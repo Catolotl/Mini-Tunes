@@ -601,7 +601,7 @@
      
       <div id="search-view">
         <div class="search-container">
-          <input id="search" placeholder="Search songs, albums, artists..." />
+          <input id="search" placeholder="Search songs, albums, artists..." autofocus />
           <button id="ai-chat-btn" onclick="toggleAIChat()">
             <i class="fas fa-comments"></i> AI Chat
           </button>
@@ -631,23 +631,14 @@
       </div>
     </div>
     <div class="controls">
-      <button class="control-btn" id="prev-btn" onclick="prevSong()"><i class="fas fa-step-backward"></i></button>
-      <button class="control-btn" id="play-pause-btn" onclick="togglePlayPause()"><i class="fas fa-play"></i></button>
-      <button class="control-btn" id="next-btn" onclick="nextSong()"><i class="fas fa-step-forward"></i></button>
-      <button id="lyrics-btn" onclick="toggleLyrics()">Lyrics</button>
+      <button class="control-btn" id="prev-btn"><i class="fas fa-step-backward"></i></button>
+      <button class="control-btn" id="play-pause-btn"><i class="fas fa-play"></i></button>
+      <button class="control-btn" id="next-btn"><i class="fas fa-step-forward"></i></button>
     </div>
-    <div id="progress-container" onclick="seekAudio(event)"><div id="progress"></div></div>
+    <div id="progress-container"><div id="progress"></div></div>
     <audio id="audio"></audio>
   </div>
 <script>
-  let currentSongs = [];
-  let currentIndex = 0;
-  let isPlaying = false;
-  let currentPlaylist = null;
-  let djMode = false;
-  let listenHistory = [];
-  let currentEditPlaylist = null;
-  let playlists = JSON.parse(localStorage.getItem("miniTunes_playlists") || "{}");
   const audio = document.getElementById("audio");
   const player = document.getElementById("player");
   const playPauseBtn = document.getElementById("play-pause-btn");
@@ -656,73 +647,370 @@
   const lyricsViewer = document.getElementById("lyrics-viewer");
   const results = document.getElementById("results");
   const searchInput = document.getElementById("search");
+  let currentSongs = [];
+  let currentIndex = 0;
+  let isPlaying = false;
+  let currentPlaylist = null;
+  // === DEEZER API WITH PROXY ===
+  const DEEZER_API = "https://api.deezer.com";
   const CORS_PROXY = "https://corsproxy.io/?";
-  const MUSICBRAINZ = "https://musicbrainz.org/ws/2";
-  const LISTENBRAINZ = "https://labs.api.listenbrainz.org/similar-artists";
-  const INVIDIOUS = "https://yewtu.be";
-  // ... [ALL YOUR ORIGINAL FUNCTIONS FOR PROFILE, PREMIUM, PLAYLISTS, etc.] ...
-  // (Kept the same — paste them here from your code)
 
-  // FIXED PERFORM SEARCH (DIRECT FOR SONGS)
+  // === SEARCH ===
+  async function searchDeezer(query) {
+    const url = CORS_PROXY + encodeURIComponent(`${DEEZER_API}/search?q=${encodeURIComponent(query)}`);
+    const res = await fetch(url);
+    const data = await res.json();
+    return data.data || [];
+  }
+
+  // === PERFORM SEARCH ===
   async function performSearch(query) {
     results.innerHTML = '<div class="spinner"></div>';
     try {
-      const data = await proxyFetch(`${INVIDIOUS}/api/v1/search?q=${encodeURIComponent(query + " official audio")}&type=video`);
-      const songs = data.map(item => ({
-        id: item.videoId,
-        title: item.title,
-        artist: { name: item.author },
-        thumbnailUrl: item.videoThumbnails[0].url,
-        duration: item.lengthSeconds
+      const data = await searchDeezer(query);
+      const songs = data.map(track => ({
+        id: track.id,
+        title: track.title,
+        artist: { name: track.artist.name },
+        album: { cover_medium: track.album.cover_medium },
+        thumbnailUrl: track.album.cover_medium,
+        preview: track.preview
       }));
       displayResults(songs);
-    } catch {
+    } catch (error) {
+      console.error('Search error:', error);
       results.innerHTML = "<p style='text-align:center; color:#ef4444; margin-top:80px;'>Search failed. Please try again.</p>";
     }
   }
 
-  // AI CHAT & DJ USE RECOMMENDATIONS
+  // === GET RELATED ARTISTS (FOR AI) ===
+  async function getRelatedArtists(artistName) {
+    const searchUrl = CORS_PROXY + encodeURIComponent(`${DEEZER_API}/search/artist?q=${encodeURIComponent(artistName)}`);
+    const searchRes = await fetch(searchUrl);
+    const searchData = await searchRes.json();
+    const artistId = searchData.data[0]?.id;
+    if (!artistId) return [];
+    const relatedUrl = CORS_PROXY + encodeURIComponent(`${DEEZER_API}/artist/${artistId}/related`);
+    const relatedRes = await fetch(relatedUrl);
+    const relatedData = await relatedRes.json();
+    return relatedData.data.map(a => a.name);
+  }
+
+  // === GET SONGS FROM ARTISTS (FOR AI) ===
+  async function getSongsFromArtists(artists) {
+    const songs = [];
+    for (const artist of artists) {
+      const data = await searchDeezer(artist);
+      songs.push(...data.slice(0, 3)); // Top 3 per artist
+    }
+    return songs.map(track => ({
+      id: track.id,
+      title: track.title,
+      artist: { name: track.artist.name },
+      album: { cover_medium: track.album.cover_medium },
+      thumbnailUrl: track.album.cover_medium,
+      preview: track.preview
+    }));
+  }
+
+  // === DISPLAY RESULTS ===
+  function displayResults(songs) {
+    results.innerHTML = "";
+    if (songs.length === 0) {
+      results.innerHTML = "<p style='text-align:center; color:#737373; margin-top:80px;'>No results found</p>";
+      return;
+    }
+    songs.forEach(song => addSongCard(song, () => playSongList([song], 0), false));
+  }
+
+  // === ADD SONG CARD ===
+  function addSongCard(song, onclick, showRemove) {
+    const div = document.createElement("div");
+    div.className = "song-card";
+    div.innerHTML = `
+      <img class="song-cover" src="${song.thumbnailUrl}" />
+      <div style="flex:1;">
+        <div style="font-weight:600;">${song.title}</div>
+        <div style="color:#a3a3a3; font-size:13px;">${song.artist.name}</div>
+      </div>
+      <div class="song-actions">
+        ${showRemove ? `<button onclick="event.stopPropagation(); removeFromPlaylist(${JSON.stringify(song).replace(/"/g, '&quot;')}, '${currentPlaylist}')"><i class="fas fa-trash"></i></button>` : `<button onclick="event.stopPropagation(); addToPlaylist(${JSON.stringify(song).replace(/"/g, '&quot;')})"><i class="fas fa-plus"></i></button>`}
+      </div>
+    `;
+    div.onclick = onclick;
+    results.appendChild(div);
+  }
+
+  // === PLAY ===
+  function playCurrentSong() {
+    const song = currentSongs[currentIndex];
+    if (!song) return;
+    audio.src = song.preview;
+    audio.play().catch(() => alert("Playback failed. Try another song."));
+    isPlaying = true;
+    playPauseBtn.innerHTML = '<i class="fas fa-pause"></i>';
+    document.getElementById("now-playing-title").textContent = song.title;
+    document.getElementById("now-playing-artist").textContent = song.artist.name;
+    document.getElementById("now-playing-cover").src = song.thumbnailUrl;
+    player.style.display = "flex";
+    fetchLyrics(song.artist.name, song.title);
+    listenHistory.push(song);
+    localStorage.setItem("miniTunes_history", JSON.stringify(listenHistory.slice(-50)));
+  }
+
+  function playSongList(songs, index) {
+    currentSongs = songs;
+    currentIndex = index;
+    playCurrentSong();
+  }
+
+  function togglePlayPause() {
+    if (isPlaying) audio.pause(); else audio.play();
+    isPlaying = !isPlaying;
+    playPauseBtn.innerHTML = isPlaying ? '<i class="fas fa-pause"></i>' : '<i class="fas fa-play"></i>';
+  }
+
+  function nextSong() {
+    currentIndex = (currentIndex + 1) % currentSongs.length;
+    playCurrentSong();
+  }
+
+  function prevSong() {
+    currentIndex = currentIndex === 0 ? currentSongs.length - 1 : currentIndex - 1;
+    playCurrentSong();
+  }
+
+  progressContainer.onclick = (e) => {
+    audio.currentTime = (e.offsetX / progressContainer.offsetWidth) * audio.duration;
+  };
+
+  audio.ontimeupdate = () => {
+    if (audio.duration) progress.style.width = (audio.currentTime / audio.duration * 100) + "%";
+  };
+
+  audio.onended = () => nextSong();
+
+  // === AI CHAT ===
+  function toggleAIChat() {
+    document.getElementById('ai-chat-panel').classList.toggle('active');
+  }
+
   async function sendAIMessage() {
     const input = document.getElementById('ai-chat-input');
     const message = input.value.trim();
     if (!message) return;
-   
     const messagesContainer = document.getElementById('ai-chat-messages');
-   
     const userMsg = document.createElement('div');
     userMsg.className = 'ai-message user-message';
     userMsg.textContent = message;
     messagesContainer.appendChild(userMsg);
-   
     input.value = '';
-   
     const aiMsg = document.createElement('div');
     aiMsg.className = 'ai-message';
-    aiMsg.textContent = `🎵 Great choice! Creating playlist for "${message}"...`;
+    aiMsg.textContent = `🎵 Great choice! Searching for "${message}"...`;
     messagesContainer.appendChild(aiMsg);
     messagesContainer.scrollTop = messagesContainer.scrollHeight;
-   
-    const artists = await getRecommendedArtists(message);
-    const songs = await getSongsFromArtists(artists);
+    let songs = await searchDeezer(message);
     if (songs.length === 0) {
-      aiMsg.textContent += " No recommendations found. Trying direct search...";
-      performSearch(message);
-    } else {
-      displayResults(songs);
-      playSongList(songs, 0); // Auto-play the playlist
+      aiMsg.textContent += " No direct results. Trying recommendations...";
+      const artists = await getRelatedArtists(message);
+      songs = await getSongsFromArtists(artists);
     }
+    const songObjects = songs.map(track => ({
+      id: track.id,
+      title: track.title,
+      artist: { name: track.artist.name },
+      album: { cover_medium: track.album.cover_medium },
+      thumbnailUrl: track.album.cover_medium,
+      preview: track.preview
+    }));
+    displayResults(songObjects);
+  }
+
+  document.getElementById('ai-chat-input').addEventListener('keypress', (e) => {
+    if (e.key === 'Enter') sendAIMessage();
+  });
+
+  // === DJ MODE ===
+  function toggleDJMode() {
+    djMode = !djMode;
+    document.getElementById('dj-toggle').classList.toggle('active');
+    document.getElementById('dj-mode-text').textContent = djMode ? 'AI DJ ON' : 'AI DJ OFF';
+    if (djMode) switchView('home');
+  }
+
+  function generateDJPlaylists() {
+    const djContainer = document.getElementById('dj-playlists');
+    djContainer.innerHTML = '';
+    const genres = ['Pop', 'Rock', 'Electronic', 'Hip Hop', 'Chill', 'Workout'];
+    genres.forEach(genre => {
+      const div = document.createElement("div");
+      div.className = "card";
+      div.innerHTML = `
+        <img src="https://via.placeholder.com/280x180?text=${genre}" />
+        <div class="play-btn" onclick="searchDJPlaylist('${genre}')"><i class="fas fa-play"></i></div>
+        <div class="card-info">
+          <div class="card-title">AI ${genre} Mix</div>
+          <div class="card-artist">Curated by AI DJ</div>
+        </div>
+      `;
+      djContainer.appendChild(div);
+    });
   }
 
   async function searchDJPlaylist(genre) {
     searchInput.value = genre;
     switchView('search');
     results.innerHTML = '<div class="spinner"></div>';
-    const artists = await getRecommendedArtists(genre);
-    const songs = await getSongsFromArtists(artists);
-    displayResults(songs);
+    const songs = await searchDeezer(genre);
+    const songObjects = songs.map(track => ({
+      id: track.id,
+      title: track.title,
+      artist: { name: track.artist.name },
+      album: { cover_medium: track.album.cover_medium },
+      thumbnailUrl: track.album.cover_medium,
+      preview: track.preview
+    }));
+    displayResults(songObjects);
   }
 
-  // ... [REST OF YOUR SCRIPT: playCurrentSong, togglePlayPause, etc.] ...
+  // === PLAYLISTS ===
+  function savePlaylists() { localStorage.setItem("miniTunes_playlists", JSON.stringify(playlists)); }
+  function renderPlaylists() {
+    const playlistsList = document.getElementById('playlists-list');
+    playlistsList.innerHTML = "";
+    Object.keys(playlists).forEach(name => {
+      const pl = playlists[name];
+      const cover = pl.cover || "https://via.placeholder.com/40?text=🎵";
+      const div = document.createElement("div");
+      div.className = "playlist-item";
+      div.innerHTML = `
+        <div style="display:flex; align-items:center; gap:12px; flex:1;">
+          <img class="playlist-cover" src="${cover}" />
+          <div><strong>${name}</strong><br><small style="color:#737373;">${pl.songs.length} songs</small></div>
+        </div>
+        <div class="playlist-actions">
+          <button onclick="event.stopPropagation(); editPlaylist('${name}')"><i class="fas fa-edit"></i></button>
+          <button onclick="event.stopPropagation(); sharePlaylist('${name}')"><i class="fas fa-share"></i></button>
+          <button onclick="event.stopPropagation(); deletePlaylist('${name}')"><i class="fas fa-trash"></i></button>
+        </div>
+      `;
+      div.onclick = () => openPlaylist(name);
+      playlistsList.appendChild(div);
+    });
+  }
+
+  function createPlaylist() {
+    const name = prompt("Playlist name:");
+    if (!name || playlists[name]) return alert("Invalid or duplicate name.");
+    playlists[name] = { songs: [], cover: "https://via.placeholder.com/280?text=🎵", id: Math.random().toString(36).substr(2, 9) };
+    savePlaylists();
+    renderPlaylists();
+  }
+
+  function editPlaylist(name) {
+    currentEditPlaylist = name;
+    const pl = playlists[name];
+    document.getElementById("edit-playlist-name").value = name;
+    document.getElementById("playlist-cover-preview").src = pl.cover;
+    document.getElementById("edit-playlist-modal").style.display = "flex";
+  }
+
+  function closeEditPlaylist() {
+    document.getElementById("edit-playlist-modal").style.display = "none";
+  }
+
+  function savePlaylistEdit() {
+    const newName = document.getElementById("edit-playlist-name").value.trim();
+    const newCover = document.getElementById("playlist-cover-preview").src;
+    if (!newName) return alert("Name required!");
+    const pl = playlists[currentEditPlaylist];
+    delete playlists[currentEditPlaylist];
+    playlists[newName] = { ...pl, cover: newCover };
+    savePlaylists();
+    renderPlaylists();
+    closeEditPlaylist();
+  }
+
+  document.getElementById('playlist-cover-input').addEventListener('change', (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onload = (e) => document.getElementById("playlist-cover-preview").src = e.target.result;
+      reader.readAsDataURL(file);
+    }
+  });
+
+  function deletePlaylist(name) {
+    if (confirm(`Delete "${name}"?`)) {
+      delete playlists[name];
+      savePlaylists();
+      renderPlaylists();
+    }
+  }
+
+  function sharePlaylist(name) {
+    const pl = playlists[name];
+    const url = `${location.origin}${location.pathname}?pl=${pl.id}`;
+    navigator.clipboard.writeText(url).then(() => alert(`Link copied!\n${url}`));
+  }
+
+  function openPlaylist(name) {
+    currentPlaylist = name;
+    const pl = playlists[name];
+    currentSongs = pl.songs;
+    results.innerHTML = `<h2 style="grid-column:1/-1; margin:20px 0; font-size:24px;">${name} <span style="color:#737373; font-size:16px;">(${pl.songs.length} songs)</span></h2>`;
+    pl.songs.forEach((song, i) => addSongCard(song, () => playSongList(pl.songs, i), true));
+    switchView('search');
+  }
+
+  function addToPlaylist(song) {
+    const names = Object.keys(playlists);
+    if (names.length === 0) return alert("Create a playlist first!");
+    const name = prompt("Add to playlist:", names[0]);
+    if (name && playlists[name]) {
+      playlists[name].songs.push(song);
+      savePlaylists();
+      renderPlaylists();
+      alert(`Added to ${name}`);
+    }
+  }
+
+  function removeFromPlaylist(song, playlistName) {
+    playlists[playlistName].songs = playlists[playlistName].songs.filter(s => s.id !== song.id);
+    savePlaylists();
+    renderPlaylists();
+    openPlaylist(playlistName);
+  }
+
+  // === LYRICS ===
+  async function fetchLyrics(artist, title) {
+    lyricsViewer.innerHTML = "Loading lyrics...";
+    try {
+      const res = await fetch(`https://api.lyrics.ovh/v1/${encodeURIComponent(artist)}/${encodeURIComponent(title)}`);
+      const data = await res.json();
+      lyricsViewer.innerHTML = data.lyrics ? data.lyrics.replace(/\n/g, "<br>") : "No lyrics found.";
+    } catch {
+      lyricsViewer.innerHTML = "Lyrics unavailable.";
+    }
+  }
+
+  // === INIT ===
+  loadProfile();
+  renderPlaylists();
+  listenHistory = JSON.parse(localStorage.getItem("miniTunes_history") || "[]");
+  results.innerHTML = "<p style='text-align:center; color:#737373; margin-top:100px; font-size:16px;'>🎵 Search for music to get started</p>";
+  // Load shared playlist from URL
+  const params = new URLSearchParams(location.search);
+  const id = params.get("pl");
+  if (id) {
+    for (const name in playlists) {
+      if (playlists[name].id === id) {
+        openPlaylist(name);
+        break;
+      }
+    }
+  }
 </script>
 </body>
 </html>
