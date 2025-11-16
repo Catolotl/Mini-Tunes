@@ -5,324 +5,708 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Mini Tunes</title>
 <style>
-body { margin:0; font-family: Arial,sans-serif; background:#0d0d0d; color:white; display:flex; height:100vh; overflow:hidden; }
-header { position:fixed; top:0; left:0; width:100%; height:60px; padding:15px 20px; background:#111; display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid #333; z-index:20; }
-#nav-buttons { display:flex; gap:10px; }
-#nav-buttons button { background:#222; border:none; color:white; padding:8px 16px; border-radius:10px; cursor:pointer; transition:0.2s; }
-#nav-buttons button:hover { background:#333; }
-#premium-btn { background:linear-gradient(90deg,#7d00ff,#0044ff); padding:8px 16px; border-radius:10px; cursor:pointer; }
-#premium-popup { position:fixed; top:50%; left:50%; transform:translate(-50%,-50%); background:#1c1c1c; padding:20px; border-radius:12px; width:320px; display:none; text-align:center; z-index:50; }
-#sidebar { width:220px; background:#111; padding-top:80px; overflow-y:auto; border-right:1px solid #333; display:flex; flex-direction:column; }
-.playlist-item { display:flex; align-items:center; padding:12px; cursor:pointer; gap:12px; transition:0.2s; border-bottom:1px solid #222; }
-.playlist-item:hover { background:#222; }
-.playlist-cover { width:40px; height:40px; object-fit:cover; border-radius:50%; }
-#content { flex:1; padding:80px 30px 20px 30px; overflow-y:auto; }
-.section { margin-bottom:30px; }
-.section h3 { margin-bottom:15px; font-size:1.2em; }
-.song-card { background:#1a1a1a; padding:15px; border-radius:12px; display:flex; gap:15px; align-items:center; transition:0.2s; cursor:pointer; margin-bottom:12px; justify-content:space-between; box-shadow:0 2px 4px rgba(0,0,0,0.2); }
-.song-card:hover { background:#222; transform:translateY(-2px); }
-.cover { width:60px; height:60px; object-fit:cover; border-radius:10px; }
-#player { position:sticky; bottom:0; background:#111; padding:15px; border-top:1px solid #333; display:none; width:100%; box-sizing:border-box; }
-.skeleton { height:70px; background:linear-gradient(90deg,#202020,#2a2a2a,#202020); background-size:200% 100%; animation:loading 1.2s infinite; border-radius:12px; margin-bottom:12px; }
-@keyframes loading { 0% { background-position:200% 0; } 100% { background-position:-200% 0; } }
-button { cursor:pointer; background:#222; color:white; border:none; padding:8px 16px; border-radius:8px; margin-left:8px; transition:0.2s; }
-button:hover { background:#333; }
-input { width:100%; padding:12px; background:#1a1a1a; border:none; border-radius:10px; color:white; margin-bottom:20px; box-sizing:border-box; }
-#welcome { font-size:1.5em; margin-bottom:20px; }
+  :root {
+    --bg: #0d0d0d;
+    --surface: #111;
+    --card: #1a1a1a;
+    --hover: #222;
+    --text: #fff;
+    --accent: #7d00ff;
+    --accent2: #0044ff;
+    --border: #333;
+  }
+
+  * { box-sizing: border-box; }
+  body { 
+    margin:0; 
+    font-family: 'Segoe UI', Arial, sans-serif; 
+    background:var(--bg); 
+    color:var(--text); 
+    display:flex; 
+    height:100vh; 
+    overflow:hidden; 
+  }
+
+  /* Header */
+  header { 
+    position:fixed; 
+    top:0; left:0; width:100%; 
+    height:70px; 
+    padding:0 24px; 
+    background:var(--surface); 
+    display:flex; 
+    justify-content:space-between; 
+    align-items:center; 
+    border-bottom:1px solid var(--border); 
+    z-index:20; 
+  }
+  header h2 { 
+    margin:0; 
+    font-size:1.4em; 
+    font-weight:600; 
+    background: linear-gradient(90deg, #fff, #ccc);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+  }
+
+  .header-right { display:flex; align-items:center; gap:12px; }
+
+  #premium-btn { 
+    background:linear-gradient(90deg,var(--accent),var(--accent2)); 
+    padding:8px 18px; 
+    border-radius:12px; 
+    cursor:pointer; 
+    font-weight:600; 
+    font-size:0.9em;
+    transition:0.2s;
+  }
+  #premium-btn:hover { transform:scale(1.03); }
+
+  #profile-btn {
+    width:36px; height:36px; 
+    background:#333; 
+    border-radius:50%; 
+    display:flex; 
+    align-items:center; 
+    justify-content:center; 
+    cursor:pointer; 
+    font-weight:bold; 
+    font-size:1em;
+    transition:0.2s;
+  }
+  #profile-btn:hover { background:#444; }
+
+  /* Profile Popup */
+  #profile-popup {
+    position:fixed; top:80px; right:24px; 
+    background:var(--card); 
+    padding:16px; 
+    border-radius:14px; 
+    width:240px; 
+    box-shadow:0 8px 24px rgba(0,0,0,0.4); 
+    display:none; 
+    z-index:100;
+    border:1px solid var(--border);
+  }
+  #profile-popup h4 { margin:0 0 8px; font-size:1.1em; }
+  #profile-popup p { margin:4px 0; font-size:0.9em; color:#aaa; }
+  #change-name { 
+    background:var(--hover); 
+    border:none; 
+    color:var(--text); 
+    padding:6px 12px; 
+    border-radius:8px; 
+    cursor:pointer; 
+    width:100%; 
+    margin-top:10px;
+    font-size:0.9em;
+  }
+
+  /* Sidebar */
+  #sidebar { 
+    width:240px; 
+    background:var(--surface); 
+    padding-top:90px; 
+    overflow-y:auto; 
+    border-right:1px solid var(--border); 
+    display:flex; 
+    flex-direction:column; 
+  }
+
+  /* Nav Items (Home & Search) */
+  .nav-item {
+    display:flex; 
+    align-items:center; 
+    padding:14px 16px; 
+    cursor:pointer; 
+    gap:14px; 
+    transition:0.2s; 
+    border-bottom:1px solid var(--border); 
+    font-weight:500;
+  }
+  .nav-item:hover { background:var(--hover); }
+  .nav-item.active { 
+    background:var(--hover); 
+    border-left:3px solid var(--accent); 
+    padding-left:13px;
+  }
+  .nav-item svg {
+    width:20px; height:20px; 
+    fill: #aaa;
+  }
+  .nav-item.active svg {
+    fill: var(--accent);
+  }
+
+  /* Playlists Section */
+  .playlists-header {
+    padding:16px 16px 8px;
+    font-size:0.9em;
+    color:#aaa;
+    text-transform:uppercase;
+    letter-spacing:0.5px;
+    font-weight:600;
+  }
+
+  .playlist-item { 
+    display:flex; 
+    align-items:center; 
+    padding:12px 16px; 
+    cursor:pointer; 
+    gap:12px; 
+    transition:0.2s; 
+    border-bottom:1px solid var(--border); 
+  }
+  .playlist-item:hover { background:var(--hover); }
+  .playlist-cover { 
+    width:42px; height:42px; 
+    object-fit:cover; 
+    border-radius:50%; 
+  }
+  .playlist-actions { 
+    margin-left:auto; 
+    display:flex; 
+    gap:6px; 
+    opacity:0; 
+    transition:0.2s;
+  }
+  .playlist-item:hover .playlist-actions { opacity:1; }
+
+  /* Content */
+  #content { 
+    flex:1; 
+    padding:90px 32px 20px 32px; 
+    overflow-y:auto; 
+  }
+  .section { margin-bottom:36px; }
+  .section h3 { 
+    margin:0 0 16px; 
+    font-size:1.3em; 
+    font-weight:600; 
+    color:#eee;
+  }
+
+  .song-card { 
+    background:var(--card); 
+    padding:16px; 
+    border-radius:14px; 
+    display:flex; 
+    gap:16px; 
+    align-items:center; 
+    transition:0.25s; 
+    cursor:pointer; 
+    margin-bottom:14px; 
+    justify-content:space-between; 
+    box-shadow:0 2px 6px rgba(0,0,0,0.2); 
+  }
+  .song-card:hover { 
+    background:var(--hover); 
+    transform:translateY(-2px); 
+    box-shadow:0 6px 12px rgba(0,0,0,0.3);
+  }
+  .cover { 
+    width:64px; height:64px; 
+    object-fit:cover; 
+    border-radius:12px; 
+    box-shadow:0 2px 4px rgba(0,0,0,0.3);
+  }
+
+  /* Player */
+  #player { 
+    position:sticky; 
+    bottom:0; 
+    background:var(--surface); 
+    padding:16px 24px; 
+    border-top:1px solid var(--border); 
+    display:none; 
+    width:100%; 
+    box-sizing:border-box; 
+    backdrop-filter: blur(10px);
+  }
+  #now-playing { 
+    margin:0 0 8px; 
+    font-weight:500; 
+    font-size:0.95em;
+  }
+
+  /* Inputs */
+  input, button {
+    font-family: inherit;
+  }
+  input { 
+    width:100%; 
+    padding:14px 16px; 
+    background:var(--card); 
+    border:none; 
+    border-radius:12px; 
+    color:var(--text); 
+    margin-bottom:20px; 
+    font-size:1em;
+    transition:0.2s;
+  }
+  input:focus { 
+    outline:none; 
+    box-shadow:0 0 0 2px var(--accent);
+  }
+
+  button { 
+    cursor:pointer; 
+    background:var(--hover); 
+    color:var(--text); 
+    border:none; 
+    padding:8px 16px; 
+    border-radius:10px; 
+    margin-left:8px; 
+    transition:0.2s; 
+    font-weight:500;
+  }
+  button:hover { background:#333; }
+
+  /* Skeleton */
+  .skeleton { 
+    height:78px; 
+    background:linear-gradient(90deg,#202020,#2a2a2a,#202020); 
+    background-size:200% 100%; 
+    animation:loading 1.4s infinite; 
+    border-radius:14px; 
+    margin-bottom:14px; 
+  }
+  @keyframes loading { 0% { background-position:200% 0; } 100% { background-position:-200% 0; } }
+
+  /* Welcome */
+  #welcome { 
+    font-size:1.8em; 
+    margin-bottom:24px; 
+    font-weight:600; 
+    background: linear-gradient(90deg, #fff, #aaa);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+  }
+
+  /* Premium Popup */
+  #premium-popup, #profile-popup {
+    position:fixed; 
+    background:var(--card); 
+    padding:24px; 
+    border-radius:16px; 
+    box-shadow:0 12px 32px rgba(0,0,0,0.5);
+    z-index:100;
+    border:1px solid var(--border);
+  }
+  #premium-popup { 
+    top:50%; left:50%; 
+    transform:translate(-50%,-50%); 
+    width:340px; 
+    text-align:center; 
+    display:none; 
+  }
 </style>
 </head>
 <body>
 
 <header>
-<h2 style="margin:0;">Mini Tunes</h2>
-<div id="nav-buttons">
-<button id="home-btn">Home</button>
-<button id="search-btn">Search</button>
-</div>
-<div id="premium-btn">Premium</div>
+  <h2>Mini Tunes</h2>
+  <div class="header-right">
+    <div id="premium-btn">Premium</div>
+    <div id="profile-btn">?</div>
+  </div>
 </header>
 
-<div id="sidebar"></div>
+<div id="profile-popup">
+  <h4 id="profile-name">User</h4>
+  <p>Customize your experience</p>
+  <button id="change-name">Change Name</button>
+</div>
+
+<div id="sidebar">
+  <!-- Navigation Items -->
+  <div id="home-nav" class="nav-item active">
+    <svg viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg>
+    <span>Home</span>
+  </div>
+  <div id="search-nav" class="nav-item">
+    <svg viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l4.5 4.5a1 1 0 0 1-1.42 1.42l-4.5-4.5v-.79l-.27-.27A6.5 6.5 0 1 1 9.5 3zm0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5z"/></svg>
+    <span>Search</span>
+  </div>
+
+  <!-- Playlists Header -->
+  <div class="playlists-header">Your Playlists</div>
+  <!-- Playlists will be injected here -->
+</div>
 
 <div id="content">
-<div id="home-page" style="display:none;">
-<div id="welcome"></div>
-<div class="section">
-<h3>Recently Played</h3>
-<div id="recently-played"></div>
-</div>
-<div class="section">
-<h3>AI Recommended Playlist</h3>
-<input id="recommend-input" placeholder="Recommend songs like (e.g., No Me Diga from In the Heights)..." />
-<div id="ai-recommendations"></div>
-</div>
-<div class="section">
-<h3>Your Playlists</h3>
-<div id="your-playlists"></div>
-</div>
-</div>
-<div id="search-page" style="display:none;">
-<input id="search" placeholder="Search for songs..." />
-<div class="section">
-<h3>Popular Songs</h3>
-<div id="popular"></div>
-</div>
-<div id="results"></div>
-</div>
-<div id="player">
-<p id="now-playing"></p>
-<audio id="audio" controls></audio>
-</div>
-<div id="lyrics-viewer" style="margin-top:20px;"></div>
+  <div id="home-page">
+    <div id="welcome">Welcome, User</div>
+    
+    <div class="section">
+      <h3>Recently Played</h3>
+      <div id="recently-played"></div>
+    </div>
+
+    <div class="section">
+      <h3>AI Recommendations</h3>
+      <input id="recommend-input" placeholder="Recommend songs like 'No Me Diga' from In the Heights..." />
+      <div id="ai-recommendations"></div>
+    </div>
+
+    <div class="section">
+      <h3>Your Playlists</h3>
+      <div id="your-playlists"></div>
+    </div>
+  </div>
+
+  <div id="search-page" style="display:none;">
+    <input id="search" placeholder="Search for songs, artists, albums..." />
+    <div class="section">
+      <h3>Popular Right Now</h3>
+      <div id="popular"></div>
+    </div>
+    <div id="results"></div>
+  </div>
+
+  <div id="player">
+    <p id="now-playing">Now playing...</p>
+    <audio id="audio" controls></audio>
+  </div>
+
+  <div id="lyrics-viewer" style="margin-top:24px; padding:16px; background:var(--card); border-radius:12px; display:none;">
+    <h4>Lyrics</h4>
+    <p id="lyrics-text">Loading lyrics...</p>
+  </div>
 </div>
 
 <div id="premium-popup">
-<h3>Mini Tunes Premium</h3>
-<p>Only <strong>$1/month</strong>! Unlock bonus skins, XP boosts, and more.</p>
-<button onclick="closePremium()">Close</button>
+  <h3>Mini Tunes Premium</h3>
+  <p>Only <strong>$1/month</strong>! Unlock bonus skins, XP boosts, and more.</p>
+  <button onclick="closePremium()">Close</button>
 </div>
 
 <script>
-const premiumBtn = document.getElementById("premium-btn");
-const premiumPopup = document.getElementById("premium-popup");
-const searchInput = document.getElementById("search");
-const results = document.getElementById("results");
-const audio = document.getElementById("audio");
-const player = document.getElementById("player");
-const nowPlaying = document.getElementById("now-playing");
-const sidebar = document.getElementById("sidebar");
-const lyricsViewer = document.getElementById("lyrics-viewer");
-const homePage = document.getElementById("home-page");
-const searchPage = document.getElementById("search-page");
-const homeBtn = document.getElementById("home-btn");
-const searchBtn = document.getElementById("search-btn");
-const welcome = document.getElementById("welcome");
-const recentlyPlayedDiv = document.getElementById("recently-played");
-const aiRecommendations = document.getElementById("ai-recommendations");
-const recommendInput = document.getElementById("recommend-input");
-const yourPlaylists = document.getElementById("your-playlists");
-const popular = document.getElementById("popular");
+  // DOM Elements
+  const premiumBtn = document.getElementById("premium-btn");
+  const premiumPopup = document.getElementById("premium-popup");
+  const profileBtn = document.getElementById("profile-btn");
+  const profilePopup = document.getElementById("profile-popup");
+  const profileName = document.getElementById("profile-name");
+  const changeNameBtn = document.getElementById("change-name");
+  const searchInput = document.getElementById("search");
+  const results = document.getElementById("results");
+  const audio = document.getElementById("audio");
+  const player = document.getElementById("player");
+  const nowPlaying = document.getElementById("now-playing");
+  const sidebar = document.getElementById("sidebar");
+  const lyricsViewer = document.getElementById("lyrics-viewer");
+  const lyricsText = document.getElementById("lyrics-text");
+  const homePage = document.getElementById("home-page");
+  const searchPage = document.getElementById("search-page");
+  const homeNav = document.getElementById("home-nav");
+  const searchNav = document.getElementById("search-nav");
+  const welcome = document.getElementById("welcome");
+  const recentlyPlayedDiv = document.getElementById("recently-played");
+  const aiRecommendations = document.getElementById("ai-recommendations");
+  const recommendInput = document.getElementById("recommend-input");
+  const yourPlaylists = document.getElementById("your-playlists");
+  const popular = document.getElementById("popular");
 
-premiumBtn.onclick = () => premiumPopup.style.display = "block";
-function closePremium() { premiumPopup.style.display = "none"; }
+  // State
+  let userName = localStorage.getItem("userName") || "User";
+  let recentlyPlayed = JSON.parse(localStorage.getItem("recentlyPlayed") || "[]");
+  let playlists = JSON.parse(localStorage.getItem("miniPlaylists") || "{}");
 
-let userName = localStorage.getItem("userName");
-if (!userName) {
-  userName = prompt("Enter your name:");
-  if (userName) localStorage.setItem("userName", userName);
-}
-welcome.innerText = `Welcome, ${userName || "User"}`;
-
-let recentlyPlayed = JSON.parse(localStorage.getItem("recentlyPlayed") || "[]");
-let playlists = JSON.parse(localStorage.getItem("miniPlaylists") || "{}");
-
-function savePlaylists() { localStorage.setItem("miniPlaylists", JSON.stringify(playlists)); }
-function saveRecentlyPlayed() { localStorage.setItem("recentlyPlayed", JSON.stringify(recentlyPlayed.slice(-10))); }
-
-/* General Deezer JSONP Fetch */
-async function deezerFetch(path) {
-  const url = `https://api.deezer.com/${path}&output=jsonp`;
-  return new Promise((resolve) => {
-    const callbackName = "dzcb_" + Math.random().toString(36).substring(2);
-    window[callbackName] = function (data) {
-      resolve(data.data || data || []);
-      delete window[callbackName];
-      script.remove();
-    };
-    const script = document.createElement("script");
-    script.src = `${url}&callback=${callbackName}`;
-    document.body.appendChild(script);
-  });
-}
-
-searchInput.addEventListener("input", async () => {
-  const q = searchInput.value.trim();
-  results.innerHTML = "";
-  if (!q) return;
-  for (let i = 0; i < 5; i++) { const sk = document.createElement("div"); sk.className = "skeleton"; results.appendChild(sk); }
-  const songs = await deezerFetch(`search?q=${encodeURIComponent(q)}`);
-  results.innerHTML = "";
-  renderSongs(songs, results);
-});
-
-function renderSongs(songs, container) {
-  songs.forEach(song => {
-    const div = document.createElement("div");
-    div.className = "song-card";
-    div.innerHTML = `
-      <div style='display:flex; align-items:center; gap:12px;'>
-        <img class="cover" src="${song.album ? song.album.cover_medium : song.cover_medium}" alt="Cover" />
-        <div>
-          <strong>${song.title}</strong><br>
-          <small>${song.artist ? song.artist.name : song.name}</small>
-        </div>
-      </div>
-      <div>
-        <button>Add to Playlist</button>
-      </div>
-    `;
-    div.querySelector('button').addEventListener('click',(e)=>{e.stopPropagation(); addSongToPlaylist(song);});
-    div.onclick = () => playSong(song);
-    container.appendChild(div);
-  });
-}
-
-async function loadPopular() {
-  popular.innerHTML = "";
-  for (let i = 0; i < 5; i++) { const sk = document.createElement("div"); sk.className = "skeleton"; popular.appendChild(sk); }
-  const songs = await deezerFetch('chart/0/tracks?limit=20');
-  popular.innerHTML = "";
-  renderSongs(songs, popular);
-}
-
-recommendInput.addEventListener("input", async () => {
-  const q = recommendInput.value.trim();
-  aiRecommendations.innerHTML = "";
-  if (!q) return;
-  for (let i = 0; i < 5; i++) { const sk = document.createElement("div"); sk.className = "skeleton"; aiRecommendations.appendChild(sk); }
-  const searchResults = await deezerFetch(`search/track?q=${encodeURIComponent(q)}&limit=1`);
-  if (searchResults.length === 0) {
-    aiRecommendations.innerHTML = "<p>No song found.</p>";
-    return;
+  // Update UI with name
+  function updateUserName(name) {
+    userName = name || "User";
+    localStorage.setItem("userName", userName);
+    welcome.innerText = `Welcome, ${userName}`;
+    profileName.innerText = userName;
+    profileBtn.innerText = userName.charAt(0).toUpperCase();
   }
-  const song = searchResults[0];
-  const artistId = song.artist.id;
-  const recommendations = await deezerFetch(`artist/${artistId}/radio?limit=10`);
-  aiRecommendations.innerHTML = "";
-  renderSongs(recommendations, aiRecommendations);
-});
+  updateUserName(userName);
 
-function playSong(song) {
-  audio.src = song.preview;
-  nowPlaying.innerText = `Now playing: ${song.title}`;
-  player.style.display = "block";
-  audio.play();
-  lyricsViewer.innerHTML = `Lyrics for ${song.title} (placeholder, implement API if desired)`;
-  let pts = Number(localStorage.getItem("points") || 0);
-  pts += 1;
-  localStorage.setItem("points", pts);
-  recentlyPlayed.push(song);
-  saveRecentlyPlayed();
-  if (homePage.style.display === 'block') loadHomeContent();
-}
+  // Event Listeners
+  premiumBtn.onclick = () => premiumPopup.style.display = "block";
+  function closePremium() { premiumPopup.style.display = "none"; }
 
-/* Playlist System */
-function renderSidebar() {
-  sidebar.innerHTML = '';
-  const newBtn = document.createElement('div');
-  newBtn.className='playlist-item';
-  newBtn.innerHTML='<strong>+ New Playlist</strong>';
-  newBtn.onclick = () => {
-    const name=prompt('Enter new playlist name');
-    if(!name) return;
-    playlists[name]={songs:[],cover:null};
-    savePlaylists();
-    renderSidebar();
-    loadHomeContent();
+  profileBtn.onclick = () => {
+    profilePopup.style.display = profilePopup.style.display === "block" ? "none" : "block";
   };
-  sidebar.appendChild(newBtn);
+  changeNameBtn.onclick = () => {
+    const newName = prompt("Enter your name:", userName);
+    if (newName && newName.trim()) {
+      updateUserName(newName.trim());
+      profilePopup.style.display = "none";
+    }
+  };
 
-  for(const name in playlists){
-    const div=document.createElement('div');
-    div.className='playlist-item';
-    const cover=playlists[name].cover||'https://via.placeholder.com/40x40.png?text=';
-    div.innerHTML=`<img class='playlist-cover' src='${cover}'/><strong>${name}</strong>`;
-    const editBtn=document.createElement('button'); editBtn.innerText='Edit'; editBtn.onclick=(e)=>{ e.stopPropagation(); const newName=prompt('Rename playlist',name); if(newName){ playlists[newName]=playlists[name]; delete playlists[name]; savePlaylists(); renderSidebar(); loadHomeContent(); } };
-    const delBtn=document.createElement('button'); delBtn.innerText='Delete'; delBtn.onclick=(e)=>{ e.stopPropagation(); if(confirm('Delete playlist?')){ delete playlists[name]; savePlaylists(); renderSidebar(); loadHomeContent(); } };
-    div.appendChild(editBtn); div.appendChild(delBtn);
-    div.onclick=()=>loadPlaylist(name);
-    sidebar.appendChild(div);
-  }
-}
-
-function loadPlaylist(name){
-  showHome(); // Keep in home, but load in results? No, load in content, but since pages, perhaps set to search but clear.
-  // Actually, for playlist load, clear results or use a separate view, but to keep simple, switch to search page but set title.
-  // Better: load into results, but since search page has popular, perhaps add a function to load into content.
-  // For now, switch to search, hide popular and search input, load into results.
-  showSearch();
-  searchInput.style.display = 'none';
-  popular.style.display = 'none';
-  results.innerHTML=`<h3>${name}</h3>`;
-  playlists[name].songs.forEach(song=>{
-    const div=document.createElement('div');
-    div.className='song-card';
-    div.innerHTML=`
-      <img class='cover' src='${song.album.cover_medium}' />
-      <div><strong>${song.title}</strong><br><small>${song.artist.name}</small></div>
-    `;
-    div.onclick=()=>playSong(song);
-    results.appendChild(div);
+  // Close popups on outside click
+  document.addEventListener("click", (e) => {
+    if (!profileBtn.contains(e.target) && !profilePopup.contains(e.target)) {
+      profilePopup.style.display = "none";
+    }
+    if (!premiumBtn.contains(e.target) && !premiumPopup.contains(e.target)) {
+      premiumPopup.style.display = "none";
+    }
   });
-}
 
-function addSongToPlaylist(song){
-  const playlistNames=Object.keys(playlists);
-  if(playlistNames.length===0){ alert('No playlists, create one first'); return; }
-  const plName=prompt('Add to which playlist?',playlistNames[0]);
-  if(!plName || !playlists[plName]) return;
-  playlists[plName].songs.push(song);
-  savePlaylists();
-  alert(`Added ${song.title} to ${plName}`);
-  loadHomeContent();
-}
-
-/* Playlist Sharing */
-function generatePlaylistID() { return Math.random().toString(36).substring(2,10); }
-function exportPlaylist(name) {
-  if (!playlists[name]) return alert("Playlist not found");
-  if (!playlists[name].id) { playlists[name].id = generatePlaylistID(); savePlaylists(); }
-  const shareURL = `${location.origin}${location.pathname}?playlist=${playlists[name].id}`;
-  navigator.clipboard.writeText(shareURL);
-  alert("Playlist link copied to clipboard!\n" + shareURL);
-}
-function loadPlaylistFromURL() {
-  const params = new URLSearchParams(location.search);
-  const id = params.get("playlist");
-  if(!id) return;
-  for(const name in playlists){ if(playlists[name].id===id){ alert(`Loaded shared playlist: ${name}`); loadPlaylist(name); } }
-}
-
-/* Page Navigation */
-function showHome() {
-  homePage.style.display = 'block';
-  searchPage.style.display = 'none';
-  loadHomeContent();
-}
-
-function showSearch() {
-  homePage.style.display = 'none';
-  searchPage.style.display = 'block';
-  searchInput.style.display = 'block';
-  popular.style.display = 'block';
-  results.innerHTML = '';
-  if (popular.innerHTML === '') loadPopular();
-}
-
-function loadHomeContent() {
-  recentlyPlayedDiv.innerHTML = '';
-  renderSongs(recentlyPlayed.slice(-10).reverse(), recentlyPlayedDiv);
-
-  yourPlaylists.innerHTML = '';
-  for (const name in playlists) {
-    const div = document.createElement('div');
-    div.className = 'playlist-item';
-    div.style.marginBottom = '10px';
-    const cover = playlists[name].cover || 'https://via.placeholder.com/40x40.png?text=';
-    div.innerHTML = `<img class='playlist-cover' src='${cover}'/><strong>${name}</strong>`;
-    div.onclick = () => loadPlaylist(name);
-    yourPlaylists.appendChild(div);
+  // Deezer JSONP Helper
+  async function deezerFetch(path) {
+    const url = `https://api.deezer.com/${path}&output=jsonp`;
+    return new Promise((resolve) => {
+      const callbackName = "dzcb_" + Math.random().toString(36).substring(2);
+      window[callbackName] = function (data) {
+        resolve(data.data || data || []);
+        delete window[callbackName];
+        script.remove();
+      };
+      const script = document.createElement("script");
+      script.src = `${url}&callback=${callbackName}`;
+      document.body.appendChild(script);
+    });
   }
 
-  // AI recommendations triggered by input
-}
+  // Search
+  searchInput.addEventListener("input", async () => {
+    const q = searchInput.value.trim();
+    results.innerHTML = "";
+    if (!q) return;
+    showSkeletons(results, 5);
+    const songs = await deezerFetch(`search?q=${encodeURIComponent(q)}`);
+    results.innerHTML = "";
+    renderSongs(songs, results);
+  });
 
-homeBtn.onclick = showHome;
-searchBtn.onclick = showSearch;
+  // Popular Songs
+  async function loadPopular() {
+    popular.innerHTML = "";
+    showSkeletons(popular, 5);
+    const songs = await deezerFetch('chart/0/tracks?limit=20');
+    popular.innerHTML = "";
+    renderSongs(songs, popular);
+  }
 
-loadPlaylistFromURL();
-renderSidebar();
-showHome();
+  // AI Recommendations
+  recommendInput.addEventListener("input", async () => {
+    const q = recommendInput.value.trim();
+    aiRecommendations.innerHTML = "";
+    if (!q) return;
+    showSkeletons(aiRecommendations, 5);
+    const searchResults = await deezerFetch(`search/track?q=${encodeURIComponent(q)}&limit=1`);
+    if (!searchResults.length) {
+      aiRecommendations.innerHTML = "<p style='color:#aaa;'>No song found.</p>";
+      return;
+    }
+    const song = searchResults[0];
+    const recommendations = await deezerFetch(`artist/${song.artist.id}/radio?limit=12`);
+    aiRecommendations.innerHTML = "<p style='margin-bottom:12px; color:#aaa;'>Songs like <strong>" + song.title + "</strong>:</p>";
+    renderSongs(recommendations, aiRecommendations);
+  });
+
+  // Render Songs
+  function renderSongs(songs, container) {
+    songs.forEach(song => {
+      const div = document.createElement("div");
+      div.className = "song-card";
+      const artistName = song.artist ? song.artist.name : (song.name || "Unknown");
+      const cover = song.album ? song.album.cover_medium : (song.cover_medium || 'https://via.placeholder.com/64');
+      div.innerHTML = `
+        <div style='display:flex; align-items:center; gap:16px;'>
+          <img class="cover" src="${cover}" alt="Cover" />
+          <div>
+            <strong>${song.title}</strong><br>
+            <small style="color:#aaa;">${artistName}</small>
+          </div>
+        </div>
+        <button>Add</button>
+      `;
+      div.querySelector('button').onclick = (e) => { e.stopPropagation(); addSongToPlaylist(song); };
+      div.onclick = () => playSong(song);
+      container.appendChild(div);
+    });
+  }
+
+  function showSkeletons(container, count) {
+    for (let i = 0; i < count; i++) {
+      const sk = document.createElement("div");
+      sk.className = "skeleton";
+      container.appendChild(sk);
+    }
+  }
+
+  // Play Song
+  function playSong(song) {
+    audio.src = song.preview;
+    nowPlaying.innerText = `Now playing: ${song.title} — ${song.artist?.name || ''}`;
+    player.style.display = "block";
+    audio.play();
+    lyricsViewer.style.display = "block";
+    lyricsText.innerText = `Lyrics for "${song.title}" coming soon...`;
+    
+    // Points
+    let pts = Number(localStorage.getItem("points") || 0) + 1;
+    localStorage.setItem("points", pts);
+
+    // Recently played
+    recentlyPlayed = recentlyPlayed.filter(s => s.id !== song.id);
+    recentlyPlayed.push(song);
+    localStorage.setItem("recentlyPlayed", JSON.stringify(recentlyPlayed.slice(-15)));
+    
+    if (homePage.style.display === 'block') loadHomeContent();
+  }
+
+  // Playlist System
+  function savePlaylists() { localStorage.setItem("miniPlaylists", JSON.stringify(playlists)); }
+
+  function renderSidebarPlaylists() {
+    // Clear existing playlists (but keep nav items)
+    const playlistItems = sidebar.querySelectorAll('.playlist-item');
+    playlistItems.forEach(item => item.remove());
+
+    const newBtn = document.createElement('div');
+    newBtn.className='playlist-item';
+    newBtn.innerHTML='<strong style="color:var(--accent);">+ New Playlist</strong>';
+    newBtn.onclick = () => {
+      const name = prompt('Playlist name:');
+      if (!name?.trim()) return;
+      playlists[name] = { songs: [], cover: null };
+      savePlaylists();
+      renderSidebarPlaylists();
+      loadHomeContent();
+    };
+    sidebar.appendChild(newBtn);
+
+    for (const name in playlists) {
+      const div = document.createElement('div');
+      div.className='playlist-item';
+      const cover = playlists[name].cover || 'https://via.placeholder.com/42x42.png?text=♪';
+      div.innerHTML = `
+        <img class='playlist-cover' src='${cover}'/>
+        <strong>${name}</strong>
+        <div class="playlist-actions">
+          <button>Edit</button>
+          <button>Delete</button>
+        </div>
+      `;
+      div.querySelectorAll('button')[0].onclick = (e) => {
+        e.stopPropagation();
+        const newName = prompt('Rename:', name);
+        if (newName && newName !== name) {
+          playlists[newName] = playlists[name];
+          delete playlists[name];
+          savePlaylists();
+          renderSidebarPlaylists();
+          loadHomeContent();
+        }
+      };
+      div.querySelectorAll('button')[1].onclick = (e) => {
+        e.stopPropagation();
+        if (confirm(`Delete "${name}"?`)) {
+          delete playlists[name];
+          savePlaylists();
+          renderSidebarPlaylists();
+          loadHomeContent();
+        }
+      };
+      div.onclick = () => loadPlaylist(name);
+      sidebar.appendChild(div);
+    }
+  }
+
+  function loadPlaylist(name) {
+    showSearch();
+    searchInput.style.display = 'none';
+    document.querySelector('#search-page > .section').style.display = 'none';
+    results.innerHTML = `<h3 style="margin:0 0 20px; color:#fff;">${name}</h3>`;
+    playlists[name].songs.forEach(song => {
+      const div = document.createElement('div');
+      div.className='song-card';
+      div.innerHTML = `
+        <img class='cover' src='${song.album.cover_medium}' />
+        <div><strong>${song.title}</strong><br><small style="color:#aaa;">${song.artist.name}</small></div>
+      `;
+      div.onclick = () => playSong(song);
+      results.appendChild(div);
+    });
+  }
+
+  function addSongToPlaylist(song) {
+    const names = Object.keys(playlists);
+    if (!names.length) return alert('Create a playlist first!');
+    const pl = prompt(`Add to playlist:\n${names.join(', ')}`, names[0]);
+    if (pl && playlists[pl]) {
+      playlists[pl].songs.push(song);
+      savePlaylists();
+      alert(`Added to ${pl}`);
+      loadHomeContent();
+    }
+  }
+
+  // Page Navigation
+  function showHome() {
+    homePage.style.display = 'block';
+    searchPage.style.display = 'none';
+    homeNav.classList.add('active');
+    searchNav.classList.remove('active');
+    lyricsViewer.style.display = 'none';
+    loadHomeContent();
+  }
+
+  function showSearch() {
+    homePage.style.display = 'none';
+    searchPage.style.display = 'block';
+    homeNav.classList.remove('active');
+    searchNav.classList.add('active');
+    searchInput.style.display = 'block';
+    document.querySelector('#search-page > .section').style.display = 'block';
+    results.innerHTML = '';
+    if (!popular.innerHTML) loadPopular();
+  }
+
+  function loadHomeContent() {
+    // Recently Played
+    recentlyPlayedDiv.innerHTML = '';
+    const recent = recentlyPlayed.slice(-10).reverse();
+    if (recent.length) renderSongs(recent, recentlyPlayedDiv);
+    else recentlyPlayedDiv.innerHTML = '<p style="color:#666; font-style:italic;">No songs played yet.</p>';
+
+    // Your Playlists
+    yourPlaylists.innerHTML = '';
+    if (Object.keys(playlists).length) {
+      for (const name in playlists) {
+        const div = document.createElement('div');
+        div.className = 'playlist-item';
+        div.style.marginBottom = '12px';
+        const cover = playlists[name].cover || 'https://via.placeholder.com/42x42.png?text=♪';
+        div.innerHTML = `<img class='playlist-cover' src='${cover}'/><strong>${name}</strong>`;
+        div.onclick = () => loadPlaylist(name);
+        yourPlaylists.appendChild(div);
+      }
+    } else {
+      yourPlaylists.innerHTML = '<p style="color:#666; font-style:italic;">No playlists yet. Create one!</p>';
+    }
+  }
+
+  // Navigation Clicks
+  homeNav.onclick = showHome;
+  searchNav.onclick = showSearch;
+
+  // Init
+  renderSidebarPlaylists();
+  showHome();
+  loadPopular();
+
+  // URL Playlist Load
+  const params = new URLSearchParams(location.search);
+  const plId = params.get("playlist");
+  if (plId) {
+    setTimeout(() => {
+      for (const name in playlists) {
+        if (playlists[name].id === plId) {
+          loadPlaylist(name);
+          break;
+        }
+      }
+    }, 500);
+  }
 </script>
 </body>
 </html>
