@@ -1028,31 +1028,29 @@
     }, 500);
   }
 
-// Show welcome popup only if not agreed before
-if (!localStorage.getItem("miniTunesAgreed")) {
-  const welcomePopup = document.getElementById("welcome-popup");
-  const closeBtn = welcomePopup.querySelector(".close-btn");
-  const agreeCheckbox = document.getElementById("agree-checkbox");
-  const agreeBtn = document.getElementById("agree-btn");
+const welcomePopup = document.getElementById("welcome-popup");
+const closeBtn = welcomePopup.querySelector(".close-btn");
+const agreeCheckbox = document.getElementById("agree-checkbox");
+const agreeBtn = document.getElementById("agree-btn");
 
+// Only show popup if user hasn't agreed
+if (!localStorage.getItem("miniTunesAgreed")) {
   welcomePopup.style.display = "flex";
 
-  // Close X just hides it temporarily
   closeBtn.onclick = () => welcomePopup.style.display = "none";
 
-  // Enable/disable agree button based on checkbox
   agreeCheckbox.onchange = () => {
     agreeBtn.disabled = !agreeCheckbox.checked;
   };
 
-  // When agreed
   agreeBtn.onclick = () => {
     if (agreeCheckbox.checked) {
-      localStorage.setItem("miniTunesAgreed", "true");
+      localStorage.setItem("miniTunesAgreed", "true"); // ✅ save agreement
       welcomePopup.style.display = "none";
     }
   };
 }
+
 
   
 </script>
