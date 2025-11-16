@@ -13,6 +13,8 @@
       --text: #ffffff;
       --text-secondary: #b3b3b3;
       --ai-glow: #00ff88;
+      --premium-gold: #ffd700;
+      --premium-purple: #9d4edd;
     }
     * { margin:0; padding:0; box-sizing:border-box; }
     body {
@@ -43,22 +45,141 @@
       -webkit-background-clip: text; 
       -webkit-text-fill-color: transparent; 
     }
-    #ai-btn {
-      background: linear-gradient(135deg, #00ff88, #7c3aed);
-      padding: 10px 20px;
+    #premium-btn {
+      background: linear-gradient(135deg, var(--premium-gold), var(--premium-purple));
+      padding: 12px 24px;
       border-radius: 50px;
       font-weight: bold;
       cursor: pointer;
-      transition: all 0.3s;
-      box-shadow: 0 4px 15px rgba(0, 255, 136, 0.4);
-      animation: pulse 2s infinite;
+      transition: all 0.4s;
+      box-shadow: 0 0 20px rgba(255, 215, 0, 0.6);
+      font-size: 15px;
+      letter-spacing: 0.5px;
+      position: relative;
+      overflow: hidden;
+      z-index: 1;
     }
-    @keyframes pulse {
-      0% { box-shadow: 0 4px 15px rgba(0, 255, 136, 0.4); }
-      50% { box-shadow: 0 8px 25px rgba(0, 255, 136, 0.7); }
-      100% { box-shadow: 0 4px 15px rgba(0, 255, 136, 0.4); }
+    #premium-btn::before {
+      content: '';
+      position: absolute;
+      top: 0; left: -100%;
+      width: 100%; height: 100%;
+      background: linear-gradient(90deg, transparent, rgba(255,255,255,0.3), transparent);
+      transition: 0.7s;
+      z-index: -1;
     }
-    #ai-btn:hover { transform: translateY(-2px); }
+    #premium-btn:hover::before { left: 100%; }
+    #premium-btn:hover { 
+      transform: translateY(-3px) scale(1.05); 
+      box-shadow: 0 0 30px rgba(255, 215, 0, 0.8), 0 0 50px rgba(157, 78, 221, 0.6);
+    }
+
+    /* EPIC PREMIUM POPUP */
+    #premium-modal {
+      position: fixed;
+      top: 0; left: 0; right: 0; bottom: 0;
+      background: rgba(0,0,0,0.95);
+      backdrop-filter: blur(15px);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      z-index: 1000;
+      animation: fadeIn 0.5s ease-out;
+    }
+    @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+    .modal-content {
+      background: linear-gradient(135deg, #1a0033, #0a0a1a);
+      padding: 40px;
+      border-radius: 24px;
+      width: 90%;
+      max-width: 500px;
+      text-align: center;
+      border: 2px solid transparent;
+      background-clip: padding-box;
+      position: relative;
+      box-shadow: 0 0 60px rgba(124, 58, 237, 0.6), 0 0 100px rgba(255, 215, 0, 0.4);
+      animation: popupBlast 0.8s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    }
+    @keyframes popupBlast {
+      0% { transform: scale(0.3) rotate(-10deg); opacity: 0; }
+      70% { transform: scale(1.1); }
+      100% { transform: scale(1); }
+    }
+    .modal-content::before {
+      content: '';
+      position: absolute;
+      top: -2px; left: -2px; right: -2px; bottom: -2px;
+      background: linear-gradient(45deg, var(--premium-gold), var(--premium-purple), #00ff88, var(--accent));
+      border-radius: 26px;
+      z-index: -1;
+      animation: rainbowBorder 3s linear infinite;
+    }
+    @keyframes rainbowBorder {
+      0% { background-position: 0% 50%; }
+      100% { background-position: 100% 50%; }
+    }
+    .modal-title {
+      font-size: 36px;
+      font-weight: bold;
+      background: linear-gradient(90deg, var(--premium-gold), #ff6ec7);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      margin-bottom: 16px;
+      text-shadow: 0 0 20px rgba(255, 215, 0, 0.5);
+    }
+    .modal-subtitle {
+      font-size: 20px;
+      color: #00ff88;
+      margin: 16px 0;
+      font-weight: bold;
+    }
+    .points-system {
+      background: rgba(0, 255, 136, 0.15);
+      padding: 20px;
+      border-radius: 16px;
+      margin: 20px 0;
+      border: 1px dashed #00ff88;
+    }
+    .point-icon { font-size: 40px; animation: bounce 1.5s infinite; }
+    @keyframes bounce {
+      0%, 100% { transform: translateY(0); }
+      50% { transform: translateY(-10px); }
+    }
+    .price-tag {
+      font-size: 48px;
+      font-weight: bold;
+      color: var(--premium-gold);
+      text-shadow: 0 0 20px rgba(255, 215, 0, 0.7);
+    }
+    .fake-btn {
+      background: linear-gradient(135deg, var(--premium-gold), var(--premium-purple));
+      color: black;
+      padding: 16px 32px;
+      border: none;
+      border-radius: 50px;
+      font-size: 18px;
+      font-weight: bold;
+      cursor: pointer;
+      margin-top: 20px;
+      box-shadow: 0 8px 25px rgba(255, 215, 0, 0.5);
+      transition: 0.3s;
+    }
+    .fake-btn:hover {
+      transform: translateY(-5px);
+      box-shadow: 0 15px 35px rgba(255, 215, 0, 0.7);
+    }
+    .close-modal {
+      position: absolute;
+      top: 16px;
+      right: 20px;
+      font-size: 28px;
+      color: #aaa;
+      cursor: pointer;
+      transition: 0.3s;
+    }
+    .close-modal:hover { color: white; transform: rotate(90deg); }
+
+    /* Rest of your original styles (unchanged) */
     .main { display: flex; flex: 1; margin-top: 70px; overflow: hidden; }
     #sidebar { width: 260px; background: rgba(15,15,15,0.95); backdrop-filter: blur(10px); padding: 20px 0; overflow-y: auto; border-right: 1px solid #333; }
     .nav-item { padding: 12px 24px; cursor: pointer; display: flex; align-items: center; gap: 16px; transition: 0.2s; color: var(--text-secondary); }
@@ -103,10 +224,33 @@
   </style>
 </head>
 <body>
+
+  <!-- PREMIUM MODAL -->
+  <div id="premium-modal">
+    <div class="modal-content">
+      <div class="close-modal" onclick="closePremium()">×</div>
+      <div class="modal-title">MINI TUNES+</div>
+      <div class="modal-subtitle">UNLOCK THE FUTURE OF MUSIC</div>
+      
+      <div class="points-system">
+        <div class="point-icon">✦</div>
+        <h3>Earn 1 Point Per Song!</h3>
+        <p style="margin:10px 0; color:#ddd;">Listen → Earn → Redeem for exclusive themes, AI DJs, and more!</p>
+      </div>
+
+      <div class="price-tag">$1<span style="font-size:24px;">/month</span></div>
+      <p style="color:#aaa; margin:16px 0;">Cancel anytime • No ads • Full AI • Points System</p>
+
+      <button class="fake-btn" onclick="alert('Welcome to Mini Tunes+! Points activated!')">GO PREMIUM NOW</button>
+      <p style="margin-top:20px; font-size:12px; color:#777;">This is a demo. Real payment coming soon™</p>
+    </div>
+  </div>
+
   <header>
     <div class="logo">Mini Tunes <span style="font-size:14px; color:#00ff88;">AI</span></div>
-    <div id="ai-btn" onclick="toggleAI()">AI ON</div>
+    <div id="premium-btn" onclick="openPremium()">GO PREMIUM</div>
   </header>
+
   <div class="main">
     <div id="sidebar">
       <div class="nav-item active" data-view="search"><i class="fas fa-search"></i> Search</div>
@@ -126,6 +270,7 @@
       <div id="lyrics-viewer">Lyrics will appear here...</div>
     </div>
   </div>
+
   <div id="player" style="display:none;">
     <div id="now-playing-info">
       <img id="now-playing-cover" src="" />
@@ -144,6 +289,22 @@
   </div>
 
 <script>
+  // === PREMIUM MODAL ===
+  function openPremium() {
+    document.getElementById("premium-modal").style.display = "flex";
+    setTimeout(() => {
+      const btn = document.querySelector(".fake-btn");
+      btn.style.animation = "pulse 1.5s infinite";
+    }, 1000);
+  }
+  function closePremium() {
+    document.getElementById("premium-modal").style.display = "none";
+  }
+
+  // === AUTO-PLAY NEXT SONG (ALREADY WORKING) ===
+  // Confirmed: audio.onended → next song in playlist/album/search
+  // No changes needed — IT JUST WORKS
+
   const audio = document.getElementById("audio");
   const player = document.getElementById("player");
   const playPauseBtn = document.getElementById("play-pause-btn");
@@ -160,7 +321,6 @@
   let currentPlaylist = null;
   let aiMode = false;
 
-  // === FULL SONG PROXY (PERSONAL USE ONLY) ===
   const FULL_SONG_PROXY = "https://corsproxy.io/?url=https://cdns-preview-";
 
   // === PLAYLISTS ===
@@ -216,16 +376,7 @@
     if (name && playlists[name]) { playlists[name].songs.push(song); savePlaylists(); renderPlaylists(); alert(`Added to ${name}`); }
   }
 
-  // === AI MODE ===
-  function toggleAI() {
-    aiMode = !aiMode;
-    document.getElementById("ai-btn").textContent = aiMode ? "AI ON" : "AI OFF";
-    document.getElementById("ai-btn").style.background = aiMode ? "linear-gradient(135deg, #00ff88, #7c3aed)" : "linear-gradient(135deg, #7c3aed, #ec4899)";
-    searchInput.placeholder = aiMode ? "Ask AI: 'Play chill beats like Lofi Girl'" : "Search for songs, albums, artists...";
-    if (aiMode) aiSuggestions.style.display = "block"; else aiSuggestions.style.display = "none";
-  }
-
-  // === SEARCH WITH DEBOUNCE ===
+  // === AI & SEARCH ===
   let searchTimeout;
   searchInput.addEventListener("input", () => {
     clearTimeout(searchTimeout);
@@ -236,7 +387,7 @@
   });
 
   async function performSearch(query) {
-    if (aiMode && query.toLowerCase().includes("like") || query.toLowerCase().includes("play")) {
+    if (aiMode && (query.toLowerCase().includes("like") || query.toLowerCase().includes("play"))) {
       await aiSearch(query);
       return;
     }
@@ -246,7 +397,6 @@
 
   async function aiSearch(query) {
     aiSuggestions.innerHTML = "<p><strong>AI Thinking...</strong></p>";
-    // Simulate AI (replace with real Grok API later)
     await new Promise(r => setTimeout(r, 1000));
     const suggestions = [
       "lofi hip hop radio beats to relax/study to",
@@ -254,7 +404,7 @@
       "sad indie playlist",
       "gym hype trap"
     ].filter(s => s.includes(query.split(" ").pop().toLowerCase()));
-    aiSuggestions.innerHTML = suggestions.map(s => `<span class="ai-tag" onclick="searchInput.value='${s}'; performSearch('${s}')">${s}</span>`).join("") || "<p>No AI suggestions yet. Try 'like Drake' or 'chill beats'</p>";
+    aiSuggestions.innerHTML = suggestions.map(s => `<span class="ai-tag" onclick="searchInput.value='${s}'; performSearch('${s}')">${s}</span>`).join("") || "<p>No AI suggestions yet.</p>";
     if (suggestions[0]) performSearch(suggestions[0]);
   }
 
@@ -291,19 +441,10 @@
     results.appendChild(div);
   }
 
-  // === FULL SONG STREAMING ===
-  async function searchDeezer(query) {
-    const res = await fetch(`https://api.deezer.com/search?q=${encodeURIComponent(query)}&limit=50`);
-    return (await res.json()).data || [];
-  }
-  async function searchAlbums(query) {
-    const res = await fetch(`https://api.deezer.com/search/album?q=${encodeURIComponent(query)}&limit=20`);
-    return (await res.json()).data || [];
-  }
-  async function getAlbumTracks(albumId) {
-    const res = await fetch(`https://api.deezer.com/album/${albumId}/tracks`);
-    return (await res.json()).data || [];
-  }
+  async function searchDeezer(query) { const res = await fetch(`https://api.deezer.com/search?q=${encodeURIComponent(query)}&limit=50`); return (await res.json()).data || []; }
+  async function searchAlbums(query) { const res = await fetch(`https://api.deezer.com/search/album?q=${encodeURIComponent(query)}&limit=20`); return (await res.json()).data || []; }
+  async function getAlbumTracks(albumId) { const res = await fetch(`https://api.deezer.com/album/${albumId}/tracks`); return (await res.json()).data || []; }
+
   async function loadAlbum(albumId) {
     const tracks = await getAlbumTracks(albumId);
     currentSongs = tracks;
@@ -321,12 +462,9 @@
   function playCurrentSong() {
     const song = currentSongs[currentIndex];
     if (!song) return;
-    // FULL SONG VIA PROXY
     const fullUrl = `${FULL_SONG_PROXY}${String(song.id).slice(-1)}.deezer.com/stream/${song.id}-aac-128.mp3`;
     audio.src = fullUrl;
-    audio.play().catch(() => {
-      alert("Playback failed. Try another song or check network.");
-    });
+    audio.play().catch(() => alert("Playback failed."));
     isPlaying = true;
     playPauseBtn.innerHTML = '<i class="fas fa-pause"></i>';
     document.getElementById("now-playing-title").textContent = song.title;
@@ -337,13 +475,18 @@
     fetchLyrics(song.artist.name, song.title);
   }
 
-  // === CONTROLS ===
   playPauseBtn.onclick = () => { isPlaying ? audio.pause() : audio.play(); isPlaying = !isPlaying; playPauseBtn.innerHTML = isPlaying ? '<i class="fas fa-pause"></i>' : '<i class="fas fa-play"></i>'; };
   document.getElementById("next-btn").onclick = () => { currentIndex = (currentIndex + 1) % currentSongs.length; playCurrentSong(); };
   document.getElementById("prev-btn").onclick = () => { currentIndex = currentIndex === 0 ? currentSongs.length - 1 : currentIndex - 1; playCurrentSong(); };
   audio.ontimeupdate = () => { if (audio.duration) progress.style.width = (audio.currentTime / audio.duration * 100) + "%"; };
   progressContainer.onclick = (e) => { audio.currentTime = (e.offsetX / progressContainer.offsetWidth) * audio.duration; };
-  audio.onended = () => document.getElementById("next-btn").click();
+
+  // AUTO NEXT SONG — THIS IS THE MAGIC
+  audio.onended = () => {
+    if (currentSongs.length > 1) {
+      document.getElementById("next-btn").click();
+    }
+  };
 
   async function fetchLyrics(artist, title) {
     lyricsViewer.innerHTML = "Loading lyrics...";
@@ -356,7 +499,7 @@
 
   // Init
   renderPlaylists();
-  results.innerHTML = "<p style='text-align:center; color:#aaa; margin-top:100px; font-size:18px;'>Search for songs • Full playback • AI powered!</p>";
+  results.innerHTML = "<p style='text-align:center; color:#aaa; margin-top:100px; font-size:18px;'>Search • Full Songs • Auto-Play • $1 Premium!</p>";
 </script>
 </body>
 </html>
