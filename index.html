@@ -1,314 +1,165 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Mini Tunes</title>
-  <style>
-    body {
-      margin: 0;
-      font-family: Arial, sans-serif;
-      background: #0d0d0d;
-      color: white;
-    }
-
-    header {
-      padding: 15px 20px;
-      background: #111;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      border-bottom: 1px solid #333;
-      position: sticky;
-      top: 0;
-      z-index: 20;
-    }
-
-    #premium-btn {
-      background: linear-gradient(90deg, #7d00ff, #0044ff);
-      padding: 8px 16px;
-      border-radius: 10px;
-      cursor: pointer;
-    }
-
-    #premium-popup {
-      position: fixed;
-      top: 50%; left: 50%;
-      transform: translate(-50%, -50%);
-      background: #1c1c1c;
-      padding: 20px;
-      border-radius: 12px;
-      width: 320px;
-      display: none;
-      text-align: center;
-      z-index: 50;
-    }
-
-    #search {
-      width: 92%;
-      margin: 20px auto;
-      display: block;
-      padding: 12px;
-      border-radius: 10px;
-      border: none;
-      font-size: 16px;
-    }
-
-    /* Loading Skeleton */
-    .skeleton {
-      height: 70px;
-      background: linear-gradient(90deg, #202020, #2a2a2a, #202020);
-      background-size: 200% 100%;
-      animation: loading 1.2s infinite;
-      border-radius: 12px;
-      margin-bottom: 12px;
-    }
-
-    @keyframes loading {
-      0% { background-position: 200% 0; }
-      100% { background-position: -200% 0; }
-    }
-
-    #results {
-      padding: 20px;
-    }
-
-    .song-card {
-      background: #1a1a1a;
-      padding: 12px;
-      border-radius: 12px;
-      display: flex;
-      gap: 12px;
-      align-items: center;
-      margin-bottom: 12px;
-      cursor: pointer;
-      transition: 0.2s;
-    }
-
-    .song-card:hover {
-      background: #222;
-    }
-
-    .cover {
-      width: 60px;
-      height: 60px;
-      object-fit: cover;
-      border-radius: 10px;
-    }
-
-    #player {
-      position: sticky;
-      bottom: 0;
-      background: #111;
-      padding: 15px;
-      border-top: 1px solid #333;
-      display: none;
-    }
-
-    #playlist-maker {
-      padding: 20px;
-      border-top: 1px solid #333;
-    }
-
-    .input {
-      width: 100%;
-      padding: 10px;
-      border-radius: 8px;
-      border: none;
-      margin-bottom: 10px;
-    }
-  </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Mini Tunes</title>
+<style>
+body { margin:0; font-family: Arial,sans-serif; background:#0d0d0d; color:white; }
+header { padding:15px 20px; background:#111; display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid #333; position:sticky; top:0; z-index:20; }
+#premium-btn { background:linear-gradient(90deg,#7d00ff,#0044ff); padding:8px 16px; border-radius:10px; cursor:pointer; }
+#premium-popup { position:fixed; top:50%; left:50%; transform:translate(-50%,-50%); background:#1c1c1c; padding:20px; border-radius:12px; width:320px; display:none; text-align:center; z-index:50; }
+#search { width:92%; margin:20px auto; display:block; padding:12px; border-radius:10px; border:none; font-size:16px; }
+.skeleton { height:70px; background:linear-gradient(90deg,#202020,#2a2a2a,#202020); background-size:200% 100%; animation:loading 1.2s infinite; border-radius:12px; margin-bottom:12px; }
+@keyframes loading { 0% { background-position:200% 0; } 100% { background-position:-200% 0; } }
+#results { padding:20px; display:flex; flex-direction:column; gap:12px; }
+.song-card { background:#1a1a1a; padding:12px; border-radius:12px; display:flex; gap:12px; align-items:center; transition:0.2s; cursor:pointer; }
+.song-card:hover { background:#222; }
+.cover { width:60px; height:60px; object-fit:cover; border-radius:10px; }
+#player { position:sticky; bottom:0; background:#111; padding:15px; border-top:1px solid #333; display:none; }
+#playlist-maker { padding:20px; border-top:1px solid #333; }
+.input { width:100%; padding:10px; border-radius:8px; border:none; margin-bottom:10px; }
+.playlist-cover { width:60px; height:60px; object-fit:cover; border-radius:10px; margin-right:10px; }
+</style>
 </head>
 <body>
-  <header>
-    <h2>Mini Tunes</h2>
-    <div id="premium-btn">Premium</div>
-  </header>
+<header>
+<h2>Mini Tunes</h2>
+<div id="premium-btn">Premium</div>
+</header>
 
-  <input id="search" placeholder="Search for songs..." />
-  <div id="results"></div>
+<input id="search" placeholder="Search for songs..." />
+<div id="results"></div>
 
-  <div id="player">
-    <p id="now-playing"></p>
-    <audio id="audio" controls></audio>
-  </div>
+<div id="player">
+<p id="now-playing"></p>
+<audio id="audio" controls></audio>
+</div>
 
-  <div id="playlist-maker">
-    <h3>Your Playlists</h3>
-    <input id="playlist-name" class="input" placeholder="New playlist name" />
-    <button onclick="createPlaylist()">Create Playlist</button>
-    <div id="playlist-list"></div>
-  </div>
+<div id="playlist-maker">
+<h3>Your Playlists</h3>
+<input id="playlist-name" class="input" placeholder="New playlist name" />
+<input type="file" id="playlist-cover-upload" accept="image/*" />
+<button onclick="createPlaylist()">Create Playlist</button>
+<div id="playlist-list"></div>
+</div>
 
-  <div id="premium-popup">
-    <h3>Mini Tunes Premium</h3>
-    <p>Only <strong>$1/month</strong>! Unlock bonus skins, XP boosts, and more.</p>
-    <button onclick="closePremium()">Close</button>
-  </div>
+<div id="premium-popup">
+<h3>Mini Tunes Premium</h3>
+<p>Only <strong>$1/month</strong>! Unlock bonus skins, XP boosts, and more.</p>
+<button onclick="closePremium()">Close</button>
+</div>
 
-  <script>
-    const premiumBtn = document.getElementById("premium-btn");
-    const premiumPopup = document.getElementById("premium-popup");
-    const searchInput = document.getElementById("search");
-    const results = document.getElementById("results");
-    const audio = document.getElementById("audio");
-    const player = document.getElementById("player");
-    const nowPlaying = document.getElementById("now-playing");
+<script>
+const premiumBtn = document.getElementById("premium-btn");
+const premiumPopup = document.getElementById("premium-popup");
+const searchInput = document.getElementById("search");
+const results = document.getElementById("results");
+const audio = document.getElementById("audio");
+const player = document.getElementById("player");
+const nowPlaying = document.getElementById("now-playing");
 
-    premiumBtn.onclick = () => premiumPopup.style.display = "block";
-    function closePremium() { premiumPopup.style.display = "none"; }
+premiumBtn.onclick = () => premiumPopup.style.display = "block";
+function closePremium() { premiumPopup.style.display = "none"; }
 
-    /* -----------------------------
-       Deezer API Search
-    ------------------------------*/
-    async function searchDeezer(query) {
-      const url = `https://api.deezer.com/search?q=${encodeURIComponent(query)}&output=jsonp`;
-      return new Promise((resolve) => {
-        const callbackName = "dzcb_" + Math.random().toString(36).substring(2);
-        window[callbackName] = function (data) {
-          resolve(data.data || []);
-          delete window[callbackName];
-          script.remove();
-        };
-        const script = document.createElement("script");
-        script.src = `${url}&callback=${callbackName}`;
-        document.body.appendChild(script);
-      });
-    }
+/* Deezer API Search */
+async function searchDeezer(query) {
+  const url = `https://api.deezer.com/search?q=${encodeURIComponent(query)}&output=jsonp`;
+  return new Promise((resolve) => {
+    const callbackName = "dzcb_" + Math.random().toString(36).substring(2);
+    window[callbackName] = function (data) {
+      resolve(data.data || []);
+      delete window[callbackName];
+      script.remove();
+    };
+    const script = document.createElement("script");
+    script.src = `${url}&callback=${callbackName}`;
+    document.body.appendChild(script);
+  });
+}
 
-    searchInput.addEventListener("input", async () => {
-      const q = searchInput.value.trim();
-      results.innerHTML = "";
-      if (!q) return;
+searchInput.addEventListener("input", async () => {
+  const q = searchInput.value.trim();
+  results.innerHTML = "";
+  if (!q) return;
+  for (let i = 0; i < 5; i++) { const sk = document.createElement("div"); sk.className = "skeleton"; results.appendChild(sk); }
+  const songs = await searchDeezer(q);
+  results.innerHTML = "";
+  songs.forEach(song => {
+    const div = document.createElement("div");
+    div.className = "song-card";
+    div.innerHTML = `
+      <img class="cover" src="${song.album.cover_medium}" alt="Album Cover" />
+      <div>
+        <strong>${song.title}</strong><br>
+        <small>${song.artist.name}</small>
+      </div>
+    `;
+    div.onclick = () => playSong(song);
+    results.appendChild(div);
+  });
+});
 
-      // Loading skeletons
-      for (let i = 0; i < 5; i++) {
-        const sk = document.createElement("div");
-        sk.className = "skeleton";
-        results.appendChild(sk);
-      }
+function playSong(song) {
+  audio.src = song.preview;
+  nowPlaying.innerText = `Now playing: ${song.title}`;
+  player.style.display = "block";
+  audio.play();
+  let pts = Number(localStorage.getItem("points") || 0);
+  pts += 1;
+  localStorage.setItem("points", pts);
+}
 
-      const songs = await searchDeezer(q);
-      results.innerHTML = "";
-
-      songs.forEach(song => {
-        const div = document.createElement("div");
-        div.className = "song-card";
-        div.innerHTML = `
-          <img class="cover" src="${song.album.cover_medium}" />
-          <div>
-            <strong>${song.title}</strong><br>
-            <small>${song.artist.name}</small>
-          </div>
-        `;
-        div.onclick = () => playSong(song);
-        results.appendChild(div);
-      });
-    });
-
-    function playSong(song) {
-      audio.src = song.preview;
-      nowPlaying.innerText = `Now playing: ${song.title}`;
-      player.style.display = "block";
-      audio.play();
-
-      let pts = Number(localStorage.getItem("points") || 0);
-      pts += 1;
-      localStorage.setItem("points", pts);
-    }
-
-    /* -----------------------------
-       PLAYLIST SYSTEM
-    ------------------------------*/
-    const playlists = JSON.parse(localStorage.getItem("miniPlaylists") || "{}");
-
-    function savePlaylists() {
-      localStorage.setItem("miniPlaylists", JSON.stringify(playlists));
-    }
-
-    function createPlaylist() {
-      const name = document.getElementById("playlist-name").value.trim();
-      if (!name) return alert("Enter a name");
-      playlists[name] = [];
+/* PLAYLIST SYSTEM */
+const playlists = JSON.parse(localStorage.getItem("miniPlaylists") || "{}");
+function savePlaylists() { localStorage.setItem("miniPlaylists", JSON.stringify(playlists)); }
+function createPlaylist() {
+  const name = document.getElementById("playlist-name").value.trim();
+  if (!name) return alert("Enter a name");
+  const coverFile = document.getElementById("playlist-cover-upload").files[0];
+  if (coverFile) {
+    const reader = new FileReader();
+    reader.onload = function(e) {
+      playlists[name] = { songs: [], cover: e.target.result };
       savePlaylists();
       loadPlaylistUI();
-      document.getElementById("playlist-name").value = "";
-    }
-
-    function loadPlaylistUI() {
-      const list = document.getElementById("playlist-list");
-      list.innerHTML = "";
-      for (const name in playlists) {
-        const div = document.createElement("div");
-        div.style.marginTop = "10px";
-        div.innerHTML = `<strong>${name}</strong> (${playlists[name].length} songs)`;
-        list.appendChild(div);
-      }
-    }
-
+    };
+    reader.readAsDataURL(coverFile);
+  } else {
+    playlists[name] = { songs: [], cover: null };
+    savePlaylists();
     loadPlaylistUI();
-  
-    /* -----------------------------
-       ACCOUNT SYSTEM
-    ------------------------------*/
-    let account = JSON.parse(localStorage.getItem("miniAccount") || "null");
+  }
+  document.getElementById("playlist-name").value = "";
+  document.getElementById("playlist-cover-upload").value = null;
+}
 
-    function createAccount() {
-      const username = prompt("Create username:");
-      const password = prompt("Create password:");
-      if (!username || !password) return alert("Missing fields");
-      account = { username, password };
-      localStorage.setItem("miniAccount", JSON.stringify(account));
-      alert("Account created!");
-      renderAccountStatus();
-    }
+function loadPlaylistUI() {
+  const list = document.getElementById("playlist-list");
+  list.innerHTML = "";
+  for (const name in playlists) {
+    const div = document.createElement("div");
+    div.style.display = "flex";
+    div.style.alignItems = "center";
+    div.style.marginTop = "10px";
+    let coverHTML = playlists[name].cover ? `<img class='playlist-cover' src='${playlists[name].cover}' />` : '';
+    div.innerHTML = `${coverHTML}<strong>${name}</strong> (${playlists[name].songs.length} songs) <button onclick='exportPlaylist("${name}")'>Share</button>`;
+    list.appendChild(div);
+  }
+}
+loadPlaylistUI();
 
-    function renderAccountStatus() {
-      const header = document.querySelector("header h2");
-      if (account) header.innerHTML = `Mini Tunes — <small>Logged in as ${account.username}</small>`;
-      else header.innerHTML = "Mini Tunes";
-    }
+/* ACCOUNT SYSTEM */
+let account = JSON.parse(localStorage.getItem("miniAccount") || "null");
+function createAccount() { const username = prompt("Create username:"); const password = prompt("Create password:"); if (!username || !password) return alert("Missing fields"); account = { username, password }; localStorage.setItem("miniAccount", JSON.stringify(account)); alert("Account created!"); renderAccountStatus(); }
+function renderAccountStatus() { const header = document.querySelector("header h2"); if (account) header.innerHTML = `Mini Tunes — <small>Logged in as ${account.username}</small>`; else header.innerHTML = "Mini Tunes"; }
+renderAccountStatus();
 
-    renderAccountStatus();
-
-    /* -----------------------------
-       PLAYLIST SHARING SYSTEM
-    ------------------------------*/
-    function generatePlaylistID() {
-      return Math.random().toString(36).substring(2, 10);
-    }
-
-    function exportPlaylist(name) {
-      if (!playlists[name]) return alert("Playlist not found");
-
-      // assign ID if missing
-      if (!playlists[name].id) {
-        playlists[name].id = generatePlaylistID();
-        savePlaylists();
-      }
-
-      const shareURL = `${location.origin}${location.pathname}?playlist=${playlists[name].id}`;
-      navigator.clipboard.writeText(shareURL);
-      alert("Playlist link copied to clipboard!
-" + shareURL);
-    }
-
-    function loadPlaylistFromURL() {
-      const params = new URLSearchParams(location.search);
-      const id = params.get("playlist");
-      if (!id) return;
-
-      // find playlist by ID
-      for (const name in playlists) {
-        if (playlists[name].id === id) {
-          alert(`Loaded shared playlist: ${name}`);
-          console.log(playlists[name]); // songs will appear in console
-        }
-      }
-    }
-
-    loadPlaylistFromURL();
-
-  </script>
+/* PLAYLIST SHARING */
+function generatePlaylistID() { return Math.random().toString(36).substring(2, 10); }
+function exportPlaylist(name) { if (!playlists[name]) return alert("Playlist not found"); if (!playlists[name].id) { playlists[name].id = generatePlaylistID(); savePlaylists(); } const shareURL = `${location.origin}${location.pathname}?playlist=${playlists[name].id}`; navigator.clipboard.writeText(shareURL); alert("Playlist link copied to clipboard!\n" + shareURL); }
+function loadPlaylistFromURL() { const params = new URLSearchParams(location.search); const id = params.get("playlist"); if (!id) return; for (const name in playlists) { if (playlists[name].id === id) { alert(`Loaded shared playlist: ${name}`); console.log(playlists[name]); } } }
+loadPlaylistFromURL();
+</script>
 </body>
 </html>
