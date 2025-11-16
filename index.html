@@ -7,34 +7,68 @@
 <style>
 body { margin:0; font-family: Arial,sans-serif; background:#0d0d0d; color:white; display:flex; height:100vh; overflow:hidden; }
 header { position:fixed; top:0; left:0; width:100%; height:60px; padding:15px 20px; background:#111; display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid #333; z-index:20; }
+#nav-buttons { display:flex; gap:10px; }
+#nav-buttons button { background:#222; border:none; color:white; padding:8px 16px; border-radius:10px; cursor:pointer; transition:0.2s; }
+#nav-buttons button:hover { background:#333; }
 #premium-btn { background:linear-gradient(90deg,#7d00ff,#0044ff); padding:8px 16px; border-radius:10px; cursor:pointer; }
 #premium-popup { position:fixed; top:50%; left:50%; transform:translate(-50%,-50%); background:#1c1c1c; padding:20px; border-radius:12px; width:320px; display:none; text-align:center; z-index:50; }
-#sidebar { width:200px; background:#111; padding-top:80px; overflow-y:auto; border-right:1px solid #333; display:flex; flex-direction:column; }
-.playlist-item { display:flex; align-items:center; padding:10px; cursor:pointer; gap:10px; transition:0.2s; border-bottom:1px solid #222; }
+#sidebar { width:220px; background:#111; padding-top:80px; overflow-y:auto; border-right:1px solid #333; display:flex; flex-direction:column; }
+.playlist-item { display:flex; align-items:center; padding:12px; cursor:pointer; gap:12px; transition:0.2s; border-bottom:1px solid #222; }
 .playlist-item:hover { background:#222; }
 .playlist-cover { width:40px; height:40px; object-fit:cover; border-radius:50%; }
-#content { flex:1; padding:80px 20px 20px 20px; overflow-y:auto; }
-.song-card { background:#1a1a1a; padding:12px; border-radius:12px; display:flex; gap:12px; align-items:center; transition:0.2s; cursor:pointer; margin-bottom:10px; justify-content:space-between; }
-.song-card:hover { background:#222; }
+#content { flex:1; padding:80px 30px 20px 30px; overflow-y:auto; }
+.section { margin-bottom:30px; }
+.section h3 { margin-bottom:15px; font-size:1.2em; }
+.song-card { background:#1a1a1a; padding:15px; border-radius:12px; display:flex; gap:15px; align-items:center; transition:0.2s; cursor:pointer; margin-bottom:12px; justify-content:space-between; box-shadow:0 2px 4px rgba(0,0,0,0.2); }
+.song-card:hover { background:#222; transform:translateY(-2px); }
 .cover { width:60px; height:60px; object-fit:cover; border-radius:10px; }
-#player { position:sticky; bottom:0; background:#111; padding:15px; border-top:1px solid #333; display:none; }
+#player { position:sticky; bottom:0; background:#111; padding:15px; border-top:1px solid #333; display:none; width:100%; box-sizing:border-box; }
 .skeleton { height:70px; background:linear-gradient(90deg,#202020,#2a2a2a,#202020); background-size:200% 100%; animation:loading 1.2s infinite; border-radius:12px; margin-bottom:12px; }
 @keyframes loading { 0% { background-position:200% 0; } 100% { background-position:-200% 0; } }
-button { cursor:pointer; background:#222; color:white; border:none; padding:4px 8px; border-radius:6px; margin-left:4px; }
+button { cursor:pointer; background:#222; color:white; border:none; padding:8px 16px; border-radius:8px; margin-left:8px; transition:0.2s; }
+button:hover { background:#333; }
+input { width:100%; padding:12px; background:#1a1a1a; border:none; border-radius:10px; color:white; margin-bottom:20px; box-sizing:border-box; }
+#welcome { font-size:1.5em; margin-bottom:20px; }
 </style>
 </head>
 <body>
 
 <header>
-<h2>Mini Tunes</h2>
+<h2 style="margin:0;">Mini Tunes</h2>
+<div id="nav-buttons">
+<button id="home-btn">Home</button>
+<button id="search-btn">Search</button>
+</div>
 <div id="premium-btn">Premium</div>
 </header>
 
 <div id="sidebar"></div>
 
 <div id="content">
+<div id="home-page" style="display:none;">
+<div id="welcome"></div>
+<div class="section">
+<h3>Recently Played</h3>
+<div id="recently-played"></div>
+</div>
+<div class="section">
+<h3>AI Recommended Playlist</h3>
+<input id="recommend-input" placeholder="Recommend songs like (e.g., No Me Diga from In the Heights)..." />
+<div id="ai-recommendations"></div>
+</div>
+<div class="section">
+<h3>Your Playlists</h3>
+<div id="your-playlists"></div>
+</div>
+</div>
+<div id="search-page" style="display:none;">
 <input id="search" placeholder="Search for songs..." />
+<div class="section">
+<h3>Popular Songs</h3>
+<div id="popular"></div>
+</div>
 <div id="results"></div>
+</div>
 <div id="player">
 <p id="now-playing"></p>
 <audio id="audio" controls></audio>
@@ -58,18 +92,40 @@ const player = document.getElementById("player");
 const nowPlaying = document.getElementById("now-playing");
 const sidebar = document.getElementById("sidebar");
 const lyricsViewer = document.getElementById("lyrics-viewer");
-
+const homePage = document.getElementById("home-page");
+const searchPage = document.getElementById("search-page");
+const homeBtn = document.getElementById("home-btn");
+const searchBtn = document.getElementById("search-btn");
+const welcome = document.getElementById("welcome");
+const recentlyPlayedDiv = document.getElementById("recently-played");
+const aiRecommendations = document.getElementById("ai-recommendations");
+const recommendInput = document.getElementById("recommend-input");
+const yourPlaylists = document.getElementById("your-playlists");
+const popular = document.getElementById("popular");
 
 premiumBtn.onclick = () => premiumPopup.style.display = "block";
 function closePremium() { premiumPopup.style.display = "none"; }
 
-/* Deezer API Search */
-async function searchDeezer(query) {
-  const url = `https://api.deezer.com/search?q=${encodeURIComponent(query)}&output=jsonp`;
+let userName = localStorage.getItem("userName");
+if (!userName) {
+  userName = prompt("Enter your name:");
+  if (userName) localStorage.setItem("userName", userName);
+}
+welcome.innerText = `Welcome, ${userName || "User"}`;
+
+let recentlyPlayed = JSON.parse(localStorage.getItem("recentlyPlayed") || "[]");
+let playlists = JSON.parse(localStorage.getItem("miniPlaylists") || "{}");
+
+function savePlaylists() { localStorage.setItem("miniPlaylists", JSON.stringify(playlists)); }
+function saveRecentlyPlayed() { localStorage.setItem("recentlyPlayed", JSON.stringify(recentlyPlayed.slice(-10))); }
+
+/* General Deezer JSONP Fetch */
+async function deezerFetch(path) {
+  const url = `https://api.deezer.com/${path}&output=jsonp`;
   return new Promise((resolve) => {
     const callbackName = "dzcb_" + Math.random().toString(36).substring(2);
     window[callbackName] = function (data) {
-      resolve(data.data || []);
+      resolve(data.data || data || []);
       delete window[callbackName];
       script.remove();
     };
@@ -84,17 +140,21 @@ searchInput.addEventListener("input", async () => {
   results.innerHTML = "";
   if (!q) return;
   for (let i = 0; i < 5; i++) { const sk = document.createElement("div"); sk.className = "skeleton"; results.appendChild(sk); }
-  const songs = await searchDeezer(q);
+  const songs = await deezerFetch(`search?q=${encodeURIComponent(q)}`);
   results.innerHTML = "";
+  renderSongs(songs, results);
+});
+
+function renderSongs(songs, container) {
   songs.forEach(song => {
     const div = document.createElement("div");
     div.className = "song-card";
     div.innerHTML = `
       <div style='display:flex; align-items:center; gap:12px;'>
-        <img class="cover" src="${song.album.cover_medium}" alt="Album Cover" />
+        <img class="cover" src="${song.album ? song.album.cover_medium : song.cover_medium}" alt="Cover" />
         <div>
           <strong>${song.title}</strong><br>
-          <small>${song.artist.name}</small>
+          <small>${song.artist ? song.artist.name : song.name}</small>
         </div>
       </div>
       <div>
@@ -103,8 +163,33 @@ searchInput.addEventListener("input", async () => {
     `;
     div.querySelector('button').addEventListener('click',(e)=>{e.stopPropagation(); addSongToPlaylist(song);});
     div.onclick = () => playSong(song);
-    results.appendChild(div);
+    container.appendChild(div);
   });
+}
+
+async function loadPopular() {
+  popular.innerHTML = "";
+  for (let i = 0; i < 5; i++) { const sk = document.createElement("div"); sk.className = "skeleton"; popular.appendChild(sk); }
+  const songs = await deezerFetch('chart/0/tracks?limit=20');
+  popular.innerHTML = "";
+  renderSongs(songs, popular);
+}
+
+recommendInput.addEventListener("input", async () => {
+  const q = recommendInput.value.trim();
+  aiRecommendations.innerHTML = "";
+  if (!q) return;
+  for (let i = 0; i < 5; i++) { const sk = document.createElement("div"); sk.className = "skeleton"; aiRecommendations.appendChild(sk); }
+  const searchResults = await deezerFetch(`search/track?q=${encodeURIComponent(q)}&limit=1`);
+  if (searchResults.length === 0) {
+    aiRecommendations.innerHTML = "<p>No song found.</p>";
+    return;
+  }
+  const song = searchResults[0];
+  const artistId = song.artist.id;
+  const recommendations = await deezerFetch(`artist/${artistId}/radio?limit=10`);
+  aiRecommendations.innerHTML = "";
+  renderSongs(recommendations, aiRecommendations);
 });
 
 function playSong(song) {
@@ -116,33 +201,34 @@ function playSong(song) {
   let pts = Number(localStorage.getItem("points") || 0);
   pts += 1;
   localStorage.setItem("points", pts);
+  recentlyPlayed.push(song);
+  saveRecentlyPlayed();
+  if (homePage.style.display === 'block') loadHomeContent();
 }
 
 /* Playlist System */
-let playlists = JSON.parse(localStorage.getItem("miniPlaylists") || "{}");
-function savePlaylists() { localStorage.setItem("miniPlaylists", JSON.stringify(playlists)); }
-
 function renderSidebar() {
   sidebar.innerHTML = '';
   const newBtn = document.createElement('div');
   newBtn.className='playlist-item';
-  newBtn.innerText='➕ New Playlist';
+  newBtn.innerHTML='<strong>+ New Playlist</strong>';
   newBtn.onclick = () => {
     const name=prompt('Enter new playlist name');
     if(!name) return;
     playlists[name]={songs:[],cover:null};
     savePlaylists();
     renderSidebar();
+    loadHomeContent();
   };
   sidebar.appendChild(newBtn);
 
   for(const name in playlists){
     const div=document.createElement('div');
     div.className='playlist-item';
-    const cover=playlists[name].cover||'https://via.placeholder.com/40x40.png?text=🎵';
+    const cover=playlists[name].cover||'https://via.placeholder.com/40x40.png?text=';
     div.innerHTML=`<img class='playlist-cover' src='${cover}'/><strong>${name}</strong>`;
-    const editBtn=document.createElement('button'); editBtn.innerText='Edit'; editBtn.onclick=(e)=>{ e.stopPropagation(); const newName=prompt('Rename playlist',name); if(newName){ playlists[newName]=playlists[name]; delete playlists[name]; savePlaylists(); renderSidebar(); } };
-    const delBtn=document.createElement('button'); delBtn.innerText='Delete'; delBtn.onclick=(e)=>{ e.stopPropagation(); if(confirm('Delete playlist?')){ delete playlists[name]; savePlaylists(); renderSidebar(); } };
+    const editBtn=document.createElement('button'); editBtn.innerText='Edit'; editBtn.onclick=(e)=>{ e.stopPropagation(); const newName=prompt('Rename playlist',name); if(newName){ playlists[newName]=playlists[name]; delete playlists[name]; savePlaylists(); renderSidebar(); loadHomeContent(); } };
+    const delBtn=document.createElement('button'); delBtn.innerText='Delete'; delBtn.onclick=(e)=>{ e.stopPropagation(); if(confirm('Delete playlist?')){ delete playlists[name]; savePlaylists(); renderSidebar(); loadHomeContent(); } };
     div.appendChild(editBtn); div.appendChild(delBtn);
     div.onclick=()=>loadPlaylist(name);
     sidebar.appendChild(div);
@@ -150,7 +236,14 @@ function renderSidebar() {
 }
 
 function loadPlaylist(name){
-  results.innerHTML='';
+  showHome(); // Keep in home, but load in results? No, load in content, but since pages, perhaps set to search but clear.
+  // Actually, for playlist load, clear results or use a separate view, but to keep simple, switch to search page but set title.
+  // Better: load into results, but since search page has popular, perhaps add a function to load into content.
+  // For now, switch to search, hide popular and search input, load into results.
+  showSearch();
+  searchInput.style.display = 'none';
+  popular.style.display = 'none';
+  results.innerHTML=`<h3>${name}</h3>`;
   playlists[name].songs.forEach(song=>{
     const div=document.createElement('div');
     div.className='song-card';
@@ -171,6 +264,7 @@ function addSongToPlaylist(song){
   playlists[plName].songs.push(song);
   savePlaylists();
   alert(`Added ${song.title} to ${plName}`);
+  loadHomeContent();
 }
 
 /* Playlist Sharing */
@@ -188,8 +282,47 @@ function loadPlaylistFromURL() {
   if(!id) return;
   for(const name in playlists){ if(playlists[name].id===id){ alert(`Loaded shared playlist: ${name}`); loadPlaylist(name); } }
 }
+
+/* Page Navigation */
+function showHome() {
+  homePage.style.display = 'block';
+  searchPage.style.display = 'none';
+  loadHomeContent();
+}
+
+function showSearch() {
+  homePage.style.display = 'none';
+  searchPage.style.display = 'block';
+  searchInput.style.display = 'block';
+  popular.style.display = 'block';
+  results.innerHTML = '';
+  if (popular.innerHTML === '') loadPopular();
+}
+
+function loadHomeContent() {
+  recentlyPlayedDiv.innerHTML = '';
+  renderSongs(recentlyPlayed.slice(-10).reverse(), recentlyPlayedDiv);
+
+  yourPlaylists.innerHTML = '';
+  for (const name in playlists) {
+    const div = document.createElement('div');
+    div.className = 'playlist-item';
+    div.style.marginBottom = '10px';
+    const cover = playlists[name].cover || 'https://via.placeholder.com/40x40.png?text=';
+    div.innerHTML = `<img class='playlist-cover' src='${cover}'/><strong>${name}</strong>`;
+    div.onclick = () => loadPlaylist(name);
+    yourPlaylists.appendChild(div);
+  }
+
+  // AI recommendations triggered by input
+}
+
+homeBtn.onclick = showHome;
+searchBtn.onclick = showSearch;
+
 loadPlaylistFromURL();
 renderSidebar();
+showHome();
 </script>
 </body>
 </html>
