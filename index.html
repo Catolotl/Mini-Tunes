@@ -128,7 +128,7 @@
     flex-direction:column; 
   }
 
-  /* Nav Items (Home & Search) */
+  /* Nav Items */
   .nav-item {
     display:flex; 
     align-items:center; 
@@ -208,29 +208,64 @@
     color:#eee;
   }
 
-  .song-card { 
-    background:var(--card); 
-    padding:16px; 
-    border-radius:14px; 
-    display:flex; 
-    gap:16px; 
-    align-items:center; 
-    transition:0.25s; 
-    cursor:pointer; 
-    margin-bottom:14px; 
-    justify-content:space-between; 
-    box-shadow:0 2px 6px rgba(0,0,0,0.2); 
+  /* Grid Layout */
+  .grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+    gap: 18px;
   }
-  .song-card:hover { 
-    background:var(--hover); 
-    transform:translateY(-2px); 
-    box-shadow:0 6px 12px rgba(0,0,0,0.3);
+  .grid-card {
+    background: var(--card);
+    border-radius: 14px;
+    overflow: hidden;
+    transition: 0.25s;
+    cursor: pointer;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.2);
+    display: flex;
+    flex-direction: column;
   }
-  .cover { 
-    width:64px; height:64px; 
-    object-fit:cover; 
-    border-radius:12px; 
-    box-shadow:0 2px 4px rgba(0,0,0,0.3);
+  .grid-card:hover {
+    background: var(--hover);
+    transform: translateY(-4px);
+    box-shadow: 0 8px 16px rgba(0,0,0,0.3);
+  }
+  .grid-cover {
+    width: 100%;
+    height: 180px;
+    object-fit: cover;
+    border-bottom: 1px solid var(--border);
+  }
+  .grid-info {
+    padding: 12px;
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+  }
+  .grid-title {
+    font-weight: 600;
+    font-size: 0.95em;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .grid-artist {
+    font-size: 0.8em;
+    color: #aaa;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .grid-actions {
+    display: flex;
+    gap: 6px;
+    margin-top: 8px;
+  }
+  .grid-actions button {
+    flex: 1;
+    padding: 6px 8px;
+    font-size: 0.8em;
+    margin: 0;
   }
 
   /* Player */
@@ -322,6 +357,15 @@
     text-align:center; 
     display:none; 
   }
+
+  /* Search Results Title */
+  #search-results-title {
+    margin: 20px 0 16px;
+    font-size: 1.3em;
+    font-weight: 600;
+    color: #eee;
+    display: none;
+  }
 </style>
 </head>
 <body>
@@ -347,7 +391,6 @@
 </div>
 
 <div id="sidebar">
-  <!-- Navigation Items -->
   <div id="home-nav" class="nav-item active">
     <svg viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg>
     <span>Home</span>
@@ -357,9 +400,7 @@
     <span>Search</span>
   </div>
 
-  <!-- Playlists Header -->
   <div class="playlists-header">Your Playlists</div>
-  <!-- Playlists will be injected here -->
 </div>
 
 <div id="content">
@@ -368,7 +409,7 @@
     
     <div class="section">
       <h3>Recently Played</h3>
-      <div id="recently-played"></div>
+      <div id="recently-played" class="grid"></div>
     </div>
 
     <div class="section">
@@ -381,14 +422,23 @@
       <h3>Your Playlists</h3>
       <div id="your-playlists"></div>
     </div>
+
+    <!-- AI Genre Playlists -->
+    <div class="section">
+      <h3>AI Genre Mixes</h3>
+      <div id="ai-genre-playlists" class="grid"></div>
+    </div>
   </div>
 
   <div id="search-page" style="display:none;">
     <input id="search" placeholder="Search for songs, artists, albums..." />
-    <div class="section">
+    
+    <div id="popular-section">
       <h3>Popular Right Now</h3>
       <div id="popular"></div>
     </div>
+
+    <h3 id="search-results-title">Search Results</h3>
     <div id="results"></div>
   </div>
 
@@ -441,8 +491,10 @@
   const recommendInput = document.getElementById("recommend-input");
   const yourPlaylists = document.getElementById("your-playlists");
   const popular = document.getElementById("popular");
-  const popularSection = document.querySelector('#search-page > .section');
+  const popularSection = document.getElementById("popular-section");
+  const searchResultsTitle = document.getElementById("search-results-title");
   const uploadPlaylistCover = document.getElementById("upload-playlist-cover");
+  const aiGenrePlaylists = document.getElementById("ai-genre-playlists");
 
   // State
   let userName = localStorage.getItem("userName") || "User";
@@ -451,7 +503,23 @@
   let recentlyPlayed = JSON.parse(localStorage.getItem("recentlyPlayed") || "[]");
   let playlists = JSON.parse(localStorage.getItem("miniPlaylists") || "{}");
 
-  // Update UI with user data
+  // Generate ID
+  function generateId() {
+    return Math.random().toString(36).substr(2, 9);
+  }
+
+  function ensurePlaylistIds() {
+    let changed = false;
+    for (const name in playlists) {
+      if (!playlists[name].id) {
+        playlists[name].id = generateId();
+        changed = true;
+      }
+    }
+    if (changed) savePlaylists();
+  }
+
+  // Update Profile
   function updateUserProfile() {
     userName = localStorage.getItem("userName") || "User";
     userAvatar = localStorage.getItem("userAvatar") || "https://via.placeholder.com/80";
@@ -473,12 +541,10 @@
   }
   updateUserProfile();
 
-  // Save bio on change
   bioInput.addEventListener('input', () => {
     localStorage.setItem("userBio", bioInput.value);
   });
 
-  // Upload Avatar
   changeAvatarBtn.onclick = () => uploadAvatar.click();
   uploadAvatar.addEventListener('change', (e) => {
     const file = e.target.files[0];
@@ -493,7 +559,6 @@
     }
   });
 
-  // Change Name
   changeNameBtn.onclick = () => {
     const newName = prompt("Enter your name:", userName);
     if (newName && newName.trim()) {
@@ -503,7 +568,7 @@
     }
   };
 
-  // Event Listeners
+  // Popups
   premiumBtn.onclick = () => premiumPopup.style.display = "block";
   function closePremium() { premiumPopup.style.display = "none"; }
 
@@ -511,7 +576,6 @@
     profilePopup.style.display = profilePopup.style.display === "block" ? "none" : "block";
   };
 
-  // Close popups on outside click
   document.addEventListener("click", (e) => {
     if (!profileBtn.contains(e.target) && !profilePopup.contains(e.target)) {
       profilePopup.style.display = "none";
@@ -521,7 +585,7 @@
     }
   });
 
-  // Deezer JSONP Helper
+  // Deezer Fetch
   async function deezerFetch(path) {
     const url = `https://api.deezer.com/${path}&output=jsonp`;
     return new Promise((resolve) => {
@@ -542,12 +606,17 @@
   searchInput.addEventListener("input", async () => {
     clearTimeout(searchTimeout);
     const q = searchInput.value.trim();
-    results.innerHTML = "";
-    popularSection.style.display = q ? 'none' : 'block';
-    if (!q) return;
-
     showSearch();
+    results.innerHTML = "";
+    searchResultsTitle.style.display = 'none';
 
+    if (!q) {
+      popularSection.style.display = 'block';
+      return;
+    }
+
+    popularSection.style.display = 'none';
+    searchResultsTitle.style.display = 'block';
     showSkeletons(results, 5);
 
     searchTimeout = setTimeout(async () => {
@@ -565,7 +634,7 @@
     }, 400);
   });
 
-  // Popular Songs
+  // Popular
   async function loadPopular() {
     popular.innerHTML = "";
     showSkeletons(popular, 5);
@@ -605,13 +674,13 @@
     }, 500);
   });
 
-  // Render Songs
+  // Render Songs (List)
   function renderSongs(songs, container) {
     songs.forEach(song => {
       const div = document.createElement("div");
       div.className = "song-card";
-      const artistName = song.artist ? song.artist.name : (song.name || "Unknown");
-      const cover = song.album ? song.album.cover_medium : (song.cover_medium || 'https://via.placeholder.com/64');
+      const artistName = song.artist ? song.artist.name : "Unknown";
+      const cover = song.album ? song.album.cover_medium : 'https://via.placeholder.com/64';
       div.innerHTML = `
         <div style='display:flex; align-items:center; gap:16px;'>
           <img class="cover" src="${cover}" alt="Cover" />
@@ -626,6 +695,31 @@
       div.onclick = () => playSong(song);
       container.appendChild(div);
     });
+  }
+
+  // Render Grid Card
+  function renderGridCard(song, container) {
+    const div = document.createElement("div");
+    div.className = "grid-card";
+    const artistName = song.artist ? song.artist.name : "Unknown";
+    const cover = song.album ? song.album.cover_medium : 'https://via.placeholder.com/180';
+    div.innerHTML = `
+      <img class="grid-cover" src="${cover}" alt="Cover" />
+      <div class="grid-info">
+        <div>
+          <div class="grid-title" title="${song.title}">${song.title}</div>
+          <div class="grid-artist" title="${artistName}">${artistName}</div>
+        </div>
+        <div class="grid-actions">
+          <button>Play</button>
+          <button>Add</button>
+        </div>
+      </div>
+    `;
+    div.querySelectorAll('button')[0].onclick = (e) => { e.stopPropagation(); playSong(song); };
+    div.querySelectorAll('button')[1].onclick = (e) => { e.stopPropagation(); addSongToPlaylist(song); };
+    div.onclick = () => playSong(song);
+    container.appendChild(div);
   }
 
   function showSkeletons(container, count) {
@@ -656,7 +750,10 @@
   }
 
   // Playlist System
-  function savePlaylists() { localStorage.setItem("miniPlaylists", JSON.stringify(playlists)); }
+  function savePlaylists() { 
+    ensurePlaylistIds();
+    localStorage.setItem("miniPlaylists", JSON.stringify(playlists)); 
+  }
 
   function renderSidebarPlaylists() {
     const playlistItems = sidebar.querySelectorAll('.playlist-item');
@@ -668,7 +765,8 @@
     newBtn.onclick = () => {
       const name = prompt('Playlist name:');
       if (!name?.trim()) return;
-      playlists[name] = { songs: [], cover: null };
+      const id = generateId();
+      playlists[name] = { id, songs: [], cover: null };
       savePlaylists();
       renderSidebarPlaylists();
       loadHomeContent();
@@ -676,14 +774,16 @@
     sidebar.appendChild(newBtn);
 
     for (const name in playlists) {
+      const pl = playlists[name];
+      const cover = pl.cover || 'https://via.placeholder.com/42x42.png?text=♪';
       const div = document.createElement('div');
       div.className='playlist-item';
-      const cover = playlists[name].cover || 'https://via.placeholder.com/42x42.png?text=♪';
       div.innerHTML = `
         <img class='playlist-cover' src='${cover}'/>
         <strong>${name}</strong>
         <div class="playlist-actions">
           <button onclick="editPlaylist('${name}')">Edit</button>
+          <button onclick="sharePlaylist('${pl.id}')">Share</button>
           <button onclick="deletePlaylist('${name}')">Delete</button>
         </div>
       `;
@@ -697,12 +797,21 @@
   window.editPlaylist = function(name) {
     const newName = prompt('Rename playlist:', name);
     if (newName && newName !== name) {
-      playlists[newName] = playlists[name];
+     666      playlists[newName] = playlists[name];
       delete playlists[name];
       savePlaylists();
       renderSidebarPlaylists();
       loadHomeContent();
     }
+  };
+
+  window.sharePlaylist = function(id) {
+    const url = `${location.origin}${location.pathname}?playlist=${id}`;
+    navigator.clipboard.writeText(url).then(() => {
+      alert(`Link copied!\n${url}\nSend to friends!`);
+    }).catch(() => {
+      prompt(`Copy this link:`, url);
+    });
   };
 
   window.deletePlaylist = function(name) {
@@ -718,6 +827,7 @@
     showSearch();
     searchInput.style.display = 'none';
     popularSection.style.display = 'none';
+    searchResultsTitle.style.display = 'none';
     results.innerHTML = `<h3 style="margin:0 0 20px; color:#fff;">${name}</h3>`;
     playlists[name].songs.forEach(song => {
       const div = document.createElement('div');
@@ -743,7 +853,6 @@
     }
   }
 
-  // Upload Playlist Cover
   window.uploadPlaylistCover = function(playlistName) {
     uploadPlaylistCover.onchange = (e) => {
       const file = e.target.files[0];
@@ -778,24 +887,29 @@
     homeNav.classList.remove('active');
     searchNav.classList.add('active');
     searchInput.style.display = 'block';
-    popularSection.style.display = 'block';
+    searchResultsTitle.style.display = 'none';
     results.innerHTML = '';
-    if (!popular.innerHTML) loadPopular();
   }
 
   function loadHomeContent() {
+    // Recently Played - Last 6 in 3x2 grid
     recentlyPlayedDiv.innerHTML = '';
-    const recent = recentlyPlayed.slice(-10).reverse();
-    if (recent.length) renderSongs(recent, recentlyPlayedDiv);
-    else recentlyPlayedDiv.innerHTML = '<p style="color:#666; font-style:italic;">No songs played yet.</p>';
+    const recent = recentlyPlayed.slice(-6).reverse();
+    if (recent.length) {
+      recent.forEach(song => renderGridCard(song, recentlyPlayedDiv));
+    } else {
+      recentlyPlayedDiv.innerHTML = '<p style="color:#666; font-style:italic; grid-column: 1 / -1;">No songs played yet.</p>';
+    }
 
+    // Your Playlists
     yourPlaylists.innerHTML = '';
     if (Object.keys(playlists).length) {
       for (const name in playlists) {
+        const pl = playlists[name];
         const div = document.createElement('div');
         div.className = 'playlist-item';
         div.style.marginBottom = '12px';
-        const cover = playlists[name].cover || 'https://via.placeholder.com/42x42.png?text=♪';
+        const cover = pl.cover || 'https://via.placeholder.com/42x42.png?text=♪';
         div.innerHTML = `<img class='playlist-cover' src='${cover}'/><strong>${name}</strong>`;
         div.onclick = () => loadPlaylist(name);
         yourPlaylists.appendChild(div);
@@ -803,30 +917,66 @@
     } else {
       yourPlaylists.innerHTML = '<p style="color:#666; font-style:italic;">No playlists yet. Create one!</p>';
     }
+
+    // AI Genre Playlists
+    loadAIGenrePlaylists();
   }
 
-  // Navigation Clicks
+  // AI Genre Playlists
+  const genres = [
+    { name: "Pop Hits", query: "pop" },
+    { name: "Chill Vibes", query: "chill" },
+    { name: "Workout Energy", query: "workout" },
+    { name: "Late Night", query: "late night" },
+    { name: "Focus Flow", query: "focus" },
+    { name: "Party Starters", query: "party" }
+  ];
+
+  async function loadAIGenrePlaylists() {
+    aiGenrePlaylists.innerHTML = '';
+    showSkeletons(aiGenrePlaylists, 6);
+
+    for (const genre of genres) {
+      try {
+        const songs = await deezerFetch(`search?q=${encodeURIComponent(genre.query)}&limit=1`);
+        if (songs.length > 0) {
+          const song = songs[0];
+          const card = document.createElement("div");
+          card.className = "grid-card";
+          const cover = song.album.cover_medium;
+          card.innerHTML = `
+            <img class="grid-cover" src="${cover}" />
+            <div class="grid-info">
+              <div class="grid-title">${genre.name}</div>
+              <div class="grid-actions">
+                <button onclick="playAIGenre('${genre.query}')">Play</button>
+              </div>
+            </div>
+          `;
+          aiGenrePlaylists.appendChild(card);
+        }
+      } catch (err) {}
+    }
+  }
+
+  window.playAIGenre = async function(query) {
+    try {
+      const songs = await deezerFetch(`search?q=${encodeURIComponent(query)}&limit=12`);
+      if (songs.length > 0) {
+        playSong(songs[0]);
+      }
+    } catch (err) {}
+  };
+
+  // Navigation
   homeNav.onclick = showHome;
   searchNav.onclick = showSearch;
 
   // Init
+  ensurePlaylistIds();
   renderSidebarPlaylists();
   showHome();
   loadPopular();
-
-  // URL Playlist Load
-  const params = new URLSearchParams(location.search);
-  const plId = params.get("playlist");
-  if (plId) {
-    setTimeout(() => {
-      for (const name in playlists) {
-        if (playlists[name].id === plId) {
-          loadPlaylist(name);
-          break;
-        }
-      }
-    }, 500);
-  }
 </script>
 </body>
 </html>
