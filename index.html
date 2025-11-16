@@ -355,9 +355,102 @@
     color: #eee;
     display: none;
   }
+
+  /* Welcome Popup */
+#welcome-popup {
+  position: fixed;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background: rgba(0,0,0,0.7);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 200;
+}
+
+#welcome-popup .popup-content {
+  background: var(--card);
+  padding: 30px 24px;
+  border-radius: 20px;
+  width: 360px;
+  text-align: center;
+  position: relative;
+  box-shadow: 0 12px 32px rgba(0,0,0,0.5);
+}
+
+#welcome-popup .close-btn {
+  position: absolute;
+  top: 12px;
+  right: 16px;
+  font-size: 24px;
+  cursor: pointer;
+  color: #aaa;
+  transition: 0.2s;
+}
+#welcome-popup .close-btn:hover { color: var(--accent); }
+
+#welcome-popup .star {
+  font-size: 50px;
+  margin-bottom: 16px;
+}
+
+#welcome-popup .popup-text {
+  font-size: 0.9rem;
+  color: #ccc;
+  margin-bottom: 20px;
+}
+
+#welcome-popup .agree-label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.9rem;
+  color: #eee;
+  margin-bottom: 16px;
+  cursor: pointer;
+}
+
+#welcome-popup #agree-btn {
+  background: linear-gradient(90deg, var(--accent), var(--accent2));
+  color: #fff;
+  padding: 10px 20px;
+  border-radius: 12px;
+  border: none;
+  cursor: pointer;
+  font-weight: 600;
+  font-size: 0.95rem;
+  transition: 0.2s;
+}
+
+#welcome-popup #agree-btn:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+
+#welcome-popup #agree-btn:hover:enabled {
+  transform: scale(1.05);
+}
+
 </style>
 </head>
 <body>
+
+  <div id="welcome-popup">
+  <div class="popup-content">
+    <span class="close-btn">&times;</span>
+    <div class="star">⭐</div>
+    <p class="popup-text">
+      Tunes is an experimental feature. By using Mini Tunes, you agree to follow our TOS.<br>
+      Competitors may not copy or redistribute this feature.
+    </p>
+    <label class="agree-label">
+      <input type="checkbox" id="agree-checkbox">
+      I agree to the terms
+    </label>
+    <button id="agree-btn" disabled>I Agree</button>
+  </div>
+</div>
+
+  
 <header>
   <h2>Mini Tunes</h2>
   <div class="header-right">
@@ -934,6 +1027,34 @@
       }
     }, 500);
   }
+
+// Show welcome popup only if not agreed before
+if (!localStorage.getItem("miniTunesAgreed")) {
+  const welcomePopup = document.getElementById("welcome-popup");
+  const closeBtn = welcomePopup.querySelector(".close-btn");
+  const agreeCheckbox = document.getElementById("agree-checkbox");
+  const agreeBtn = document.getElementById("agree-btn");
+
+  welcomePopup.style.display = "flex";
+
+  // Close X just hides it temporarily
+  closeBtn.onclick = () => welcomePopup.style.display = "none";
+
+  // Enable/disable agree button based on checkbox
+  agreeCheckbox.onchange = () => {
+    agreeBtn.disabled = !agreeCheckbox.checked;
+  };
+
+  // When agreed
+  agreeBtn.onclick = () => {
+    if (agreeCheckbox.checked) {
+      localStorage.setItem("miniTunesAgreed", "true");
+      welcomePopup.style.display = "none";
+    }
+  };
+}
+
+  
 </script>
 </body>
 </html>
