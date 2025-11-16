@@ -355,6 +355,44 @@
     color: #eee;
     display: none;
   }
+
+#playlist-popup {
+  position: fixed;
+  top: 50%; left: 50%;
+  transform: translate(-50%, -50%);
+  background: var(--card);
+  padding: 24px;
+  border-radius: 16px;
+  width: 300px;
+  box-shadow: 0 12px 32px rgba(0,0,0,0.5);
+  z-index: 101;
+  border: 1px solid var(--border);
+}
+
+#playlist-popup input {
+  width: 100%;
+  padding: 12px 14px;
+  border-radius: 10px;
+  border: 1px solid var(--border);
+  background: var(--surface);
+  color: var(--text);
+}
+
+#playlist-popup button {
+  background: var(--hover);
+  color: var(--text);
+  border-radius: 8px;
+  padding: 6px 12px;
+  border: none;
+  cursor: pointer;
+}
+
+#playlist-popup button:hover {
+  background: var(--accent);
+  color: #fff;
+}
+
+  
 </style>
 </head>
 <body>
@@ -375,6 +413,18 @@
   <textarea id="bio-input" placeholder="Write your bio... (private)"></textarea>
   <button class="upload-btn" id="change-name">Change Name</button>
 </div>
+
+<div id="playlist-popup" style="display:none;">
+  <h3 id="playlist-popup-title">Playlist</h3>
+  <input type="text" id="playlist-popup-input" placeholder="Enter name..." />
+  <p id="playlist-popup-message" style="display:none; color:#aaa; margin-top:8px; font-size:0.9em;"></p>
+  <div style="display:flex; justify-content:flex-end; gap:8px; margin-top:12px;">
+    <button id="playlist-popup-cancel">Cancel</button>
+    <button id="playlist-popup-save">Save</button>
+  </div>
+</div>
+
+
 
 <div id="sidebar">
   <div id="home-nav" class="nav-item active">
@@ -534,15 +584,19 @@
     }
   });
 
-  // Change name
-  changeNameBtn.onclick = () => {
-    const newName = prompt("Enter your name:", userName);
-    if (newName && newName.trim()) {
-      localStorage.setItem("userName", newName.trim());
+changeNameBtn.onclick = () => {
+  openPopup({
+    title: "Change your name",
+    defaultValue: userName,
+    callback: (newName) => {
+      if (!newName) return;
+      localStorage.setItem("userName", newName);
       updateUserProfile();
       profilePopup.style.display = "none";
     }
-  };
+  });
+};
+
 
   // Popups
   premiumBtn.onclick = () => premiumPopup.style.display = "block";
@@ -777,7 +831,20 @@
   }
 }
   window.editPlaylist = function(name) {
-    const newName = prompt('Rename playlist:', name);
+openPopup({
+  title: "Rename playlist",
+  defaultValue: name,
+  callback: (newName) => {
+    if (!newName || newName === name) return;
+    playlists[newName] = playlists[name];
+    delete playlists[name];
+    savePlaylists();
+    renderSidebarPlaylists();
+    loadHomeContent();
+  }
+});
+
+
     if (newName && newName !== name) {
       playlists[newName] = playlists[name];
       delete playlists[name];
@@ -789,12 +856,24 @@
 
   window.sharePlaylist = function(id) {
     const url = `${location.origin}${location.pathname}?playlist=${id}`;
-    navigator.clipboard.writeText(url).then(() => {
-      alert(`Link copied!\n${url}\nSend to friends!`);
-    }).catch(() => {
-      prompt(`Copy this link:`, url);
+window.sharePlaylist = function(id) {
+  const url = `${location.origin}${location.pathname}?playlist=${id}`;
+  navigator.clipboard.writeText(url).then(() => {
+    openPopup({
+      title: "Link copied!",
+      message: url,
+      callback: () => {} // just close
     });
-  };
+  }).catch(() => {
+    openPopup({
+      title: "Copy this link",
+      defaultValue: url,
+      message: "Select and copy the URL manually",
+      callback: () => {}
+    });
+  });
+};
+
 
   window.deletePlaylist = function(name) {
     if (confirm(`Delete "${name}"?`)) {
@@ -838,7 +917,21 @@
   function addSongToPlaylist(song) {
     const names = Object.keys(playlists);
     if (!names.length) return alert('Create a playlist first!');
-    const pl = prompt(`Add to playlist:\n${names.join(', ')}`, names[0]);
+openPopup({
+  title: `Add to playlist`,
+  defaultValue: names[0],
+  message: names.join(', '),
+  callback: (plName) => {
+    if (plName && playlists[plName]) {
+      playlists[plName].songs.push(song);
+      savePlaylists();
+      loadHomeContent();
+      alert(`Added to ${plName}`);
+    }
+  }
+});
+
+
     if (pl && playlists[pl]) {
       playlists[pl].songs.push(song);
       savePlaylists();
@@ -934,6 +1027,39 @@
       }
     }, 500);
   }
+
+// Playlist / Action popup logic
+const playlistPopup = document.getElementById('playlist-popup');
+const popupTitle = document.getElementById('playlist-popup-title');
+const popupInput = document.getElementById('playlist-popup-input');
+const popupMessage = document.getElementById('playlist-popup-message');
+const popupCancel = document.getElementById('playlist-popup-cancel');
+const popupSave = document.getElementById('playlist-popup-save');
+
+let popupCallback = null;
+
+function openPopup({title, defaultValue = '', message = '', callback}) {
+  popupTitle.innerText = title;
+  popupInput.value = defaultValue;
+  popupMessage.innerText = message;
+  popupMessage.style.display = message ? 'block' : 'none';
+  playlistPopup.style.display = 'block';
+  popupInput.focus();
+  popupCallback = callback;
+}
+
+function closePopup() {
+  playlistPopup.style.display = 'none';
+  popupCallback = null;
+}
+
+// Button actions
+popupCancel.onclick = closePopup;
+popupSave.onclick = () => {
+  if (popupCallback) popupCallback(popupInput.value.trim());
+  closePopup();
+};
+
 </script>
 </body>
 </html>
