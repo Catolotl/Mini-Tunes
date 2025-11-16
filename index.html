@@ -640,140 +640,48 @@
     <audio id="audio"></audio>
   </div>
 <script>
-  // YOUR ORIGINAL SCRIPT + UPGRADES
+  let currentSongs = [];
+  let currentIndex = 0;
+  let isPlaying = false;
+  let currentPlaylist = null;
+  let djMode = false;
+  let listenHistory = [];
+  let currentEditPlaylist = null;
+  let playlists = JSON.parse(localStorage.getItem("miniTunes_playlists") || "{}");
+  const audio = document.getElementById("audio");
+  const player = document.getElementById("player");
+  const playPauseBtn = document.getElementById("play-pause-btn");
+  const progress = document.getElementById("progress");
+  const progressContainer = document.getElementById("progress-container");
+  const lyricsViewer = document.getElementById("lyrics-viewer");
+  const results = document.getElementById("results");
+  const searchInput = document.getElementById("search");
   const CORS_PROXY = "https://corsproxy.io/?";
   const MUSICBRAINZ = "https://musicbrainz.org/ws/2";
   const LISTENBRAINZ = "https://labs.api.listenbrainz.org/similar-artists";
   const INVIDIOUS = "https://yewtu.be";
-  function loadProfile() {
-    const profile = JSON.parse(localStorage.getItem("miniTunes_profile") || '{"name":"Friend","bio":"","pic":"https://via.placeholder.com/120?text=👤"}');
-    document.getElementById("profile-name").value = profile.name;
-    document.getElementById("profile-bio").value = profile.bio;
-    document.getElementById("profile-pic-preview").src = profile.pic;
-    document.getElementById("header-profile-pic").src = profile.pic;
-    document.getElementById("welcome-name").textContent = profile.name;
-  }
-  function saveProfile() {
-    const profile = {
-      name: document.getElementById("profile-name").value || "Friend",
-      bio: document.getElementById("profile-bio").value,
-      pic: document.getElementById("profile-pic-preview").src
-    };
-    localStorage.setItem("miniTunes_profile", JSON.stringify(profile));
-    document.getElementById("header-profile-pic").src = profile.pic;
-    document.getElementById("welcome-name").textContent = profile.name;
-    closeProfileModal();
-    alert("Profile saved!");
-  }
-  document.getElementById('profile-pic-input').addEventListener('change', function(event) {
-    const file = event.target.files[0];
-    if (file) {
-      const reader = new FileReader();
-      reader.onload = (e) => {
-        document.getElementById("profile-pic-preview").src = e.target.result;
-      };
-      reader.readAsDataURL(file);
-    }
-  });
-  function openProfileModal() {
-    document.getElementById("profile-modal").style.display = "flex";
-  }
-  function closeProfileModal() {
-    document.getElementById("profile-modal").style.display = "none";
-  }
-  function openPremium() {
-    document.getElementById("premium-modal").style.display = "flex";
-  }
-  function closePremium() {
-    document.getElementById("premium-modal").style.display = "none";
-  }
-  function switchView(view) {
-    document.querySelectorAll('.nav-item').forEach(item => {
-      item.classList.remove('active');
-    });
-    document.querySelector(`[data-view="${view}"]`).classList.add('active');
-   
-    if (view === 'home') {
-      document.getElementById('home-view').style.display = 'block';
-      document.getElementById('search-view').style.display = 'none';
-      generateDJPlaylists();
-    } else {
-      document.getElementById('home-view').style.display = 'none';
-      document.getElementById('search-view').style.display = 'block';
-    }
-  }
-  function toggleDJMode() {
-    djMode = !djMode;
-    const djToggle = document.getElementById('dj-toggle');
-    const djText = document.getElementById('dj-mode-text');
-   
-    if (djMode) {
-      djToggle.classList.add('active');
-      djText.textContent = 'AI DJ ON';
-      switchView('home');
-    } else {
-      djToggle.classList.remove('active');
-      djText.textContent = 'AI DJ OFF';
-    }
-  }
-  async function generateDJPlaylists() {
-    const djContainer = document.getElementById('dj-playlists');
-    djContainer.innerHTML = '<div class="spinner"></div>';
-    const genres = ['Pop', 'Rock', 'Electronic', 'Hip Hop', 'Chill', 'Workout'];
-    djContainer.innerHTML = '';
-    for (const genre of genres) {
-      const card = document.createElement('div');
-      card.className = 'card';
-      card.innerHTML = `
-        <img src="https://via.placeholder.com/280x180?text=${encodeURIComponent(genre)}" />
-        <button class="play-btn" onclick="searchDJPlaylist('${genre}')"><i class="fas fa-play"></i></button>
-        <div class="card-info">
-          <div class="card-title">AI ${genre} Mix</div>
-          <div class="card-artist">Curated by AI DJ</div>
-        </div>
-      `;
-      djContainer.appendChild(card);
-    }
-  }
-  async function searchDJPlaylist(genre) {
-    searchInput.value = genre;
-    switchView('search');
+  // ... [ALL YOUR ORIGINAL FUNCTIONS FOR PROFILE, PREMIUM, PLAYLISTS, etc.] ...
+  // (Kept the same — paste them here from your code)
+
+  // FIXED PERFORM SEARCH (DIRECT FOR SONGS)
+  async function performSearch(query) {
     results.innerHTML = '<div class="spinner"></div>';
-    const artists = await getRecommendedArtists(genre);
-    const songs = await getSongsFromArtists(artists);
-    displayResults(songs);
-  }
-  async function getRecommendedArtists(query) {
     try {
-      const mbData = await fetch(`${CORS_PROXY}${encodeURIComponent(`${MUSICBRAINZ}/artist/?query=tag:${query}&fmt=json`)}`).then(res => res.json());
-      const mbid = mbData.artists?.[0]?.id;
-      if (!mbid) return [];
-      const lbData = await fetch(`${CORS_PROXY}${encodeURIComponent(`${LISTENBRAINZ}?artist_mbids=${mbid}&algorithm=session_based_days_7500_session_300_contribution_5_threshold_10_limit_100_filter_True_skip_30`)}`).then(res => res.json());
-      return lbData.payload?.artists?.map(a => a.artist_name) || [];
+      const data = await proxyFetch(`${INVIDIOUS}/api/v1/search?q=${encodeURIComponent(query + " official audio")}&type=video`);
+      const songs = data.map(item => ({
+        id: item.videoId,
+        title: item.title,
+        artist: { name: item.author },
+        thumbnailUrl: item.videoThumbnails[0].url,
+        duration: item.lengthSeconds
+      }));
+      displayResults(songs);
     } catch {
-      return [];
+      results.innerHTML = "<p style='text-align:center; color:#ef4444; margin-top:80px;'>Search failed. Please try again.</p>";
     }
   }
-  async function getSongsFromArtists(artists) {
-    const songs = [];
-    for (const artist of artists.slice(0, 5)) {
-      const data = await proxyFetch(`${INVIDIOUS}/api/v1/search?q=${encodeURIComponent(artist + " official audio")}&type=video`);
-      data.slice(0, 3).forEach(item => {
-        songs.push({
-          id: item.videoId,
-          title: item.title,
-          artist: { name: artist },
-          thumbnailUrl: item.videoThumbnails?.[0]?.url || "https://via.placeholder.com/56",
-          duration: item.lengthSeconds
-        });
-      });
-    }
-    return songs;
-  }
-  function toggleAIChat() {
-    const panel = document.getElementById('ai-chat-panel');
-    panel.classList.toggle('active');
-  }
+
+  // AI CHAT & DJ USE RECOMMENDATIONS
   async function sendAIMessage() {
     const input = document.getElementById('ai-chat-input');
     const message = input.value.trim();
@@ -790,210 +698,31 @@
    
     const aiMsg = document.createElement('div');
     aiMsg.className = 'ai-message';
-    aiMsg.textContent = `🎵 Searching for "${message}" recommendations...`;
+    aiMsg.textContent = `🎵 Great choice! Creating playlist for "${message}"...`;
     messagesContainer.appendChild(aiMsg);
     messagesContainer.scrollTop = messagesContainer.scrollHeight;
    
     const artists = await getRecommendedArtists(message);
     const songs = await getSongsFromArtists(artists);
-    displayResults(songs);
-  }
-  document.getElementById('ai-chat-input').addEventListener('keypress', function(e) {
-    if (e.key === 'Enter') sendAIMessage();
-  });
-  playlists = JSON.parse(localStorage.getItem("miniTunes_playlists") || "{}");
- 
-  function savePlaylists() {
-    localStorage.setItem("miniTunes_playlists", JSON.stringify(playlists));
-  }
-  function renderPlaylists() {
-    const playlistsList = document.getElementById('playlists-list');
-    playlistsList.innerHTML = "";
-    Object.keys(playlists).forEach(name => {
-      const pl = playlists[name];
-      const cover = pl.cover || "https://via.placeholder.com/40?text=🎵";
-      const div = document.createElement("div");
-      div.className = "playlist-item";
-      div.innerHTML = `
-        <div style="display:flex; align-items:center; gap:12px; flex:1;">
-          <img class="playlist-cover" src="${cover}" />
-          <div><strong>${name}</strong><br><small style="color:#737373;">${pl.songs.length} songs</small></div>
-        </div>
-        <div class="playlist-actions">
-          <button onclick="event.stopPropagation(); editPlaylistFunc('${name.replace(/'/g, "\\'")}')"><i class="fas fa-edit"></i></button>
-          <button onclick="event.stopPropagation(); deletePlaylist('${name.replace(/'/g, "\\'")}')"><i class="fas fa-trash"></i></button>
-        </div>
-      `;
-      div.onclick = () => openPlaylist(name);
-      playlistsList.appendChild(div);
-    });
-  }
-  function createPlaylist() {
-    const name = prompt("Playlist name:");
-    if (!name || playlists[name]) return alert("Invalid or duplicate name.");
-    playlists[name] = {
-      songs: [],
-      cover: "https://via.placeholder.com/280?text=🎵",
-      id: Math.random().toString(36).substr(2, 9)
-    };
-    savePlaylists();
-    renderPlaylists();
-  }
-  function editPlaylistFunc(name) {
-    currentEditPlaylist = name;
-    const pl = playlists[name];
-    document.getElementById("edit-playlist-name").value = name;
-    document.getElementById("playlist-cover-preview").src = pl.cover;
-    document.getElementById("edit-playlist-modal").style.display = "flex";
-  }
-  function closeEditPlaylist() {
-    document.getElementById("edit-playlist-modal").style.display = "none";
-    currentEditPlaylist = null;
-  }
-  function savePlaylistEdit() {
-    if (!currentEditPlaylist) return;
-   
-    const newName = document.getElementById("edit-playlist-name").value.trim();
-    const newCover = document.getElementById("playlist-cover-preview").src;
-   
-    if (!newName) return alert("Name required!");
-   
-    const pl = playlists[currentEditPlaylist];
-    delete playlists[currentEditPlaylist];
-   
-    playlists[newName] = {
-      ...pl,
-      cover: newCover
-    };
-   
-    savePlaylists();
-    renderPlaylists();
-    closeEditPlaylist();
-  }
-  document.getElementById('playlist-cover-input').addEventListener('change', function(event) {
-    const file = event.target.files[0];
-    if (file) {
-      const reader = new FileReader();
-      reader.onload = (e) => {
-        document.getElementById("playlist-cover-preview").src = e.target.result;
-      };
-      reader.readAsDataURL(file);
-    }
-  });
-  function deletePlaylist(name) {
-    if (confirm(`Delete "${name}"?`)) {
-      delete playlists[name];
-      savePlaylists();
-      renderPlaylists();
-    }
-  }
-  function openPlaylist(name) {
-    currentPlaylist = name;
-    const pl = playlists[name];
-    currentSongs = pl.songs;
-    results.innerHTML = `<h2 style="grid-column:1/-1; margin:20px 0; font-size:24px;">${name} <span style="color:#737373; font-size:16px;">(${pl.songs.length} songs)</span></h2>`;
-    pl.songs.forEach((song, i) => addSongCard(song, () => playSongList(pl.songs, i), true));
-    switchView('search');
-  }
-  function addToPlaylist(song) {
-    const names = Object.keys(playlists);
-    if (names.length === 0) return alert("Create a playlist first!");
-    const name = prompt("Add to playlist:", names[0]);
-    if (name && playlists[name]) {
-      playlists[name].songs.push(song);
-      savePlaylists();
-      renderPlaylists();
-      alert(`Added to ${name}`);
-    }
-  }
-  function removeFromPlaylist(song, playlistName) {
-    if (!playlists[playlistName]) return;
-    playlists[playlistName].songs = playlists[playlistName].songs.filter(s => s.id !== song.id);
-    savePlaylists();
-    renderPlaylists();
-    openPlaylist(playlistName);
-  }
-  let searchTimeout;
-  searchInput.addEventListener("input", () => {
-    clearTimeout(searchTimeout);
-    const query = searchInput.value.trim();
-    if (!query) {
-      results.innerHTML = "<p style='text-align:center; color:#737373; margin-top:80px; font-size:16px;'>Type to search for music...</p>";
-      return;
-    }
-    results.innerHTML = `<div class="spinner"></div>`;
-    searchTimeout = setTimeout(() => performSearch(query), 500);
-  });
-  async function performSearch(query) {
-    results.innerHTML = '<div class="spinner"></div>';
-    const songs = await getSongsFromArtists([query]);
-    displayResults(songs);
-  }
-  function displayResults(songs) {
-    results.innerHTML = "";
     if (songs.length === 0) {
-      results.innerHTML = "<p style='text-align:center; color:#737373; margin-top:80px;'>No results found</p>";
-      return;
+      aiMsg.textContent += " No recommendations found. Trying direct search...";
+      performSearch(message);
+    } else {
+      displayResults(songs);
+      playSongList(songs, 0); // Auto-play the playlist
     }
-    songs.forEach(song => addSongCard(song, () => playSongList([song], 0), false));
   }
-  async function playCurrentSong() {
-    const song = currentSongs[currentIndex];
-    if (!song) return;
-   
-    listenHistory.push(song);
-    localStorage.setItem("miniTunes_history", JSON.stringify(listenHistory.slice(-50)));
-   
-    const streamUrl = await getAudioStream(song.id);
-    if (!streamUrl) return alert("Stream unavailable.");
-    audio.src = streamUrl;
-    audio.play().catch(() => alert("Playback failed."));
-    isPlaying = true;
-    playPauseBtn.innerHTML = '<i class="fas fa-pause"></i>';
-    document.getElementById("now-playing-title").textContent = song.title;
-    document.getElementById("now-playing-artist").textContent = song.artist.name;
-    document.getElementById("now-playing-cover").src = song.thumbnailUrl;
-    player.style.display = "flex";
-   
-    fetchLyrics(song.artist.name, song.title);
+
+  async function searchDJPlaylist(genre) {
+    searchInput.value = genre;
+    switchView('search');
+    results.innerHTML = '<div class="spinner"></div>';
+    const artists = await getRecommendedArtists(genre);
+    const songs = await getSongsFromArtists(artists);
+    displayResults(songs);
   }
-  async function getAudioStream(videoId) {
-    const data = await fetch(`${CORS_PROXY}${encodeURIComponent(`${INVIDIOUS}/api/v1/videos/${videoId}`)}`).then(res => res.json());
-    const audio = data.adaptiveFormats.find(f => f.type.startsWith('audio/'));
-    return audio ? audio.url : null;
-  }
-  function togglePlayPause() {
-    if (isPlaying) audio.pause(); else audio.play();
-    isPlaying = !isPlaying;
-    playPauseBtn.innerHTML = isPlaying ? '<i class="fas fa-pause"></i>' : '<i class="fas fa-play"></i>';
-  }
-  function nextSong() {
-    currentIndex = (currentIndex + 1) % currentSongs.length;
-    playCurrentSong();
-  }
-  function prevSong() {
-    currentIndex = currentIndex === 0 ? currentSongs.length - 1 : currentIndex - 1;
-    playCurrentSong();
-  }
-  function seekAudio(e) {
-    const rect = e.currentTarget.getBoundingClientRect();
-    const percent = (e.clientX - rect.left) / rect.width;
-    audio.currentTime = percent * audio.duration;
-  }
-  function toggleLyrics() {
-    lyricsViewer.style.display = lyricsViewer.style.display === 'block' ? 'none' : 'block';
-  }
-  audio.ontimeupdate = () => {
-    if (audio.duration) progress.style.width = (audio.currentTime / audio.duration * 100) + "%";
-  };
-  audio.onended = () => {
-    if (currentSongs.length > 1) nextSong();
-  };
-  // Init
-  loadProfile();
-  renderPlaylists();
-  listenHistory = JSON.parse(localStorage.getItem("miniTunes_history") || "[]");
-  results.innerHTML = "<p style='text-align:center; color:#737373; margin-top:100px; font-size:16px;'>🎵 Search for music to get started</p>";
+
+  // ... [REST OF YOUR SCRIPT: playCurrentSong, togglePlayPause, etc.] ...
 </script>
 </body>
 </html>
