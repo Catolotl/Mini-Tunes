@@ -456,7 +456,7 @@
       window[callbackName] = function (data) {
         resolve(data.data || data || []);
         delete window[callbackName];
-        script.remove();
+        if (script && script.parentNode) script.remove();
       };
       const script = document.createElement("script");
       script.src = `${url}&callback=${callbackName}`;
@@ -464,41 +464,72 @@
     });
   }
 
-  // Search
+  // Search - FIXED: Added showSearch() + debounce + proper skeleton cleanup
+  let searchTimeout;
   searchInput.addEventListener("input", async () => {
+    clearTimeout(searchTimeout);
     const q = searchInput.value.trim();
     results.innerHTML = "";
     if (!q) return;
+
+    showSearch(); // Ensure we're on search page
+
+    // Show skeletons
     showSkeletons(results, 5);
-    const songs = await deezerFetch(`search?q=${encodeURIComponent(q)}`);
-    results.innerHTML = "";
-    renderSongs(songs, results);
+
+    searchTimeout = setTimeout(async () => {
+      try {
+        const songs = await deezerFetch(`search?q=${encodeURIComponent(q)}`);
+        results.innerHTML = "";
+        if (songs.length === 0) {
+          results.innerHTML = "<p style='color:#aaa; text-align:center; padding:20px;'>No results found.</p>";
+        } else {
+          renderSongs(songs, results);
+        }
+      } catch (err) {
+        results.innerHTML = "<p style='color:#f66; text-align:center;'>Search failed. Try again.</p>";
+      }
+    }, 400); // Debounce
   });
 
   // Popular Songs
   async function loadPopular() {
     popular.innerHTML = "";
     showSkeletons(popular, 5);
-    const songs = await deezerFetch('chart/0/tracks?limit=20');
-    popular.innerHTML = "";
-    renderSongs(songs, popular);
+    try {
+      const songs = await deezerFetch('chart/0/tracks?limit=20');
+      popular.innerHTML = "";
+      renderSongs(songs, popular);
+    } catch (err) {
+      popular.innerHTML = "<p style='color:#f66;'>Failed to load popular songs.</p>";
+    }
   }
 
   // AI Recommendations
+  let recommendTimeout;
   recommendInput.addEventListener("input", async () => {
+    clearTimeout(recommendTimeout);
     const q = recommendInput.value.trim();
     aiRecommendations.innerHTML = "";
     if (!q) return;
+
     showSkeletons(aiRecommendations, 5);
-    const searchResults = await deezerFetch(`search/track?q=${encodeURIComponent(q)}&limit=1`);
-    if (!searchResults.length) {
-      aiRecommendations.innerHTML = "<p style='color:#aaa;'>No song found.</p>";
-      return;
-    }
-    const song = searchResults[0];
-    const recommendations = await deezerFetch(`artist/${song.artist.id}/radio?limit=12`);
-    aiRecommendations.innerHTML = "<p style='margin-bottom:12px; color:#aaa;'>Songs like <strong>" + song.title + "</strong>:</p>";
-    renderSongs(recommendations, aiRecommendations);
+
+    recommendTimeout = setTimeout(async () => {
+      try {
+        const searchResults = await deezerFetch(`search/track?q=${encodeURIComponent(q)}&limit=1`);
+        if (!searchResults.length) {
+          aiRecommendations.innerHTML = "<p style='color:#aaa;'>No song found.</p>";
+          return;
+        }
+        const song = searchResults[0];
+        const recommendations = await deezerFetch(`artist/${song.artist.id}/radio?limit=12`);
+        aiRecommendations.innerHTML = "<p style='margin-bottom:12px; color:#aaa;'>Songs like <strong>" + song.title + "</strong>:</p>";
+        renderSongs(recommendations, aiRecommendations);
+      } catch (err) {
+        aiRecommendations.innerHTML = "<p style='color:#f66;'>Recommendation failed.</p>";
+      }
+    }, 500);
   });
 
   // Render Songs
@@ -537,7 +568,7 @@
     audio.src = song.preview;
     nowPlaying.innerText = `Now playing: ${song.title} — ${song.artist?.name || ''}`;
     player.style.display = "block";
-    audio.play();
+    audio.play().catch(() => {});
     lyricsViewer.style.display = "block";
     lyricsText.innerText = `Lyrics for "${song.title}" coming soon...`;
     
