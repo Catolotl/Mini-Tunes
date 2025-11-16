@@ -73,6 +73,10 @@
     font-weight:bold; 
     font-size:1em;
     transition:0.2s;
+    overflow:hidden;
+  }
+  #profile-btn img {
+    width:100%; height:100%; object-fit:cover;
   }
   #profile-btn:hover { background:#444; }
 
@@ -80,9 +84,9 @@
   #profile-popup {
     position:fixed; top:80px; right:24px; 
     background:var(--card); 
-    padding:16px; 
+    padding:20px; 
     border-radius:14px; 
-    width:240px; 
+    width:300px; 
     box-shadow:0 8px 24px rgba(0,0,0,0.4); 
     display:none; 
     z-index:100;
@@ -90,7 +94,13 @@
   }
   #profile-popup h4 { margin:0 0 8px; font-size:1.1em; }
   #profile-popup p { margin:4px 0; font-size:0.9em; color:#aaa; }
-  #change-name { 
+  #profile-avatar {
+    width:80px; height:80px; border-radius:50%; margin:0 auto 12px; display:block; object-fit:cover;
+  }
+  #upload-avatar, #upload-playlist-cover {
+    display:none;
+  }
+  .upload-btn {
     background:var(--hover); 
     border:none; 
     color:var(--text); 
@@ -98,9 +108,14 @@
     border-radius:8px; 
     cursor:pointer; 
     width:100%; 
-    margin-top:10px;
+    margin-top:8px;
     font-size:0.9em;
+    text-align:center;
   }
+  #bio-input {
+    width:100%; height:80px; background:var(--card); border:none; border-radius:8px; color:var(--text); padding:8px; margin-top:8px; resize:none;
+  }
+  #bio-input:focus { outline:none; box-shadow:0 0 0 2px var(--accent); }
 
   /* Sidebar */
   #sidebar { 
@@ -156,6 +171,8 @@
     gap:12px; 
     transition:0.2s; 
     border-bottom:1px solid var(--border); 
+    position:relative;
+    overflow:hidden;
   }
   .playlist-item:hover { background:var(--hover); }
   .playlist-cover { 
@@ -169,6 +186,11 @@
     gap:6px; 
     opacity:0; 
     transition:0.2s;
+    position:absolute;
+    right:16px;
+    background:var(--surface);
+    padding:0 4px;
+    border-radius:8px;
   }
   .playlist-item:hover .playlist-actions { opacity:1; }
 
@@ -230,7 +252,7 @@
   }
 
   /* Inputs */
-  input, button {
+  input, button, textarea {
     font-family: inherit;
   }
   input { 
@@ -313,9 +335,15 @@
 </header>
 
 <div id="profile-popup">
+  <img id="profile-avatar" src="https://via.placeholder.com/80" alt="Profile">
   <h4 id="profile-name">User</h4>
   <p>Customize your experience</p>
-  <button id="change-name">Change Name</button>
+  <button class="upload-btn" id="change-avatar-btn">Change Avatar</button>
+  <input type="file" id="upload-avatar" accept="image/*">
+  
+  <textarea id="bio-input" placeholder="Write your bio... (private)"></textarea>
+  
+  <button class="upload-btn" id="change-name">Change Name</button>
 </div>
 
 <div id="sidebar">
@@ -381,6 +409,8 @@
   <button onclick="closePremium()">Close</button>
 </div>
 
+<input type="file" id="upload-playlist-cover" accept="image/*" style="display:none;">
+
 <script>
   // DOM Elements
   const premiumBtn = document.getElementById("premium-btn");
@@ -389,6 +419,10 @@
   const profilePopup = document.getElementById("profile-popup");
   const profileName = document.getElementById("profile-name");
   const changeNameBtn = document.getElementById("change-name");
+  const profileAvatar = document.getElementById("profile-avatar");
+  const changeAvatarBtn = document.getElementById("change-avatar-btn");
+  const uploadAvatar = document.getElementById("upload-avatar");
+  const bioInput = document.getElementById("bio-input");
   const searchInput = document.getElementById("search");
   const results = document.getElementById("results");
   const audio = document.getElementById("audio");
@@ -407,21 +441,67 @@
   const recommendInput = document.getElementById("recommend-input");
   const yourPlaylists = document.getElementById("your-playlists");
   const popular = document.getElementById("popular");
+  const popularSection = document.querySelector('#search-page > .section');
+  const uploadPlaylistCover = document.getElementById("upload-playlist-cover");
 
   // State
   let userName = localStorage.getItem("userName") || "User";
+  let userAvatar = localStorage.getItem("userAvatar") || "https://via.placeholder.com/80";
+  let userBio = localStorage.getItem("userBio") || "";
   let recentlyPlayed = JSON.parse(localStorage.getItem("recentlyPlayed") || "[]");
   let playlists = JSON.parse(localStorage.getItem("miniPlaylists") || "{}");
 
-  // Update UI with name
-  function updateUserName(name) {
-    userName = name || "User";
-    localStorage.setItem("userName", userName);
+  // Update UI with user data
+  function updateUserProfile() {
+    userName = localStorage.getItem("userName") || "User";
+    userAvatar = localStorage.getItem("userAvatar") || "https://via.placeholder.com/80";
+    userBio = localStorage.getItem("userBio") || "";
+    
     welcome.innerText = `Welcome, ${userName}`;
     profileName.innerText = userName;
-    profileBtn.innerText = userName.charAt(0).toUpperCase();
+    profileAvatar.src = userAvatar;
+    bioInput.value = userBio;
+    
+    if (userAvatar !== "https://via.placeholder.com/80") {
+      const img = document.createElement('img');
+      img.src = userAvatar;
+      profileBtn.innerHTML = '';
+      profileBtn.appendChild(img);
+    } else {
+      profileBtn.innerText = userName.charAt(0).toUpperCase();
+    }
   }
-  updateUserName(userName);
+  updateUserProfile();
+
+  // Save bio on change
+  bioInput.addEventListener('input', () => {
+    localStorage.setItem("userBio", bioInput.value);
+  });
+
+  // Upload Avatar
+  changeAvatarBtn.onclick = () => uploadAvatar.click();
+  uploadAvatar.addEventListener('change', (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onload = (ev) => {
+        const dataUrl = ev.target.result;
+        localStorage.setItem("userAvatar", dataUrl);
+        updateUserProfile();
+      };
+      reader.readAsDataURL(file);
+    }
+  });
+
+  // Change Name
+  changeNameBtn.onclick = () => {
+    const newName = prompt("Enter your name:", userName);
+    if (newName && newName.trim()) {
+      localStorage.setItem("userName", newName.trim());
+      updateUserProfile();
+      profilePopup.style.display = "none";
+    }
+  };
 
   // Event Listeners
   premiumBtn.onclick = () => premiumPopup.style.display = "block";
@@ -429,13 +509,6 @@
 
   profileBtn.onclick = () => {
     profilePopup.style.display = profilePopup.style.display === "block" ? "none" : "block";
-  };
-  changeNameBtn.onclick = () => {
-    const newName = prompt("Enter your name:", userName);
-    if (newName && newName.trim()) {
-      updateUserName(newName.trim());
-      profilePopup.style.display = "none";
-    }
   };
 
   // Close popups on outside click
@@ -464,17 +537,17 @@
     });
   }
 
-  // Search - FIXED: Added showSearch() + debounce + proper skeleton cleanup
+  // Search
   let searchTimeout;
   searchInput.addEventListener("input", async () => {
     clearTimeout(searchTimeout);
     const q = searchInput.value.trim();
     results.innerHTML = "";
+    popularSection.style.display = q ? 'none' : 'block';
     if (!q) return;
 
-    showSearch(); // Ensure we're on search page
+    showSearch();
 
-    // Show skeletons
     showSkeletons(results, 5);
 
     searchTimeout = setTimeout(async () => {
@@ -489,7 +562,7 @@
       } catch (err) {
         results.innerHTML = "<p style='color:#f66; text-align:center;'>Search failed. Try again.</p>";
       }
-    }, 400); // Debounce
+    }, 400);
   });
 
   // Popular Songs
@@ -572,11 +645,9 @@
     lyricsViewer.style.display = "block";
     lyricsText.innerText = `Lyrics for "${song.title}" coming soon...`;
     
-    // Points
     let pts = Number(localStorage.getItem("points") || 0) + 1;
     localStorage.setItem("points", pts);
 
-    // Recently played
     recentlyPlayed = recentlyPlayed.filter(s => s.id !== song.id);
     recentlyPlayed.push(song);
     localStorage.setItem("recentlyPlayed", JSON.stringify(recentlyPlayed.slice(-15)));
@@ -588,7 +659,6 @@
   function savePlaylists() { localStorage.setItem("miniPlaylists", JSON.stringify(playlists)); }
 
   function renderSidebarPlaylists() {
-    // Clear existing playlists (but keep nav items)
     const playlistItems = sidebar.querySelectorAll('.playlist-item');
     playlistItems.forEach(item => item.remove());
 
@@ -613,39 +683,41 @@
         <img class='playlist-cover' src='${cover}'/>
         <strong>${name}</strong>
         <div class="playlist-actions">
-          <button>Edit</button>
-          <button>Delete</button>
+          <button onclick="editPlaylist('${name}')">Edit</button>
+          <button onclick="deletePlaylist('${name}')">Delete</button>
         </div>
       `;
-      div.querySelectorAll('button')[0].onclick = (e) => {
-        e.stopPropagation();
-        const newName = prompt('Rename:', name);
-        if (newName && newName !== name) {
-          playlists[newName] = playlists[name];
-          delete playlists[name];
-          savePlaylists();
-          renderSidebarPlaylists();
-          loadHomeContent();
-        }
+      div.onclick = (e) => {
+        if (!e.target.closest('.playlist-actions')) loadPlaylist(name);
       };
-      div.querySelectorAll('button')[1].onclick = (e) => {
-        e.stopPropagation();
-        if (confirm(`Delete "${name}"?`)) {
-          delete playlists[name];
-          savePlaylists();
-          renderSidebarPlaylists();
-          loadHomeContent();
-        }
-      };
-      div.onclick = () => loadPlaylist(name);
       sidebar.appendChild(div);
     }
   }
 
+  window.editPlaylist = function(name) {
+    const newName = prompt('Rename playlist:', name);
+    if (newName && newName !== name) {
+      playlists[newName] = playlists[name];
+      delete playlists[name];
+      savePlaylists();
+      renderSidebarPlaylists();
+      loadHomeContent();
+    }
+  };
+
+  window.deletePlaylist = function(name) {
+    if (confirm(`Delete "${name}"?`)) {
+      delete playlists[name];
+      savePlaylists();
+      renderSidebarPlaylists();
+      loadHomeContent();
+    }
+  };
+
   function loadPlaylist(name) {
     showSearch();
     searchInput.style.display = 'none';
-    document.querySelector('#search-page > .section').style.display = 'none';
+    popularSection.style.display = 'none';
     results.innerHTML = `<h3 style="margin:0 0 20px; color:#fff;">${name}</h3>`;
     playlists[name].songs.forEach(song => {
       const div = document.createElement('div');
@@ -671,6 +743,25 @@
     }
   }
 
+  // Upload Playlist Cover
+  window.uploadPlaylistCover = function(playlistName) {
+    uploadPlaylistCover.onchange = (e) => {
+      const file = e.target.files[0];
+      if (file) {
+        const reader = new FileReader();
+        reader.onload = (ev) => {
+          const dataUrl = ev.target.result;
+          playlists[playlistName].cover = dataUrl;
+          savePlaylists();
+          renderSidebarPlaylists();
+          loadHomeContent();
+        };
+        reader.readAsDataURL(file);
+      }
+    };
+    uploadPlaylistCover.click();
+  };
+
   // Page Navigation
   function showHome() {
     homePage.style.display = 'block';
@@ -687,19 +778,17 @@
     homeNav.classList.remove('active');
     searchNav.classList.add('active');
     searchInput.style.display = 'block';
-    document.querySelector('#search-page > .section').style.display = 'block';
+    popularSection.style.display = 'block';
     results.innerHTML = '';
     if (!popular.innerHTML) loadPopular();
   }
 
   function loadHomeContent() {
-    // Recently Played
     recentlyPlayedDiv.innerHTML = '';
     const recent = recentlyPlayed.slice(-10).reverse();
     if (recent.length) renderSongs(recent, recentlyPlayedDiv);
     else recentlyPlayedDiv.innerHTML = '<p style="color:#666; font-style:italic;">No songs played yet.</p>';
 
-    // Your Playlists
     yourPlaylists.innerHTML = '';
     if (Object.keys(playlists).length) {
       for (const name in playlists) {
