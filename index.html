@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Mini Tunes</title>
+  <title>Mini Tunes AI</title>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"/>
   <style>
     :root {
@@ -12,6 +12,7 @@
       --accent: #7c3aed;
       --text: #ffffff;
       --text-secondary: #b3b3b3;
+      --ai-glow: #00ff88;
     }
     * { margin:0; padding:0; box-sizing:border-box; }
     body {
@@ -36,249 +37,80 @@
       top: 0; left: 0; right: 0;
       z-index: 100;
     }
-    .logo { font-size: 24px; font-weight: bold; background: linear-gradient(90deg, #7c3aed, #3b82f6); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
-    #premium-btn {
-      background: linear-gradient(135deg, #7c3aed, #ec4899);
+    .logo { 
+      font-size: 24px; font-weight: bold; 
+      background: linear-gradient(90deg, #7c3aed, #00ff88); 
+      -webkit-background-clip: text; 
+      -webkit-text-fill-color: transparent; 
+    }
+    #ai-btn {
+      background: linear-gradient(135deg, #00ff88, #7c3aed);
       padding: 10px 20px;
       border-radius: 50px;
       font-weight: bold;
       cursor: pointer;
       transition: all 0.3s;
-      box-shadow: 0 4px 15px rgba(124,58,237,0.4);
+      box-shadow: 0 4px 15px rgba(0, 255, 136, 0.4);
+      animation: pulse 2s infinite;
     }
-    #premium-btn:hover { transform: translateY(-2px); box-shadow: 0 8px 25px rgba(124,58,237,0.6); }
-
-    .main {
-      display: flex;
-      flex: 1;
-      margin-top: 70px;
-      overflow: hidden;
+    @keyframes pulse {
+      0% { box-shadow: 0 4px 15px rgba(0, 255, 136, 0.4); }
+      50% { box-shadow: 0 8px 25px rgba(0, 255, 136, 0.7); }
+      100% { box-shadow: 0 4px 15px rgba(0, 255, 136, 0.4); }
     }
-    #sidebar {
-      width: 260px;
-      background: rgba(15,15,15,0.95);
-      backdrop-filter: blur(10px);
-      padding: 20px 0;
-      overflow-y: auto;
-      border-right: 1px solid #333;
-    }
-    .nav-item {
-      padding: 12px 24px;
-      cursor: pointer;
-      display: flex;
-      align-items: center;
-      gap: 16px;
-      transition: 0.2s;
-      color: var(--text-secondary);
-    }
-    .nav-item:hover, .nav-item.active {
-      background: rgba(124,58,237,0.2);
-      color: white;
-    }
+    #ai-btn:hover { transform: translateY(-2px); }
+    .main { display: flex; flex: 1; margin-top: 70px; overflow: hidden; }
+    #sidebar { width: 260px; background: rgba(15,15,15,0.95); backdrop-filter: blur(10px); padding: 20px 0; overflow-y: auto; border-right: 1px solid #333; }
+    .nav-item { padding: 12px 24px; cursor: pointer; display: flex; align-items: center; gap: 16px; transition: 0.2s; color: var(--text-secondary); }
+    .nav-item:hover, .nav-item.active { background: rgba(124,58,237,0.2); color: white; }
     .nav-item i { width: 24px; text-align: center; }
-
     .playlist-section { margin-top: 30px; padding: 0 16px; }
     .playlist-title { padding: 0 8px; font-size: 14px; color: #aaa; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 10px; }
-    .playlist-item {
-      padding: 10px;
-      border-radius: 8px;
-      cursor: pointer;
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      gap: 12px;
-      transition: 0.2s;
-      margin: 4px 8px;
-    }
+    .playlist-item { padding: 10px; border-radius: 8px; cursor: pointer; display: flex; align-items: center; justify-content: space-between; gap: 12px; transition: 0.2s; margin: 4px 8px; }
     .playlist-item:hover { background: rgba(255,255,255,0.1); }
     .playlist-cover { width: 40px; height: 40px; border-radius: 8px; object-fit: cover; }
-    .playlist-actions button { background: none; border: none; color: #aaa; cursor: pointer; font-size: 14px; }
-    .playlist-actions button:hover { color: white; }
-
-    #content {
-      flex: 1;
-      padding: 30px;
-      overflow-y: auto;
-      background: linear-gradient(to bottom, #1a0028, var(--bg));
-    }
-    #search {
-      width: 100%;
-      padding: 16px 20px;
-      border-radius: 50px;
-      border: none;
-      background: rgba(255,255,255,0.1);
-      color: white;
-      font-size: 16px;
-      backdrop-filter: blur(10px);
-    }
+    #content { flex: 1; padding: 30px; overflow-y: auto; background: linear-gradient(to bottom, #1a0028, var(--bg)); }
+    #search { width: 100%; padding: 16px 20px; border-radius: 50px; border: none; background: rgba(255,255,255,0.1); color: white; font-size: 16px; backdrop-filter: blur(10px); }
     #search::placeholder { color: #999; }
     #search:focus { outline: none; background: rgba(255,255,255,0.15); }
-
-    .results-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-      gap: 20px;
-      margin-top: 30px;
-    }
-    .card {
-      background: var(--card);
-      border-radius: 16px;
-      overflow: hidden;
-      transition: all 0.3s;
-      cursor: pointer;
-      position: relative;
-    }
-    .card:hover {
-      transform: translateY(-8px);
-      box-shadow: 0 20px 40px rgba(0,0,0,0.4);
-    }
-    .card img {
-      width: 100%;
-      height: 200px;
-      object-fit: cover;
-    }
-    .card-info {
-      padding: 16px;
-    }
-    .card-title {
-      font-size: 18px;
-      font-weight: bold;
-      margin-bottom: 4px;
-    }
-    .card-artist {
-      color: var(--text-secondary);
-      font-size: 14px;
-    }
-    .play-btn {
-      position: absolute;
-      bottom: 80px;
-      right: 16px;
-      width: 60px;
-      height: 60px;
-      background: var(--accent);
-      border-radius: 50%;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 28px;
-      opacity: 0;
-      transition: all 0.3s;
-      box-shadow: 0 8px 20px rgba(124,58,237,0.5);
-    }
-    .card:hover .play-btn {
-      opacity: 1;
-      transform: translateY(-10px);
-    }
-
-    .song-card {
-      display: flex;
-      align-items: center;
-      gap: 16px;
-      padding: 12px;
-      border-radius: 12px;
-      transition: 0.2s;
-      background: rgba(255,255,255,0.03);
-      position: relative;
-    }
+    .results-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 20px; margin-top: 30px; }
+    .card { background: var(--card); border-radius: 16px; overflow: hidden; transition: all 0.3s; cursor: pointer; position: relative; }
+    .card:hover { transform: translateY(-8px); box-shadow: 0 20px 40px rgba(0,0,0,0.4); }
+    .card img { width: 100%; height: 200px; object-fit: cover; }
+    .card-info { padding: 16px; }
+    .card-title { font-size: 18px; font-weight: bold; margin-bottom: 4px; }
+    .card-artist { color: var(--text-secondary); font-size: 14px; }
+    .play-btn { position: absolute; bottom: 80px; right: 16px; width: 60px; height: 60px; background: var(--accent); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 28px; opacity: 0; transition: all 0.3s; box-shadow: 0 8px 20px rgba(124,58,237,0.5); }
+    .card:hover .play-btn { opacity: 1; transform: translateY(-10px); }
+    .song-card { display: flex; align-items: center; gap: 16px; padding: 12px; border-radius: 12px; transition: 0.2s; background: rgba(255,255,255,0.03); position: relative; }
     .song-card:hover { background: rgba(124,58,237,0.15); }
     .song-cover { width: 60px; height: 60px; border-radius: 8px; object-fit: cover; }
-    .add-to-playlist {
-      position: absolute;
-      right: 12px;
-      background: rgba(124,58,237,0.8);
-      color: white;
-      border: none;
-      border-radius: 50%;
-      width: 36px;
-      height: 36px;
-      cursor: pointer;
-      opacity: 0;
-      transition: 0.2s;
-    }
+    .add-to-playlist { position: absolute; right: 12px; background: rgba(124,58,237,0.8); color: white; border: none; border-radius: 50%; width: 36px; height: 36px; cursor: pointer; opacity: 0; transition: 0.2s; }
     .song-card:hover .add-to-playlist { opacity: 1; }
-
-    #player {
-      height: 90px;
-      background: rgba(10,10,10,0.95);
-      backdrop-filter: blur(20px);
-      border-top: 1px solid #333;
-      display: flex;
-      align-items: center;
-      padding: 0 20px;
-      gap: 20px;
-      position: fixed;
-      bottom: 0; left: 0; right: 0;
-      z-index: 100;
-    }
-    #now-playing-info {
-      display: flex;
-      align-items: center;
-      gap: 16px;
-      flex: 1;
-    }
-    #now-playing-cover {
-      width: 60px; height: 60px; border-radius: 8px; object-fit: cover;
-    }
-    .controls {
-      display: flex;
-      align-items: center;
-      gap: 20px;
-    }
-    .control-btn {
-      background: none;
-      border: none;
-      color: white;
-      font-size: 28px;
-      cursor: pointer;
-    }
-    #progress-container {
-      flex: 2;
-      height: 6px;
-      background: #333;
-      border-radius: 3px;
-      overflow: hidden;
-      cursor: pointer;
-    }
-    #progress {
-      width: 0%;
-      height: 100%;
-      background: var(--accent);
-      transition: width 0.1s;
-    }
-
-    #lyrics-viewer {
-      margin-top: 40px;
-      background: rgba(26,26,26,0.8);
-      padding: 24px;
-      border-radius: 16px;
-      max-height: 400px;
-      overflow-y: auto;
-      white-space: pre-line;
-      line-height: 1.8;
-      font-size: 16px;
-      backdrop-filter: blur(10px);
-      display: none;
-    }
-
-    @media (max-width: 768px) {
-      .main { flex-direction: column; }
-      #sidebar { width: 100%; height: auto; max-height: 200px; }
-      .results-grid { grid-template-columns: 1fr; }
-    }
+    #player { height: 90px; background: rgba(10,10,10,0.95); backdrop-filter: blur(20px); border-top: 1px solid #333; display: flex; align-items: center; padding: 0 20px; gap: 20px; position: fixed; bottom: 0; left: 0; right: 0; z-index: 100; }
+    #now-playing-info { display: flex; align-items: center; gap: 16px; flex: 1; }
+    #now-playing-cover { width: 60px; height: 60px; border-radius: 8px; object-fit: cover; }
+    .controls { display: flex; align-items: center; gap: 20px; }
+    .control-btn { background: none; border: none; color: white; font-size: 28px; cursor: pointer; }
+    #progress-container { flex: 2; height: 6px; background: #333; border-radius: 3px; overflow: hidden; cursor: pointer; }
+    #progress { width: 0%; height: 100%; background: var(--accent); transition: width 0.1s; }
+    #lyrics-viewer { margin-top: 40px; background: rgba(26,26,26,0.8); padding: 24px; border-radius: 16px; max-height: 400px; overflow-y: auto; white-space: pre-line; line-height: 1.8; font-size: 16px; backdrop-filter: blur(10px); display: none; }
+    #ai-suggestions { margin-top: 20px; padding: 16px; background: rgba(0, 255, 136, 0.1); border: 1px solid rgba(0, 255, 136, 0.3); border-radius: 12px; }
+    .ai-tag { display: inline-block; background: var(--ai-glow); color: black; padding: 4px 12px; border-radius: 20px; font-size: 12px; font-weight: bold; margin: 4px; cursor: pointer; }
+    .spinner { border: 4px solid #333; border-top: 4px solid var(--accent); border-radius: 50%; width: 30px; height: 30px; animation: spin 1s linear infinite; margin: 40px auto; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    @media (max-width: 768px) { .main { flex-direction: column; } #sidebar { width: 100%; height: auto; max-height: 200px; } .results-grid { grid-template-columns: 1fr; } }
   </style>
 </head>
 <body>
-
   <header>
-    <div class="logo">Mini Tunes</div>
-    <div id="premium-btn">Go Premium</div>
+    <div class="logo">Mini Tunes <span style="font-size:14px; color:#00ff88;">AI</span></div>
+    <div id="ai-btn" onclick="toggleAI()">AI ON</div>
   </header>
-
   <div class="main">
     <div id="sidebar">
       <div class="nav-item active" data-view="search"><i class="fas fa-search"></i> Search</div>
       <div class="nav-item" data-view="home"><i class="fas fa-home"></i> Home</div>
-
       <div class="playlist-section">
         <div class="playlist-title">Your Playlists</div>
         <div id="playlists-list"></div>
@@ -287,14 +119,13 @@
         </div>
       </div>
     </div>
-
     <div id="content">
-      <input id="search" placeholder="Search for songs, albums, artists..." autofocus />
+      <input id="search" placeholder="Ask AI or search songs..." autofocus />
+      <div id="ai-suggestions" style="display:none;"></div>
       <div id="results" class="results-grid"></div>
       <div id="lyrics-viewer">Lyrics will appear here...</div>
     </div>
   </div>
-
   <div id="player" style="display:none;">
     <div id="now-playing-info">
       <img id="now-playing-cover" src="" />
@@ -320,35 +151,32 @@
   const progressContainer = document.getElementById("progress-container");
   const lyricsViewer = document.getElementById("lyrics-viewer");
   const results = document.getElementById("results");
+  const searchInput = document.getElementById("search");
+  const aiSuggestions = document.getElementById("ai-suggestions");
   const playlistsList = document.getElementById("playlists-list");
-
   let currentSongs = [];
   let currentIndex = 0;
   let isPlaying = false;
   let currentPlaylist = null;
+  let aiMode = false;
 
-  // === PLAYLISTS SYSTEM ===
+  // === FULL SONG PROXY (PERSONAL USE ONLY) ===
+  const FULL_SONG_PROXY = "https://corsproxy.io/?url=https://cdns-preview-";
+
+  // === PLAYLISTS ===
   let playlists = JSON.parse(localStorage.getItem("miniTunes_playlists") || "{}");
-
-  function savePlaylists() {
-    localStorage.setItem("miniTunes_playlists", JSON.stringify(playlists));
-  }
-
+  function savePlaylists() { localStorage.setItem("miniTunes_playlists", JSON.stringify(playlists)); }
   function renderPlaylists() {
     playlistsList.innerHTML = "";
     Object.keys(playlists).forEach(name => {
       const pl = playlists[name];
       const cover = pl.songs[0]?.album?.cover_medium || "https://via.placeholder.com/40?text=🎵";
-
       const div = document.createElement("div");
       div.className = "playlist-item";
       div.innerHTML = `
         <div style="display:flex; align-items:center; gap:12px; flex:1;">
           <img class="playlist-cover" src="${cover}" />
-          <div>
-            <strong>${name}</strong>
-            <small style="color:#aaa;">${pl.songs.length} songs</small>
-          </div>
+          <div><strong>${name}</strong><small style="color:#aaa;">${pl.songs.length} songs</small></div>
         </div>
         <div class="playlist-actions">
           <button onclick="event.stopPropagation(); sharePlaylist('${name}')"><i class="fas fa-share"></i></button>
@@ -359,113 +187,79 @@
       playlistsList.appendChild(div);
     });
   }
-
   function createPlaylist() {
     const name = prompt("Playlist name:");
     if (!name || playlists[name]) return alert("Invalid or duplicate name.");
     playlists[name] = { songs: [], id: Math.random().toString(36).substr(2, 9) };
-    savePlaylists();
-    renderPlaylists();
+    savePlaylists(); renderPlaylists();
   }
-
   function deletePlaylist(name) {
-    if (confirm(`Delete "${name}"?`)) {
-      delete playlists[name];
-      savePlaylists();
-      renderPlaylists();
-      if (currentPlaylist === name) {
-        results.innerHTML = "<p style='text-align:center; color:#aaa; margin-top:50px;'>Playlist deleted.</p>";
-        currentPlaylist = null;
-      }
-    }
+    if (confirm(`Delete "${name}"?`)) { delete playlists[name]; savePlaylists(); renderPlaylists(); }
   }
-
   function sharePlaylist(name) {
-    const pl = playlists[name];
-    if (!pl.id) pl.id = Math.random().toString(36).substr(2, 9);
+    const pl = playlists[name]; if (!pl.id) pl.id = Math.random().toString(36).substr(2, 9);
     savePlaylists();
     const url = `${location.origin}${location.pathname}?pl=${pl.id}`;
-    navigator.clipboard.writeText(url).then(() => {
-      alert(`Link copied!\n${url}`);
-    });
+    navigator.clipboard.writeText(url).then(() => alert(`Link copied!\n${url}`));
   }
-
   function openPlaylist(name) {
     currentPlaylist = name;
     const pl = playlists[name];
     currentSongs = pl.songs;
-    currentIndex = 0;
-
     results.innerHTML = `<h2 style="grid-column:1/-1; margin:20px 0;">${name} (${pl.songs.length} songs)</h2>`;
-    pl.songs.forEach((song, i) => {
-      const div = document.createElement("div");
-      div.className = "song-card";
-      div.innerHTML = `
-        <img class="song-cover" src="${song.album.cover_medium}" />
-        <div style="flex:1;">
-          <div><strong>${song.title}</strong></div>
-          <div style="color:#aaa; font-size:14px;">${song.artist.name}</div>
-        </div>
-      `;
-      div.onclick = () => playSongList(pl.songs, i);
-      results.appendChild(div);
-    });
+    pl.songs.forEach((song, i) => addSongCard(song, () => playSongList(pl.songs, i)));
   }
-
   function addToPlaylist(song) {
     const names = Object.keys(playlists);
     if (names.length === 0) return alert("Create a playlist first!");
     const name = prompt("Add to playlist:", names[0]);
-    if (name && playlists[name]) {
-      playlists[name].songs.push(song);
-      savePlaylists();
-      renderPlaylists();
-      alert(`Added to ${name}`);
-    }
+    if (name && playlists[name]) { playlists[name].songs.push(song); savePlaylists(); renderPlaylists(); alert(`Added to ${name}`); }
   }
 
-  // Load shared playlist from URL
-  function loadSharedPlaylist() {
-    const params = new URLSearchParams(location.search);
-    const id = params.get("pl");
-    if (!id) return;
-    for (const name in playlists) {
-      if (playlists[name].id === id) {
-        openPlaylist(name);
-        return;
-      }
-    }
-    results.innerHTML = "<p style='color:#f55;'>Playlist not found. Create one first!</p>";
+  // === AI MODE ===
+  function toggleAI() {
+    aiMode = !aiMode;
+    document.getElementById("ai-btn").textContent = aiMode ? "AI ON" : "AI OFF";
+    document.getElementById("ai-btn").style.background = aiMode ? "linear-gradient(135deg, #00ff88, #7c3aed)" : "linear-gradient(135deg, #7c3aed, #ec4899)";
+    searchInput.placeholder = aiMode ? "Ask AI: 'Play chill beats like Lofi Girl'" : "Search for songs, albums, artists...";
+    if (aiMode) aiSuggestions.style.display = "block"; else aiSuggestions.style.display = "none";
   }
 
-  // === SEARCH & PLAYBACK ===
-  async function searchDeezer(query) {
-    const res = await fetch(`https://api.deezer.com/search?q=${encodeURIComponent(query)}&limit=50`);
-    return (await res.json()).data || [];
-  }
+  // === SEARCH WITH DEBOUNCE ===
+  let searchTimeout;
+  searchInput.addEventListener("input", () => {
+    clearTimeout(searchTimeout);
+    const query = searchInput.value.trim();
+    if (!query) { results.innerHTML = "<p style='text-align:center; color:#aaa; margin-top:50px;'>Type to search...</p>"; return; }
+    results.innerHTML = `<div class="spinner"></div><p style="text-align:center; color:#aaa;">Loading...</p>`;
+    searchTimeout = setTimeout(() => performSearch(query), 600);
+  });
 
-  async function searchAlbums(query) {
-    const res = await fetch(`https://api.deezer.com/search/album?q=${encodeURIComponent(query)}&limit=20`);
-    return (await res.json()).data || [];
-  }
-
-  async function getAlbumTracks(albumId) {
-    const res = await fetch(`https://api.deezer.com/album/${albumId}/tracks`);
-    return (await res.json()).data || [];
-  }
-
-  document.getElementById("search").addEventListener("input", async (e) => {
-    const query = e.target.value.trim();
-    if (!query) {
-      results.innerHTML = "<p style='text-align:center; color:#aaa; margin-top:50px;'>Type to search...</p>";
+  async function performSearch(query) {
+    if (aiMode && query.toLowerCase().includes("like") || query.toLowerCase().includes("play")) {
+      await aiSearch(query);
       return;
     }
+    const [songs, albums] = await Promise.all([searchDeezer(query), searchAlbums(query)]).catch(() => [[], []]);
+    displayResults(songs, albums);
+  }
 
-    results.innerHTML = "<p style='text-align:center; margin-top:50px;'>Loading...</p>";
+  async function aiSearch(query) {
+    aiSuggestions.innerHTML = "<p><strong>AI Thinking...</strong></p>";
+    // Simulate AI (replace with real Grok API later)
+    await new Promise(r => setTimeout(r, 1000));
+    const suggestions = [
+      "lofi hip hop radio beats to relax/study to",
+      "Drake type beat 2025",
+      "sad indie playlist",
+      "gym hype trap"
+    ].filter(s => s.includes(query.split(" ").pop().toLowerCase()));
+    aiSuggestions.innerHTML = suggestions.map(s => `<span class="ai-tag" onclick="searchInput.value='${s}'; performSearch('${s}')">${s}</span>`).join("") || "<p>No AI suggestions yet. Try 'like Drake' or 'chill beats'</p>";
+    if (suggestions[0]) performSearch(suggestions[0]);
+  }
 
-    const [songs, albums] = await Promise.all([searchDeezer(query), searchAlbums(query)]);
+  function displayResults(songs, albums) {
     results.innerHTML = "";
-
     albums.slice(0, 6).forEach(album => {
       const div = document.createElement("div");
       div.className = "card";
@@ -479,43 +273,43 @@
       `;
       results.appendChild(div);
     });
+    songs.slice(0, 12).forEach(song => addSongCard(song, () => playSongList([song], 0)));
+  }
 
-    songs.slice(0, 12).forEach(song => {
-      const div = document.createElement("div");
-      div.className = "song-card";
-      div.innerHTML = `
-        <img class="song-cover" src="${song.album.cover_medium}" />
-        <div style="flex:1;">
-          <div><strong>${song.title}</strong></div>
-          <div style="color:#aaa; font-size:14px;">${song.artist.name}</div>
-        </div>
-        <button class="add-to-playlist" onclick="event.stopPropagation(); addToPlaylist(${JSON.stringify(song).split('"').join('&quot;')})">+</button>
-      `;
-      div.onclick = () => playSongList([song], 0);
-      results.appendChild(div);
-    });
-  });
+  function addSongCard(song, onclick) {
+    const div = document.createElement("div");
+    div.className = "song-card";
+    div.innerHTML = `
+      <img class="song-cover" src="${song.album.cover_medium}" />
+      <div style="flex:1;">
+        <div><strong>${song.title}</strong></div>
+        <div style="color:#aaa; font-size:14px;">${song.artist.name}</div>
+      </div>
+      <button class="add-to-playlist" onclick="event.stopPropagation(); addToPlaylist(${JSON.stringify(song).replace(/"/g, '&quot;')})">+</button>
+    `;
+    div.onclick = onclick;
+    results.appendChild(div);
+  }
 
+  // === FULL SONG STREAMING ===
+  async function searchDeezer(query) {
+    const res = await fetch(`https://api.deezer.com/search?q=${encodeURIComponent(query)}&limit=50`);
+    return (await res.json()).data || [];
+  }
+  async function searchAlbums(query) {
+    const res = await fetch(`https://api.deezer.com/search/album?q=${encodeURIComponent(query)}&limit=20`);
+    return (await res.json()).data || [];
+  }
+  async function getAlbumTracks(albumId) {
+    const res = await fetch(`https://api.deezer.com/album/${albumId}/tracks`);
+    return (await res.json()).data || [];
+  }
   async function loadAlbum(albumId) {
     const tracks = await getAlbumTracks(albumId);
     currentSongs = tracks;
     currentIndex = 0;
-
     results.innerHTML = `<h2 style="grid-column:1/-1; margin:20px 0;">Album Tracks</h2>`;
-    tracks.forEach((song, i) => {
-      const div = document.createElement("div");
-      div.className = "song-card";
-      div.innerHTML = `
-        <img class="song-cover" src="${song.album.cover_big}" />
-        <div style="flex:1;">
-          <div><strong>${song.title}</strong></div>
-          <div style="color:#aaa;">${song.artist.name}</div>
-        </div>
-        <button class="add-to-playlist" onclick="event.stopPropagation(); addToPlaylist(${JSON.stringify(song).split('"').join('&quot;')})">+</button>
-      `;
-      div.onclick = () => playSongList(tracks, i);
-      results.appendChild(div);
-    });
+    tracks.forEach((song, i) => addSongCard(song, () => playSongList(tracks, i)));
   }
 
   function playSongList(songs, index) {
@@ -527,13 +321,14 @@
   function playCurrentSong() {
     const song = currentSongs[currentIndex];
     if (!song) return;
-
-    const fullUrl = `https://cdns-preview-${String(song.id).slice(-1)}.deezer.com/stream/${song.id}-aac-128.mp3`;
+    // FULL SONG VIA PROXY
+    const fullUrl = `${FULL_SONG_PROXY}${String(song.id).slice(-1)}.deezer.com/stream/${song.id}-aac-128.mp3`;
     audio.src = fullUrl;
-    audio.play();
+    audio.play().catch(() => {
+      alert("Playback failed. Try another song or check network.");
+    });
     isPlaying = true;
     playPauseBtn.innerHTML = '<i class="fas fa-pause"></i>';
-
     document.getElementById("now-playing-title").textContent = song.title;
     document.getElementById("now-playing-artist").textContent = song.artist.name;
     document.getElementById("now-playing-cover").src = song.album.cover_medium;
@@ -542,30 +337,12 @@
     fetchLyrics(song.artist.name, song.title);
   }
 
-  playPauseBtn.onclick = () => {
-    if (isPlaying) audio.pause(); else audio.play();
-    isPlaying = !isPlaying;
-    playPauseBtn.innerHTML = isPlaying ? '<i class="fas fa-pause"></i>' : '<i class="fas fa-play"></i>';
-  };
-
-  document.getElementById("next-btn").onclick = () => {
-    currentIndex = (currentIndex + 1) % currentSongs.length;
-    playCurrentSong();
-  };
-
-  document.getElementById("prev-btn").onclick = () => {
-    currentIndex = currentIndex === 0 ? currentSongs.length - 1 : currentIndex - 1;
-    playCurrentSong();
-  };
-
-  audio.ontimeupdate = () => {
-    if (audio.duration) progress.style.width = (audio.currentTime / audio.duration * 100) + "%";
-  };
-
-  progressContainer.onclick = (e) => {
-    audio.currentTime = (e.offsetX / progressContainer.offsetWidth) * audio.duration;
-  };
-
+  // === CONTROLS ===
+  playPauseBtn.onclick = () => { isPlaying ? audio.pause() : audio.play(); isPlaying = !isPlaying; playPauseBtn.innerHTML = isPlaying ? '<i class="fas fa-pause"></i>' : '<i class="fas fa-play"></i>'; };
+  document.getElementById("next-btn").onclick = () => { currentIndex = (currentIndex + 1) % currentSongs.length; playCurrentSong(); };
+  document.getElementById("prev-btn").onclick = () => { currentIndex = currentIndex === 0 ? currentSongs.length - 1 : currentIndex - 1; playCurrentSong(); };
+  audio.ontimeupdate = () => { if (audio.duration) progress.style.width = (audio.currentTime / audio.duration * 100) + "%"; };
+  progressContainer.onclick = (e) => { audio.currentTime = (e.offsetX / progressContainer.offsetWidth) * audio.duration; };
   audio.onended = () => document.getElementById("next-btn").click();
 
   async function fetchLyrics(artist, title) {
@@ -574,15 +351,12 @@
       const res = await fetch(`https://api.lyrics.ovh/v1/${encodeURIComponent(artist)}/${encodeURIComponent(title)}`);
       const data = await res.json();
       lyricsViewer.innerHTML = data.lyrics ? data.lyrics.replace(/\n/g, "<br>") : "No lyrics found.";
-    } catch {
-      lyricsViewer.innerHTML = "Lyrics unavailable.";
-    }
+    } catch { lyricsViewer.innerHTML = "Lyrics unavailable."; }
   }
 
   // Init
   renderPlaylists();
-  loadSharedPlaylist();
-  results.innerHTML = "<p style='text-align:center; color:#aaa; margin-top:100px; font-size:18px;'>Search for songs • Full playback • Create & share playlists!</p>";
+  results.innerHTML = "<p style='text-align:center; color:#aaa; margin-top:100px; font-size:18px;'>Search for songs • Full playback • AI powered!</p>";
 </script>
 </body>
 </html>
