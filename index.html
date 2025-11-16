@@ -1,194 +1,346 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Mini Tunes</title>
-<style>
-body { margin:0; font-family: Arial,sans-serif; background:#0d0d0d; color:white; display:flex; height:100vh; overflow:hidden; }
-header { position:fixed; top:0; left:0; width:100%; height:60px; padding:15px 20px; background:#111; display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid #333; z-index:20; }
-#premium-btn { background:linear-gradient(90deg,#7d00ff,#0044ff); padding:8px 16px; border-radius:10px; cursor:pointer; }
-#premium-popup { position:fixed; top:50%; left:50%; transform:translate(-50%,-50%); background:#1c1c1c; padding:20px; border-radius:12px; width:320px; display:none; text-align:center; z-index:50; }
-#sidebar { width:200px; background:#111; padding-top:80px; overflow-y:auto; border-right:1px solid #333; display:flex; flex-direction:column; }
-.playlist-item { display:flex; align-items:center; padding:10px; cursor:pointer; gap:10px; transition:0.2s; border-bottom:1px solid #222; }
-.playlist-item:hover { background:#222; }
-.playlist-cover { width:40px; height:40px; object-fit:cover; border-radius:50%; }
-#content { flex:1; padding:80px 20px 20px 20px; overflow-y:auto; }
-.song-card { background:#1a1a1a; padding:12px; border-radius:12px; display:flex; gap:12px; align-items:center; transition:0.2s; cursor:pointer; margin-bottom:10px; justify-content:space-between; }
-.song-card:hover { background:#222; }
-.cover { width:60px; height:60px; object-fit:cover; border-radius:10px; }
-#player { position:sticky; bottom:0; background:#111; padding:15px; border-top:1px solid #333; display:none; }
-.skeleton { height:70px; background:linear-gradient(90deg,#202020,#2a2a2a,#202020); background-size:200% 100%; animation:loading 1.2s infinite; border-radius:12px; margin-bottom:12px; }
-@keyframes loading { 0% { background-position:200% 0; } 100% { background-position:-200% 0; } }
-button { cursor:pointer; background:#222; color:white; border:none; padding:4px 8px; border-radius:6px; margin-left:4px; }
-</style>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Mini Tunes</title>
+  <style>
+    body { margin:0; font-family: Arial, sans-serif; background:#0d0d0d; color:white; display:flex; height:100vh; overflow:hidden; }
+    header { position:fixed; top:0; left:0; width:100%; height:60px; padding:10px 20px; background:#111; display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid #333; z-index:20; }
+    #premium-btn { background:linear-gradient(90deg,#7d00ff,#0044ff); padding:6px 14px; border-radius:8px; cursor:pointer; }
+    #premium-popup { position:fixed; top:50%; left:50%; transform:translate(-50%,-50%); background:#1c1c1c; padding:20px; border-radius:12px; width:300px; display:none; text-align:center; z-index:50; }
+    #sidebar { width:200px; background:#111; padding-top:80px; overflow-y:auto; border-right:1px solid #333; display:flex; flex-direction:column; }
+    .playlist-item { display:flex; align-items:center; padding:10px; cursor:pointer; gap:10px; transition:0.2s; border-bottom:1px solid #222; }
+    .playlist-item:hover { background:#222; }
+    .playlist-cover { width:40px; height:40px; object-fit:cover; border-radius:50%; }
+    #content { flex:1; padding:80px 20px 20px 20px; overflow-y:auto; }
+    .card { background:#1a1a1a; padding:12px; border-radius:12px; display:flex; gap:12px; align-items:center; transition:0.2s; cursor:pointer; margin-bottom:10px; justify-content:space-between; }
+    .card:hover { background:#222; }
+    .cover { width:60px; height:60px; object-fit:cover; border-radius:10px; }
+    #player { position:sticky; bottom:0; background:#111; padding:15px; border-top:1px solid #333; display:none; }
+    button { cursor:pointer; background:#222; color:white; border:none; padding:4px 8px; border-radius:6px; margin-left:4px; }
+    #lyrics-viewer { margin-top:20px; background:#1a1a1a; padding:12px; border-radius:8px; white-space:pre-wrap; max-height:200px; overflow-y:auto; }
+  </style>
 </head>
 <body>
 
-<header>
-<h2>Mini Tunes</h2>
-<div id="premium-btn">Premium</div>
-</header>
+  <header>
+    <h2>Mini Tunes</h2>
+    <div id="premium-btn">Premium</div>
+  </header>
 
-<div id="sidebar"></div>
+  <div id="sidebar"></div>
 
-<div id="content">
-<input id="search" placeholder="Search for songs..." />
-<div id="results"></div>
-<div id="player">
-<p id="now-playing"></p>
-<audio id="audio" controls></audio>
-</div>
-<div id="lyrics-viewer" style="margin-top:20px;"></div>
-</div>
+  <div id="content">
+    <input id="search" placeholder="Search for songs or albums..." style="width:100%; padding:8px; border-radius:8px; border:none;"/>
+    <div id="results"></div>
+    <div id="player">
+      <p id="now-playing"></p>
+      <audio id="audio" controls></audio>
+    </div>
+    <div id="lyrics-viewer">Lyrics will appear here.</div>
+  </div>
 
-<div id="premium-popup">
-<h3>Mini Tunes Premium</h3>
-<p>Only <strong>$1/month</strong>! Unlock bonus skins, XP boosts, and more.</p>
-<button onclick="closePremium()">Close</button>
-</div>
+  <div id="premium-popup">
+    <h3>Mini Tunes Premium</h3>
+    <p>Only <strong>$1/month</strong>! Unlock bonus skins, XP boosts, and more.</p>
+    <button onclick="closePremium()">Close</button>
+  </div>
 
 <script>
-const premiumBtn = document.getElementById("premium-btn");
-const premiumPopup = document.getElementById("premium-popup");
-const searchInput = document.getElementById("search");
-const results = document.getElementById("results");
-const audio = document.getElementById("audio");
-const player = document.getElementById("player");
-const nowPlaying = document.getElementById("now-playing");
-const sidebar = document.getElementById("sidebar");
-const lyricsViewer = document.getElementById("lyrics-viewer");
+  // === UI Elements ===
+  const premiumBtn = document.getElementById("premium-btn");
+  const premiumPopup = document.getElementById("premium-popup");
+  const searchInput = document.getElementById("search");
+  const results = document.getElementById("results");
+  const audio = document.getElementById("audio");
+  const player = document.getElementById("player");
+  const nowPlaying = document.getElementById("now-playing");
+  const sidebar = document.getElementById("sidebar");
+  const lyricsViewer = document.getElementById("lyrics-viewer");
 
-premiumBtn.onclick = () => premiumPopup.style.display = "block";
-function closePremium() { premiumPopup.style.display = "none"; }
+  premiumBtn.onclick = () => premiumPopup.style.display = "block";
+  function closePremium() { premiumPopup.style.display = "none"; }
 
-/* Deezer API Search */
-async function searchDeezer(query) {
-  const url = `https://api.deezer.com/search?q=${encodeURIComponent(query)}&output=jsonp`;
-  return new Promise((resolve) => {
-    const callbackName = "dzcb_" + Math.random().toString(36).substring(2);
-    window[callbackName] = function (data) {
-      resolve(data.data || []);
-      delete window[callbackName];
-      script.remove();
-    };
-    const script = document.createElement("script");
-    script.src = `${url}&callback=${callbackName}`;
-    document.body.appendChild(script);
-  });
-}
-
-searchInput.addEventListener("input", async () => {
-  const q = searchInput.value.trim();
-  results.innerHTML = "";
-  if (!q) return;
-  for (let i = 0; i < 5; i++) { const sk = document.createElement("div"); sk.className = "skeleton"; results.appendChild(sk); }
-  const songs = await searchDeezer(q);
-  results.innerHTML = "";
-  songs.forEach(song => {
-    const div = document.createElement("div");
-    div.className = "song-card";
-    div.innerHTML = `
-      <div style='display:flex; align-items:center; gap:12px;'>
-        <img class="cover" src="${song.album.cover_medium}" alt="Album Cover" />
-        <div>
-          <strong>${song.title}</strong><br>
-          <small>${song.artist.name}</small>
-        </div>
-      </div>
-      <div>
-        <button>Add to Playlist</button>
-      </div>
-    `;
-    div.querySelector('button').addEventListener('click',(e)=>{e.stopPropagation(); addSongToPlaylist(song);});
-    div.onclick = () => playSong(song);
-    results.appendChild(div);
-  });
-});
-
-function playSong(song) {
-  audio.src = song.preview;
-  nowPlaying.innerText = `Now playing: ${song.title}`;
-  player.style.display = "block";
-  audio.play();
-  lyricsViewer.innerHTML = `Lyrics for ${song.title} (placeholder, implement API if desired)`;
-  let pts = Number(localStorage.getItem("points") || 0);
-  pts += 1;
-  localStorage.setItem("points", pts);
-}
-
-/* Playlist System */
-let playlists = JSON.parse(localStorage.getItem("miniPlaylists") || "{}");
-function savePlaylists() { localStorage.setItem("miniPlaylists", JSON.stringify(playlists)); }
-
-function renderSidebar() {
-  sidebar.innerHTML = '';
-  const newBtn = document.createElement('div');
-  newBtn.className='playlist-item';
-  newBtn.innerText='➕ New Playlist';
-  newBtn.onclick = () => {
-    const name=prompt('Enter new playlist name');
-    if(!name) return;
-    playlists[name]={songs:[],cover:null};
-    savePlaylists();
-    renderSidebar();
-  };
-  sidebar.appendChild(newBtn);
-
-  for(const name in playlists){
-    const div=document.createElement('div');
-    div.className='playlist-item';
-    const cover=playlists[name].cover||'https://via.placeholder.com/40x40.png?text=🎵';
-    div.innerHTML=`<img class='playlist-cover' src='${cover}'/><strong>${name}</strong>`;
-    const editBtn=document.createElement('button'); editBtn.innerText='Edit'; editBtn.onclick=(e)=>{ e.stopPropagation(); const newName=prompt('Rename playlist',name); if(newName){ playlists[newName]=playlists[name]; delete playlists[name]; savePlaylists(); renderSidebar(); } };
-    const delBtn=document.createElement('button'); delBtn.innerText='Delete'; delBtn.onclick=(e)=>{ e.stopPropagation(); if(confirm('Delete playlist?')){ delete playlists[name]; savePlaylists(); renderSidebar(); } };
-    div.appendChild(editBtn); div.appendChild(delBtn);
-    div.onclick=()=>loadPlaylist(name);
-    sidebar.appendChild(div);
+  // === Deezer Search Functions ===
+  async function jsonpDeezer(url) {
+    return new Promise(resolve => {
+      const cb = "dzcb_" + Math.random().toString(36).substring(2);
+      window[cb] = data => { resolve(data); delete window[cb]; script.remove(); };
+      const script = document.createElement("script");
+      script.src = url + "&callback=" + cb;
+      document.body.appendChild(script);
+    });
   }
-}
 
-function loadPlaylist(name){
-  results.innerHTML='';
-  playlists[name].songs.forEach(song=>{
-    const div=document.createElement('div');
-    div.className='song-card';
-    div.innerHTML=`
-      <img class='cover' src='${song.album.cover_medium}' />
-      <div><strong>${song.title}</strong><br><small>${song.artist.name}</small></div>
-    `;
-    div.onclick=()=>playSong(song);
-    results.appendChild(div);
+  async function searchDeezer(query) {
+    const albums = await jsonpDeezer(`https://api.deezer.com/search/album?q=${encodeURIComponent(query)}&output=jsonp`);
+    const songs = await jsonpDeezer(`https://api.deezer.com/search?q=${encodeURIComponent(query)}&output=jsonp`);
+    return { albums: albums.data || [], songs: songs.data || [] };
+  }
+
+  searchInput.addEventListener("input", async () => {
+    const q = searchInput.value.trim();
+    results.innerHTML = "";
+    if (!q) return;
+    results.innerHTML = "<p>Loading...</p>";
+    const { albums, songs } = await searchDeezer(q);
+    results.innerHTML = "";
+
+    // Show albums
+    for (const album of albums) {
+      const div = document.createElement("div");
+      div.className = "card";
+      div.innerHTML = `
+        <div style='display:flex; align-items:center; gap:12px;'>
+          <img class="cover" src="${album.cover_medium}" />
+          <div>
+            <strong>${album.title}</strong><br/>
+            <small>${album.artist.name}</small>
+          </div>
+        </div>
+        <button>View Album</button>
+      `;
+      div.querySelector("button").onclick = e => {
+        e.stopPropagation();
+        loadAlbum(album.id);
+      };
+      results.appendChild(div);
+    }
+
+    // Show songs
+    for (const song of songs) {
+      const div = document.createElement("div");
+      div.className = "card";
+      div.innerHTML = `
+        <div style='display:flex; align-items:center; gap:12px;'>
+          <img class="cover" src="${song.album.cover_medium}" />
+          <div>
+            <strong>${song.title}</strong><br/>
+            <small>${song.artist.name}</small>
+          </div>
+        </div>
+        <div>
+          <button class="btn-add">Add</button>
+          <button class="btn-lyrics">Lyrics</button>
+        </div>
+      `;
+      div.querySelector(".btn-add").onclick = e => {
+        e.stopPropagation();
+        addSongToPlaylist(song);
+      };
+      div.querySelector(".btn-lyrics").onclick = e => {
+        e.stopPropagation();
+        fetchLyrics(song.artist.name, song.title);
+      };
+      div.onclick = () => playSong(song);
+      results.appendChild(div);
+    }
   });
-}
 
-function addSongToPlaylist(song){
-  const playlistNames=Object.keys(playlists);
-  if(playlistNames.length===0){ alert('No playlists, create one first'); return; }
-  const plName=prompt('Add to which playlist?',playlistNames[0]);
-  if(!plName || !playlists[plName]) return;
-  playlists[plName].songs.push(song);
-  savePlaylists();
-  alert(`Added ${song.title} to ${plName}`);
-}
+  async function loadAlbum(albumId) {
+    results.innerHTML = "<p>Loading album...</p>";
+    const albumData = await jsonpDeezer(`https://api.deezer.com/album/${albumId}&output=jsonp`);
+    results.innerHTML = "";
+    for (const song of albumData.data) {
+      const div = document.createElement("div");
+      div.className = "card";
+      div.innerHTML = `
+        <img class="cover" src="${song.album.cover_medium}" />
+        <div><strong>${song.title}</strong><br/><small>${song.artist.name}</small></div>
+        <div>
+          <button class="btn-add">Add</button>
+          <button class="btn-lyrics">Lyrics</button>
+        </div>
+      `;
+      div.querySelector(".btn-add").onclick = e => { e.stopPropagation(); addSongToPlaylist(song); };
+      div.querySelector(".btn-lyrics").onclick = e => { e.stopPropagation(); fetchLyrics(song.artist.name, song.title); };
+      div.onclick = () => playSong(song);
+      results.appendChild(div);
+    }
+  }
 
-/* Playlist Sharing */
-function generatePlaylistID() { return Math.random().toString(36).substring(2,10); }
-function exportPlaylist(name) {
-  if (!playlists[name]) return alert("Playlist not found");
-  if (!playlists[name].id) { playlists[name].id = generatePlaylistID(); savePlaylists(); }
-  const shareURL = `${location.origin}${location.pathname}?playlist=${playlists[name].id}`;
-  navigator.clipboard.writeText(shareURL);
-  alert("Playlist link copied to clipboard!\n" + shareURL);
-}
-function loadPlaylistFromURL() {
-  const params = new URLSearchParams(location.search);
-  const id = params.get("playlist");
-  if(!id) return;
-  for(const name in playlists){ if(playlists[name].id===id){ alert(`Loaded shared playlist: ${name}`); loadPlaylist(name); } }
-}
-loadPlaylistFromURL();
-renderSidebar();
+  // === Lyrics Fetching === via lyrics.ovh
+  async function fetchLyrics(artist, title) {
+    lyricsViewer.innerText = "Loading lyrics...";
+    try {
+      const res = await fetch(`https://api.lyrics.ovh/v1/${encodeURIComponent(artist)}/${encodeURIComponent(title)}`);
+      const json = await res.json();
+      if (json.lyrics) {
+        lyricsViewer.innerText = json.lyrics;
+      } else {
+        lyricsViewer.innerText = "No lyrics found.";
+      }
+    } catch (e) {
+      lyricsViewer.innerText = "Error fetching lyrics.";
+    }
+  }
+
+  // === Player / Playlist System ===
+  let playlists = JSON.parse(localStorage.getItem("miniPlaylists") || "{}");
+  let currentPlaylist = null;
+  let currentIndex = 0;
+
+  function savePlaylists() {
+    localStorage.setItem("miniPlaylists", JSON.stringify(playlists));
+  }
+
+  function renderSidebar() {
+    sidebar.innerHTML = "";
+    const newBtn = document.createElement("div");
+    newBtn.className = "playlist-item";
+    newBtn.innerText = "➕ New Playlist";
+    newBtn.onclick = () => {
+      const name = prompt("Enter new playlist name");
+      if (!name) return;
+      playlists[name] = { songs: [], cover: null, id: null };
+      savePlaylists();
+      renderSidebar();
+    };
+    sidebar.appendChild(newBtn);
+
+    for (const name in playlists) {
+      const div = document.createElement("div");
+      div.className = "playlist-item";
+      const cover = playlists[name].cover || "https://via.placeholder.com/40x40.png?text=🎵";
+      div.innerHTML = `<img class='playlist-cover' src='${cover}'/><strong>${name}</strong>`;
+      const editBtn = document.createElement("button");
+      editBtn.innerText = "Edit";
+      editBtn.onclick = e => {
+        e.stopPropagation();
+        const newName = prompt("Rename playlist", name);
+        if (newName) {
+          playlists[newName] = playlists[name];
+          delete playlists[name];
+          savePlaylists();
+          renderSidebar();
+        }
+      };
+      const delBtn = document.createElement("button");
+      delBtn.innerText = "Delete";
+      delBtn.onclick = e => {
+        e.stopPropagation();
+        if (confirm("Delete playlist?")) {
+          delete playlists[name];
+          savePlaylists();
+          renderSidebar();
+        }
+      };
+      div.appendChild(editBtn);
+      div.appendChild(delBtn);
+
+      div.onclick = () => {
+        loadPlaylist(name);
+        currentPlaylist = name;
+        currentIndex = 0;
+      };
+
+      sidebar.appendChild(div);
+    }
+  }
+
+  function loadPlaylist(name) {
+    results.innerHTML = "";
+    const pl = playlists[name];
+    pl.songs.forEach((song, idx) => {
+      const div = document.createElement("div");
+      div.className = "card";
+      div.innerHTML = `
+        <img class="cover" src="${song.album.cover_medium}" />
+        <div><strong>${song.title}</strong><br/><small>${song.artist.name}</small></div>
+        <div>
+          <button class="btn-lyrics">Lyrics</button>
+        </div>
+      `;
+      div.querySelector(".btn-lyrics").onclick = e => { e.stopPropagation(); fetchLyrics(song.artist.name, song.title); };
+      div.onclick = () => playFromPlaylist(name, idx);
+      results.appendChild(div);
+    });
+  }
+
+  function addSongToPlaylist(song) {
+    const names = Object.keys(playlists);
+    if (names.length === 0) {
+      alert("No playlists yet — create one first");
+      return;
+    }
+    const plName = prompt("Add to which playlist?", names[0]);
+    if (!plName || !playlists[plName]) return;
+    playlists[plName].songs.push(song);
+    savePlaylists();
+    alert(`Added "${song.title}" to ${plName}`);
+  }
+
+  function playSong(song) {
+    audio.src = song.preview;
+    nowPlaying.innerText = `Now playing: ${song.title} — ${song.artist.name}`;
+    player.style.display = "block";
+    audio.play();
+    // Clear any loaded playlist play
+    currentPlaylist = null;
+    currentIndex = 0;
+  }
+
+  function playFromPlaylist(plName, index) {
+    const pl = playlists[plName];
+    if (!pl || !pl.songs[index]) return;
+    currentPlaylist = plName;
+    currentIndex = index;
+    const song = pl.songs[index];
+    audio.src = song.preview;
+    nowPlaying.innerText = `Now playing: ${song.title} — ${song.artist.name}`;
+    player.style.display = "block";
+    audio.play();
+  }
+
+  // Auto next song when one ends
+  audio.addEventListener("ended", () => {
+    if (currentPlaylist) {
+      const pl = playlists[currentPlaylist];
+      const next = currentIndex + 1;
+      if (next < pl.songs.length) {
+        playFromPlaylist(currentPlaylist, next);
+      } else {
+        // Optionally loop: set currentIndex = 0; playFromPlaylist(...)
+        // For now, just stop after last
+        currentPlaylist = null;
+      }
+    }
+  });
+
+  // Playlist sharing (ID)
+  function generatePlaylistID() {
+    return Math.random().toString(36).substring(2, 10);
+  }
+  function exportPlaylist(name) {
+    if (!playlists[name]) return alert("Playlist not found");
+    if (!playlists[name].id) {
+      playlists[name].id = generatePlaylistID();
+      savePlaylists();
+    }
+    const shareURL = `${location.origin}${location.pathname}?playlist=${playlists[name].id}`;
+    navigator.clipboard.writeText(shareURL);
+    alert("Playlist link copied to clipboard!\n" + shareURL);
+  }
+  function loadPlaylistFromURL() {
+    const params = new URLSearchParams(location.search);
+    const id = params.get("playlist");
+    if (!id) return;
+    for (const name in playlists) {
+      if (playlists[name].id === id) {
+        loadPlaylist(name);
+        currentPlaylist = name;
+        currentIndex = 0;
+        break;
+      }
+    }
+  }
+
+  // Initial render
+  renderSidebar();
+  loadPlaylistFromURL();
+
 </script>
+
 </body>
 </html>
