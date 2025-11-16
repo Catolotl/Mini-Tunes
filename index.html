@@ -79,64 +79,85 @@
     return { albums: albums.data || [], songs: songs.data || [] };
   }
 
-  searchInput.addEventListener("input", async () => {
-    const q = searchInput.value.trim();
-    results.innerHTML = "";
-    if (!q) return;
-    results.innerHTML = "<p>Loading...</p>";
-    const { albums, songs } = await searchDeezer(q);
-    results.innerHTML = "";
+ searchInput.addEventListener("input", async () => {
+  const q = searchInput.value.trim();
+  results.innerHTML = "";
+  if (!q) return;
+  results.innerHTML = "<p>Loading...</p>";
 
-    // Show albums
-    for (const album of albums) {
-      const div = document.createElement("div");
-      div.className = "card";
-      div.innerHTML = `
-        <div style='display:flex; align-items:center; gap:12px;'>
-          <img class="cover" src="${album.cover_medium}" />
-          <div>
-            <strong>${album.title}</strong><br/>
-            <small>${album.artist.name}</small>
-          </div>
-        </div>
-        <button>View Album</button>
-      `;
-      div.querySelector("button").onclick = e => {
-        e.stopPropagation();
-        loadAlbum(album.id);
-      };
-      results.appendChild(div);
-    }
+  const { albums, songs } = await searchDeezer(q);
+  results.innerHTML = "";
 
-    // Show songs
-    for (const song of songs) {
-      const div = document.createElement("div");
-      div.className = "card";
-      div.innerHTML = `
-        <div style='display:flex; align-items:center; gap:12px;'>
-          <img class="cover" src="${song.album.cover_medium}" />
-          <div>
-            <strong>${song.title}</strong><br/>
-            <small>${song.artist.name}</small>
-          </div>
-        </div>
+  // Show top 2-4 albums only
+  const topAlbums = albums.slice(0, 4);
+  topAlbums.forEach(album => {
+    const div = document.createElement("div");
+    div.className = "card";
+    div.innerHTML = `
+      <div style='display:flex; align-items:center; gap:12px;'>
+        <img class="cover" src="${album.cover_medium}" />
         <div>
-          <button class="btn-add">Add</button>
-          <button class="btn-lyrics">Lyrics</button>
+          <strong>${album.title}</strong><br/>
+          <small>${album.artist.name}</small>
         </div>
-      `;
-      div.querySelector(".btn-add").onclick = e => {
-        e.stopPropagation();
-        addSongToPlaylist(song);
-      };
-      div.querySelector(".btn-lyrics").onclick = e => {
-        e.stopPropagation();
-        fetchLyrics(song.artist.name, song.title);
-      };
-      div.onclick = () => playSong(song);
-      results.appendChild(div);
-    }
+      </div>
+      <button>View Album</button>
+    `;
+    div.querySelector("button").onclick = e => {
+      e.stopPropagation();
+      loadAlbum(album.id); // Load all songs in album
+    };
+    results.appendChild(div);
   });
+
+  // Show top 4 songs only
+  const topSongs = songs.slice(0, 4);
+  topSongs.forEach(song => {
+    const div = document.createElement("div");
+    div.className = "card";
+    div.innerHTML = `
+      <div style='display:flex; align-items:center; gap:12px;'>
+        <img class="cover" src="${song.album.cover_medium}" />
+        <div>
+          <strong>${song.title}</strong><br/>
+          <small>${song.artist.name}</small>
+        </div>
+      </div>
+      <div>
+        <button class="btn-add">Add</button>
+        <button class="btn-lyrics">Lyrics</button>
+      </div>
+    `;
+    div.querySelector(".btn-add").onclick = e => { e.stopPropagation(); addSongToPlaylist(song); };
+    div.querySelector(".btn-lyrics").onclick = e => { e.stopPropagation(); fetchLyrics(song.artist.name, song.title); };
+    div.onclick = () => playSong(song);
+    results.appendChild(div);
+  });
+});
+
+// Load full album songs
+async function loadAlbum(albumId) {
+  results.innerHTML = "<p>Loading album songs...</p>";
+  const albumData = await jsonpDeezer(`https://api.deezer.com/album/${albumId}&output=jsonp`);
+  results.innerHTML = "";
+  albumData.data.forEach(song => {
+    const div = document.createElement("div");
+    div.className = "card";
+    div.innerHTML = `
+      <img class="cover" src="${song.album.cover_medium}" />
+      <div><strong>${song.title}</strong><br/><small>${song.artist.name}</small></div>
+      <div>
+        <button class="btn-add">Add</button>
+        <button class="btn-lyrics">Lyrics</button>
+      </div>
+    `;
+    div.querySelector(".btn-add").onclick = e => { e.stopPropagation(); addSongToPlaylist(song); };
+    div.querySelector(".btn-lyrics").onclick = e => { e.stopPropagation(); fetchLyrics(song.artist.name, song.title); };
+    div.onclick = () => playSong(song);
+    results.appendChild(div);
+  });
+}
+
 
   async function loadAlbum(albumId) {
     results.innerHTML = "<p>Loading album...</p>";
