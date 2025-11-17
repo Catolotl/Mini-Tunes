@@ -25,7 +25,6 @@
     height:100vh;
     overflow:hidden;
   }
-
   /* ---------- 3×2 GRID CARD (recent & playlists) ---------- */
   .grid-container {
     display: grid;
@@ -59,7 +58,6 @@
     overflow: hidden;
     text-overflow: ellipsis;
   }
-
   /* ---------- PLAYLIST HEADER (Name + Share + Delete) ---------- */
   .playlist-header {
     display: flex;
@@ -89,7 +87,6 @@
     background: var(--accent);
     color: #fff;
   }
-
   /* Header */
   header {
     position:fixed;
@@ -139,7 +136,6 @@
     width:100%; height:100%; object-fit:cover;
   }
   #profile-btn:hover { background:#444; }
-
   /* Profile Popup */
   #profile-popup {
     position:fixed; top:80px; right:24px;
@@ -174,7 +170,6 @@
     width:100%; height:80px; background:var(--card); border:none; border-radius:8px; color:var(--text); padding:8px; margin-top:8px; resize:none;
   }
   #bio-input:focus { outline:none; box-shadow:0 0 0 2px var(--accent); }
-
   /* Sidebar */
   #sidebar {
     width:240px;
@@ -203,7 +198,6 @@
   }
   .nav-item svg { width:20px; height:20px; fill: #aaa; }
   .nav-item.active svg { fill: var(--accent); }
-
   .playlists-header {
     padding:16px 16px 8px;
     font-size:0.9em;
@@ -229,16 +223,17 @@
     margin-left:auto;
     display:flex;
     gap:6px;
-    opacity:0;
+    opacity:1;
     transition:0.2s;
-    position:absolute;
-    right:16px;
-    background:var(--surface);
-    padding:0 4px;
+    position:static;
+    background:none;
+    padding:0;
     border-radius:8px;
   }
-  .playlist-item:hover .playlist-actions { opacity:1; }
-
+  .playlist-actions button {
+    font-size: 0.75rem;
+    padding: 4px 8px;
+  }
   /* Content */
   #content {
     flex:1;
@@ -247,7 +242,6 @@
   }
   .section { margin-bottom:36px; }
   .section h3 { margin:0 0 16px; font-size:1.3em; font-weight:600; color:#eee; }
-
   .song-card {
     background:var(--card);
     padding:16px;
@@ -267,7 +261,6 @@
     box-shadow:0 6px 12px rgba(0,0,0,0.3);
   }
   .cover { width:64px; height:64px; object-fit:cover; border-radius:12px; box-shadow:0 2px 4px rgba(0,0,0,0.3); }
-
   /* Player */
   #player {
     position:sticky;
@@ -281,7 +274,6 @@
     backdrop-filter: blur(10px);
   }
   #now-playing { margin:0 0 8px; font-weight:500; font-size:0.95em; }
-
   /* Inputs */
   input, button, textarea { font-family: inherit; }
   input {
@@ -308,7 +300,6 @@
     font-weight:500;
   }
   button:hover { background:#333; }
-
   /* Skeleton */
   .skeleton {
     height:78px;
@@ -319,7 +310,6 @@
     margin-bottom:14px;
   }
   @keyframes loading { 0% { background-position:200% 0; } 100% { background-position:-200% 0; } }
-
   /* Welcome */
   #welcome {
     font-size:1.8em;
@@ -329,9 +319,8 @@
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
   }
-
   /* Premium Popup */
-  #premium-popup, #profile-popup {
+  #premium-popup {
     position:fixed;
     background:var(--card);
     padding:24px;
@@ -339,21 +328,88 @@
     box-shadow:0 12px 32px rgba(0,0,0,0.5);
     z-index:100;
     border:1px solid var(--border);
-  }
-  #premium-popup {
     top:50%; left:50%;
     transform:translate(-50%,-50%);
     width:340px;
     text-align:center;
     display:none;
   }
-
   #search-results-title {
     margin: 20px 0 16px;
     font-size: 1.3em;
     font-weight: 600;
     color: #eee;
     display: none;
+  }
+
+  /* ===== CUSTOM MODAL DIALOGS ===== */
+  .modal-overlay {
+    position: fixed;
+    top: 0; left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0,0,0,0.7);
+    display: none;
+    align-items: center;
+    justify-content: center;
+    z-index: 200;
+  }
+  .modal-overlay.active {
+    display: flex;
+  }
+  .modal-box {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 24px;
+    width: 90%;
+    max-width: 400px;
+    box-shadow: 0 12px 32px rgba(0,0,0,0.6);
+  }
+  .modal-box h3 {
+    margin: 0 0 12px;
+    font-size: 1.2em;
+  }
+  .modal-box p {
+    margin: 0 0 20px;
+    color: #aaa;
+  }
+  .modal-box input {
+    margin-bottom: 16px;
+  }
+  .modal-buttons {
+    display: flex;
+    gap: 10px;
+    justify-content: flex-end;
+  }
+  .modal-buttons button {
+    margin: 0;
+    padding: 10px 20px;
+  }
+  .modal-buttons .primary {
+    background: var(--accent);
+    color: #fff;
+  }
+  .modal-buttons .primary:hover {
+    background: #6a00d8;
+  }
+
+  /* Select Playlist Modal */
+  .playlist-select-list {
+    max-height: 200px;
+    overflow-y: auto;
+    margin-bottom: 16px;
+  }
+  .playlist-select-item {
+    background: var(--hover);
+    padding: 12px;
+    border-radius: 8px;
+    margin-bottom: 8px;
+    cursor: pointer;
+    transition: 0.2s;
+  }
+  .playlist-select-item:hover {
+    background: #333;
   }
 </style>
 </head>
@@ -405,7 +461,6 @@
       <div id="your-playlists"></div>
     </div>
   </div>
-
   <div id="search-page" style="display:none;">
     <input id="search" placeholder="Search for songs, artists, albums..." />
     <div id="popular-section">
@@ -415,12 +470,10 @@
     <h3 id="search-results-title">Search Results</h3>
     <div id="results"></div>
   </div>
-
   <div id="player">
     <p id="now-playing">Now playing...</p>
     <audio id="audio" controls></audio>
   </div>
-
   <div id="lyrics-viewer" style="margin-top:24px; padding:16px; background:var(--card); border-radius:12px; display:none;">
     <h4>Lyrics</h4>
     <p id="lyrics-text">Loading lyrics...</p>
@@ -435,7 +488,169 @@
 
 <input type="file" id="upload-playlist-cover" accept="image/*" style="display:none;">
 
+<!-- Custom Modal Dialogs -->
+<div id="input-modal" class="modal-overlay">
+  <div class="modal-box">
+    <h3 id="input-modal-title">Input</h3>
+    <p id="input-modal-message"></p>
+    <input type="text" id="input-modal-input" />
+    <div class="modal-buttons">
+      <button id="input-modal-cancel">Cancel</button>
+      <button id="input-modal-ok" class="primary">OK</button>
+    </div>
+  </div>
+</div>
+
+<div id="alert-modal" class="modal-overlay">
+  <div class="modal-box">
+    <h3 id="alert-modal-title">Notice</h3>
+    <p id="alert-modal-message"></p>
+    <div class="modal-buttons">
+      <button id="alert-modal-ok" class="primary">OK</button>
+    </div>
+  </div>
+</div>
+
+<div id="confirm-modal" class="modal-overlay">
+  <div class="modal-box">
+    <h3 id="confirm-modal-title">Confirm</h3>
+    <p id="confirm-modal-message"></p>
+    <div class="modal-buttons">
+      <button id="confirm-modal-cancel">Cancel</button>
+      <button id="confirm-modal-ok" class="primary">OK</button>
+    </div>
+  </div>
+</div>
+
+<div id="playlist-select-modal" class="modal-overlay">
+  <div class="modal-box">
+    <h3>Add to Playlist</h3>
+    <div class="playlist-select-list" id="playlist-select-list"></div>
+    <div class="modal-buttons">
+      <button id="playlist-select-cancel">Cancel</button>
+    </div>
+  </div>
+</div>
+
 <script>
+  // ===== CUSTOM DIALOG FUNCTIONS =====
+  function showInputDialog(title, message, defaultValue = '') {
+    return new Promise((resolve) => {
+      const modal = document.getElementById('input-modal');
+      const titleEl = document.getElementById('input-modal-title');
+      const messageEl = document.getElementById('input-modal-message');
+      const inputEl = document.getElementById('input-modal-input');
+      const okBtn = document.getElementById('input-modal-ok');
+      const cancelBtn = document.getElementById('input-modal-cancel');
+
+      titleEl.textContent = title;
+      messageEl.textContent = message;
+      inputEl.value = defaultValue;
+      modal.classList.add('active');
+      inputEl.focus();
+
+      const cleanup = () => {
+        modal.classList.remove('active');
+        okBtn.onclick = null;
+        cancelBtn.onclick = null;
+        inputEl.onkeydown = null;
+      };
+
+      okBtn.onclick = () => {
+        const value = inputEl.value.trim();
+        cleanup();
+        resolve(value || null);
+      };
+
+      cancelBtn.onclick = () => {
+        cleanup();
+        resolve(null);
+      };
+
+      inputEl.onkeydown = (e) => {
+        if (e.key === 'Enter') okBtn.click();
+        if (e.key === 'Escape') cancelBtn.click();
+      };
+    });
+  }
+
+  function showAlert(title, message) {
+    return new Promise((resolve) => {
+      const modal = document.getElementById('alert-modal');
+      const titleEl = document.getElementById('alert-modal-title');
+      const messageEl = document.getElementById('alert-modal-message');
+      const okBtn = document.getElementById('alert-modal-ok');
+
+      titleEl.textContent = title;
+      messageEl.textContent = message;
+      modal.classList.add('active');
+
+      okBtn.onclick = () => {
+        modal.classList.remove('active');
+        okBtn.onclick = null;
+        resolve();
+      };
+    });
+  }
+
+  function showConfirm(title, message) {
+    return new Promise((resolve) => {
+      const modal = document.getElementById('confirm-modal');
+      const titleEl = document.getElementById('confirm-modal-title');
+      const messageEl = document.getElementById('confirm-modal-message');
+      const okBtn = document.getElementById('confirm-modal-ok');
+      const cancelBtn = document.getElementById('confirm-modal-cancel');
+
+      titleEl.textContent = title;
+      messageEl.textContent = message;
+      modal.classList.add('active');
+
+      const cleanup = () => {
+        modal.classList.remove('active');
+        okBtn.onclick = null;
+        cancelBtn.onclick = null;
+      };
+
+      okBtn.onclick = () => {
+        cleanup();
+        resolve(true);
+      };
+
+      cancelBtn.onclick = () => {
+        cleanup();
+        resolve(false);
+      };
+    });
+  }
+
+  function showPlaylistSelect(playlists) {
+    return new Promise((resolve) => {
+      const modal = document.getElementById('playlist-select-modal');
+      const listEl = document.getElementById('playlist-select-list');
+      const cancelBtn = document.getElementById('playlist-select-cancel');
+
+      listEl.innerHTML = '';
+      Object.keys(playlists).forEach(name => {
+        const item = document.createElement('div');
+        item.className = 'playlist-select-item';
+        item.textContent = name;
+        item.onclick = () => {
+          modal.classList.remove('active');
+          resolve(name);
+        };
+        listEl.appendChild(item);
+      });
+
+      modal.classList.add('active');
+
+      cancelBtn.onclick = () => {
+        modal.classList.remove('active');
+        cancelBtn.onclick = null;
+        resolve(null);
+      };
+    });
+  }
+
   // DOM Elements
   const premiumBtn = document.getElementById("premium-btn");
   const premiumPopup = document.getElementById("premium-popup");
@@ -475,7 +690,7 @@
   let userBio = localStorage.getItem("userBio") || "";
   let recentlyPlayed = JSON.parse(localStorage.getItem("recentlyPlayed") || "[]");
   let playlists = JSON.parse(localStorage.getItem("miniPlaylists") || "{}");
-  let currentPlaylist = null; // { name, index }
+  let currentPlaylist = null;
   let queueFromPlaylist = false;
 
   // Generate ID
@@ -535,8 +750,8 @@
   });
 
   // Change name
-  changeNameBtn.onclick = () => {
-    const newName = prompt("Enter your name:", userName);
+  changeNameBtn.onclick = async () => {
+    const newName = await showInputDialog('Change Name', 'Enter your name:', userName);
     if (newName && newName.trim()) {
       localStorage.setItem("userName", newName.trim());
       updateUserProfile();
@@ -687,14 +902,11 @@
     nowPlaying.innerText = `Now playing: ${song.title} — ${song.artist?.name || ''}`;
     player.style.display = "block";
     audio.play().catch(() => {});
-
     // Update recently played (max 6)
     recentlyPlayed = recentlyPlayed.filter(s => s.id !== song.id);
     recentlyPlayed.push(song);
     localStorage.setItem("recentlyPlayed", JSON.stringify(recentlyPlayed.slice(-6)));
-
     if (homePage.style.display === 'block') loadHomeContent();
-
     // Queue logic
     if (fromPlaylist && currentPlaylist) {
       queueFromPlaylist = true;
@@ -732,52 +944,48 @@
   }
 
   function renderSidebarPlaylists() {
-  const playlistItems = sidebar.querySelectorAll('.playlist-item');
-  playlistItems.forEach(item => item.remove());
-
-  // + New Playlist
-  const newBtn = document.createElement('div');
-  newBtn.className='playlist-item';
-  newBtn.innerHTML='<strong style="color:var(--accent);">+ New Playlist</strong>';
-  newBtn.onclick = () => {
-    const name = prompt('Playlist name:');
-    if (!name?.trim()) return;
-    const id = generateId();
-    playlists[name] = { id, songs: [], cover: null };
-    savePlaylists();
-    renderSidebarPlaylists();
-    loadHomeContent();
-  };
-  sidebar.appendChild(newBtn);
-
-  // Existing Playlists
-  for (const name in playlists) {
-    const pl = playlists[name];
-    const cover = pl.cover || 'https://via.placeholder.com/42x42.png?text=♪';
-    const div = document.createElement('div');
-    div.className='playlist-item';
-
-    // Always show the action buttons (no hover)
-    div.innerHTML = `
-      <img class='playlist-cover' src='${cover}'/>
-      <strong style="flex:1;">${name}</strong>
-      <div class="playlist-actions" style="opacity:1; position:static; background:none; padding:0;">
-        <button onclick="editPlaylist('${name}')">Edit</button>
-        <button onclick="uploadPlaylistCover('${name}')">Cover</button>
-        <button onclick="sharePlaylist('${pl.id}')">Share</button>
-        <button onclick="deletePlaylist('${name}')">Delete</button>
-      </div>
-    `;
-
-    // Click on cover or name → open playlist
-    div.onclick = (e) => {
-      if (!e.target.closest('.playlist-actions')) loadPlaylist(name);
+    const playlistItems = sidebar.querySelectorAll('.playlist-item');
+    playlistItems.forEach(item => item.remove());
+    // + New Playlist
+    const newBtn = document.createElement('div');
+    newBtn.className='playlist-item';
+    newBtn.innerHTML='<strong style="color:var(--accent);">+ New Playlist</strong>';
+    newBtn.onclick = async () => {
+      const name = await showInputDialog('New Playlist', 'Enter playlist name:');
+      if (!name?.trim()) return;
+      const id = generateId();
+      playlists[name] = { id, songs: [], cover: null };
+      savePlaylists();
+      renderSidebarPlaylists();
+      loadHomeContent();
     };
-    sidebar.appendChild(div);
+    sidebar.appendChild(newBtn);
+    // Existing Playlists
+    for (const name in playlists) {
+      const pl = playlists[name];
+      const cover = pl.cover || 'https://via.placeholder.com/42x42.png?text=♪';
+      const div = document.createElement('div');
+      div.className='playlist-item';
+      div.innerHTML = `
+        <img class='playlist-cover' src='${cover}'/>
+        <strong style="flex:1;">${name}</strong>
+        <div class="playlist-actions">
+          <button onclick="editPlaylist('${name}')">Edit</button>
+          <button onclick="uploadPlaylistCoverFunc('${name}')">Cover</button>
+          <button onclick="sharePlaylist('${pl.id}')">Share</button>
+          <button onclick="deletePlaylist('${name}')">Delete</button>
+        </div>
+      `;
+      // Click on cover or name → open playlist
+      div.onclick = (e) => {
+        if (!e.target.closest('.playlist-actions')) loadPlaylist(name);
+      };
+      sidebar.appendChild(div);
+    }
   }
-}
-  window.editPlaylist = function(name) {
-    const newName = prompt('Rename playlist:', name);
+
+  window.editPlaylist = async function(name) {
+    const newName = await showInputDialog('Rename Playlist', 'Enter new name:', name);
     if (newName && newName !== name) {
       playlists[newName] = playlists[name];
       delete playlists[name];
@@ -787,17 +995,19 @@
     }
   };
 
-  window.sharePlaylist = function(id) {
+  window.sharePlaylist = async function(id) {
     const url = `${location.origin}${location.pathname}?playlist=${id}`;
-    navigator.clipboard.writeText(url).then(() => {
-      alert(`Link copied!\n${url}\nSend to friends!`);
-    }).catch(() => {
-      prompt(`Copy this link:`, url);
-    });
+    try {
+      await navigator.clipboard.writeText(url);
+      await showAlert('Link Copied!', `Share this link with friends:\n${url}`);
+    } catch {
+      await showAlert('Share Link', url);
+    }
   };
 
-  window.deletePlaylist = function(name) {
-    if (confirm(`Delete "${name}"?`)) {
+  window.deletePlaylist = async function(name) {
+    const confirmed = await showConfirm('Delete Playlist', `Delete "${name}"?`);
+    if (confirmed) {
       delete playlists[name];
       savePlaylists();
       renderSidebarPlaylists();
@@ -810,7 +1020,6 @@
     searchInput.style.display = 'none';
     popularSection.style.display = 'none';
     searchResultsTitle.style.display = 'none';
-
     results.innerHTML = `
       <div class="playlist-header">
         <h3>${name}</h3>
@@ -820,7 +1029,6 @@
         </div>
       </div>
     `;
-
     const songsContainer = document.createElement('div');
     playlists[name].songs.forEach((song, idx) => {
       const div = document.createElement('div');
@@ -835,19 +1043,22 @@
     results.appendChild(songsContainer);
   }
 
-  function addSongToPlaylist(song) {
+  async function addSongToPlaylist(song) {
     const names = Object.keys(playlists);
-    if (!names.length) return alert('Create a playlist first!');
-    const pl = prompt(`Add to playlist:\n${names.join(', ')}`, names[0]);
+    if (!names.length) {
+      await showAlert('No Playlists', 'Create a playlist first!');
+      return;
+    }
+    const pl = await showPlaylistSelect(playlists);
     if (pl && playlists[pl]) {
       playlists[pl].songs.push(song);
       savePlaylists();
-      alert(`Added to ${pl}`);
+      await showAlert('Success', `Added to ${pl}`);
       loadHomeContent();
     }
   }
 
-  window.uploadPlaylistCover = function(playlistName) {
+  window.uploadPlaylistCoverFunc = function(playlistName) {
     uploadPlaylistCover.onchange = e => {
       const file = e.target.files[0];
       if (!file) return;
@@ -876,7 +1087,6 @@
     } else {
       recentlyPlayedDiv.innerHTML = '<p style="color:#666; font-style:italic;">No songs played yet.</p>';
     }
-
     // Your Playlists
     yourPlaylists.innerHTML = '';
     const plNames = Object.keys(playlists);
@@ -903,6 +1113,7 @@
     lyricsViewer.style.display = 'none';
     loadHomeContent();
   }
+
   function showSearch() {
     homePage.style.display = 'none';
     searchPage.style.display = 'block';
@@ -912,6 +1123,7 @@
     searchResultsTitle.style.display = 'none';
     results.innerHTML = '';
   }
+
   homeNav.onclick = showHome;
   searchNav.onclick = showSearch;
 
