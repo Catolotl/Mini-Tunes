@@ -5,20 +5,20 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Tunes</title>
 <style>
-  :root {
-    --bg: #0d0d0d;
-    --surface: #111;
-    --card: transparent;
-    --hover: #222;
+:root {
+    --bg: #000;
+    --surface: #121212;
+    --card: #181818;
+    --hover: #282828;
     --text: #fff;
-    --accent: #fff;
-    --accent2: #32CD32;
-    --border: #333;
+    --text-secondary: #b3b3b3;
+    --accent: #1db954;
+    --border: #282828;
   }
   * { box-sizing: border-box; }
   body {
     margin:0;
-    font-family: 'Segoe UI', Arial, sans-serif;
+    font-family: 'Circular', 'Helvetica Neue', Arial, sans-serif;
     background:var(--bg);
     color:var(--text);
     display:flex;
@@ -26,36 +26,52 @@
     overflow:hidden;
   }
   /* ---------- 3×2 GRID CARD (recent & playlists) ---------- */
+ /* ---------- RECENTLY PLAYED CARDS ---------- */
   .grid-container {
     display: grid;
-    grid-template-columns: repeat(3, 1fr);
-    gap: 20px;
-    margin-bottom: 24px;
+    grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+    gap: 16px;
+    margin-bottom: 32px;
   }
   .grid-card {
     background: var(--card);
-    border-radius: 16px;
-    overflow: hidden;
+    border-radius: 8px;
+    padding: 16px;
     cursor: pointer;
-    transition: transform .2s, box-shadow .2s;
-    text-align: center;
+    transition: background 0.3s ease;
+    position: relative;
   }
   .grid-card:hover {
-    transform: translateY(-4px);
-    box-shadow: 0 8px 16px rgba(0,0,0,.3);
+    background: var(--hover);
   }
   .grid-cover {
     width: 100%;
-    height: 180px;
+    aspect-ratio: 1;
     object-fit: cover;
+    border-radius: 4px;
+    box-shadow: 0 8px 24px rgba(0,0,0,.5);
+    margin-bottom: 16px;
   }
   .grid-title {
-    margin: 10px 8px 0;
-    font-weight: 600;
+    font-weight: 700;
     font-size: 1rem;
-    white-space: nowrap;
+    margin-bottom: 8px;
     overflow: hidden;
     text-overflow: ellipsis;
+    display: -webkit-box;
+    -webkit-line-clamp: 1;
+    -webkit-box-orient: vertical;
+    line-height: 1.4;
+  }
+  .grid-artist {
+    font-size: 0.875rem;
+    color: var(--text-secondary);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    line-height: 1.4;
   }
   /* ---------- PLAYLIST HEADER (Name + Share + Delete) ---------- */
   .playlist-header {
