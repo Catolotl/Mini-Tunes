@@ -535,33 +535,63 @@ audio.onended = () => {
     }
   };
 
-  function loadPlaylist(name) {
-    showSearch();
-    searchInput.style.display = 'none';
-    popularSection.style.display = 'none';
-    searchResultsTitle.style.display = 'none';
-    results.innerHTML = `
-      <div class="playlist-header">
-        <h3>${name}</h3>
-        <div class="btns">
-          <button onclick="sharePlaylist('${playlists[name].id}')">Share</button>
-          <button onclick="deletePlaylist('${name}')">Delete</button>
-        </div>
+function loadPlaylist(name) {
+  showSearch();
+  searchInput.style.display = 'none';
+  popularSection.style.display = 'none';
+  searchResultsTitle.style.display = 'none';
+
+  const pl = playlists[name];
+  const cover = pl.cover || 'https://via.placeholder.com/280?text=♪';
+
+  results.innerHTML = `
+    <div class="playlist-view-header">
+      <img class="playlist-big-cover" 
+           src="${cover}" 
+           alt="${name} cover"
+           style="cursor:pointer;" 
+           onclick="uploadPlaylistCoverFunc('${name}')">
+      <h1 class="playlist-view-title">${name}</h1>
+      <p class="playlist-view-song-count">${pl.songs.length} song${pl.songs.length !== 1 ? 's' : ''}</p>
+    </div>
+
+    <div class="playlist-header" style="justify-content:flex-end; margin: -20px 0 30px;">
+      <div class="btns">
+        <button onclick="sharePlaylist('${pl.id}')">Share</button>
+        <button onclick="deletePlaylist('${name}')">Delete</button>
       </div>
-    `;
-    const songsContainer = document.createElement('div');
-    playlists[name].songs.forEach((song, idx) => {
+    </div>
+  `;
+
+  const songsContainer = document.createElement('div');
+  
+  if (pl.songs.length === 0) {
+    songsContainer.innerHTML = '<p style="text-align:center; color:#888; padding:40px; font-size:1.1em;">This playlist is empty.<br>Add some songs!</p>';
+  } else {
+    pl.songs.forEach((song, idx) => {
       const div = document.createElement('div');
       div.className = 'song-card';
+      const artistName = song.artist?.name || "Unknown Artist";
+      const songCover = song.album?.cover_medium || 'https://via.placeholder.com/64';
+
       div.innerHTML = `
-        <img class='cover' src='${song.album.cover_medium}'>
-        <div><strong>${song.title}</strong><br><small style="color:#aaa;">${song.artist.name}</small></div>
+        <div style="display:flex; align-items:center; gap:16px;">
+          <img class="cover" src="${songCover}" alt="Cover">
+          <div>
+            <strong>${song.title}</strong><br>
+            <small style="color:#aaa;">${artistName}</small>
+          </div>
+        </div>
+        <div style="color:#888; font-size:1.3em;">⋯</div>
       `;
+
       div.onclick = () => startPlaylistPlayback(name, idx);
       songsContainer.appendChild(div);
     });
-    results.appendChild(songsContainer);
   }
+
+  results.appendChild(songsContainer);
+}
 
   async function addSongToPlaylist(song) {
     const names = Object.keys(playlists);
