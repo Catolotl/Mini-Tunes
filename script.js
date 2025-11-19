@@ -458,7 +458,7 @@ function updateUserProfile() {
         <div class="playlist-actions">
           <button onclick="editPlaylist('${name}')">Edit</button>
           <button onclick="uploadPlaylistCoverFunc('${name}')">Cover</button>
-          <button onclick="sharePlaylist('${pl.id}')">Share</button>
+          
           <button onclick="deletePlaylist('${name}')">Delete</button>
         </div>
       `;
