@@ -1,3 +1,5 @@
+
+
 // ===== CUSTOM DIALOG FUNCTIONS =====
   function showInputDialog(title, message, defaultValue = '') {
     return new Promise((resolve) => {
@@ -158,6 +160,20 @@
   let currentPlaylist = null;
   let queueFromPlaylist = false;
 
+function getTimeBasedGreeting() {
+  const hour = new Date().getHours();
+
+  if (hour >= 5 && hour < 12) {
+    return "Good morning";
+  } else if (hour >= 12 && hour < 17) {
+    return "Good afternoon";
+  } else if (hour >= 17 && hour < 22) {
+    return "Good evening";
+  } else {
+    return "Good night";
+  }
+}
+
   // Generate ID
   function generateId() {
     return Math.random().toString(36).substr(2, 9);
@@ -176,23 +192,28 @@
   }
 
   // Update Profile
-  function updateUserProfile() {
-    userName = localStorage.getItem("userName") || "User";
-    userAvatar = localStorage.getItem("userAvatar") || "https://via.placeholder.com/80";
-    userBio = localStorage.getItem("userBio") || "";
-    welcome.innerText = `Welcome, ${userName}`;
-    profileName.innerText = userName;
-    profileAvatar.src = userAvatar;
-    bioInput.value = userBio;
-    if (userAvatar !== "https://via.placeholder.com/80") {
-      const img = document.createElement('img');
-      img.src = userAvatar;
-      profileBtn.innerHTML = '';
-      profileBtn.appendChild(img);
-    } else {
-      profileBtn.innerText = userName.charAt(0).toUpperCase();
-    }
+function updateUserProfile() {
+  userName = localStorage.getItem("userName") || "User";
+  userAvatar = localStorage.getItem("userAvatar") || "https://via.placeholder.com/80";
+  userBio = localStorage.getItem("userBio") || "";
+
+  // ← THIS IS THE NEW DYNAMIC GREETING
+  const greeting = getTimeBasedGreeting();
+  welcome.innerText = `${greeting}, ${userName}!`;
+
+  profileName.innerText = userName;
+  profileAvatar.src = userAvatar;
+  bioInput.value = userBio;
+
+  if (userAvatar !== "https://via.placeholder.com/80") {
+    const img = document.createElement('img');
+    img.src = userAvatar;
+    profileBtn.innerHTML = '';
+    profileBtn.appendChild(img);
+  } else {
+    profileBtn.innerText = userName.charAt(0).toUpperCase();
   }
+}
   updateUserProfile();
 
   // Bio save
@@ -611,3 +632,10 @@
       }
     }, 500);
   }
+// Update greeting at midnight automatically
+setInterval(() => {
+  const now = new Date();
+  if (now.getHours() === 0 && now.getMinutes() === 0) {
+    updateUserProfile();
+  }
+}, 60000); // check every minute
