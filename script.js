@@ -678,3 +678,8 @@ setInterval(() => {
 if (!audio.src) {
   nowPlayingSidebar.style.display = "none";
 }
+
+
+
+// Hide the entire right sidebar on page load
+rightSidebar.classList.add("hidden");
