@@ -458,8 +458,6 @@ function updateUserProfile() {
         <div class="playlist-actions">
           <button onclick="editPlaylist('${name}')">Edit</button>
           <button onclick="uploadPlaylistCoverFunc('${name}')">Cover</button>
-          
-          <button onclick="deletePlaylist('${name}')">Delete</button>
         </div>
       `;
       // Click on cover or name → open playlist
