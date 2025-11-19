@@ -410,7 +410,8 @@ function playSong(song, fromPlaylist = false) {
   nowPlayingCover.src = coverBig;
   nowPlayingTitle.textContent = song.title;
   nowPlayingArtist.textContent = artistName;
-  nowPlayingSidebar.style.display = "block";
+rightSidebar.classList.remove("hidden");
+nowPlayingSidebar.style.display = "block";
 
   // Update recently played
   recentlyPlayed = recentlyPlayed.filter(s => s.id !== song.id);
@@ -441,7 +442,7 @@ audio.onended = () => {
     if (nextIdx < pl.songs.length) {
       currentPlaylist.index = nextIdx;
       playSong(pl.songs[nextIdx], true);
-      return; // there's a next song → don't hide anything yet
+      return; // next song is playing → keep everything visible
     } else {
       // End of playlist
       queueFromPlaylist = false;
@@ -449,15 +450,13 @@ audio.onended = () => {
     }
   }
 
-  // No next song (either no queue or end of playlist)
-  // Hide the right sidebar + bottom player smoothly
+  // No next song → hide everything smoothly
   setTimeout(() => {
-    if (!audio.src || audio.ended || audio.paused) {
-      nowPlayingSidebar.style.display = "none";
-      player.style.display = "none";
-      nowPlaying.innerText = "No song playing";
-    }
-  }, 600); // small delay so the last moments of audio finish nicely
+    nowPlayingSidebar.style.display = "none";
+    player.style.display = "none";
+    nowPlaying.innerText = "No song playing";
+    rightSidebar.classList.add("hidden");   // ← collapses the whole sidebar
+  }, 600);
 };
 
   // === PLAYLISTS ===
