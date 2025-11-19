@@ -144,6 +144,18 @@ addCurrentBtn.onclick = async () => {
   const searchInput = document.getElementById("search");
   const results = document.getElementById("results");
   const audio = document.getElementById("audio");
+
+// ← ADD THESE TWO LINES HERE
+audio.onerror = () => {
+  if (currentSong) {
+    nowPlaying.innerText = `Preview unavailable for "${currentSong.title}"`;
+    setTimeout(() => {
+      player.style.display = "none";
+      nowPlayingSidebar.style.display = "none";
+    }, 2500);
+  }
+};
+
   const player = document.getElementById("player");
   const nowPlaying = document.getElementById("now-playing");
   const sidebar = document.getElementById("sidebar");
@@ -395,31 +407,52 @@ function updateUserProfile() {
   }
 
   // === PLAY SONG + QUEUE ===
-function playSong(song, fromPlaylist = false) {
-  currentSong = song; // ← NEW: remember the song
+async function playSong(song, fromPlaylist = false) {
+  currentSong = song;
 
-  audio.src = song.preview;
+  // Update UI immediately (optimistic)
   nowPlaying.innerText = `Now playing: ${song.title} — ${song.artist?.name || ''}`;
   player.style.display = "block";
-  audio.play().catch(() => {});
-
-  // === UPDATE RIGHT SIDEBAR ===
   const coverBig = song.album?.cover_big || song.album?.cover_medium || 'https://via.placeholder.com/240';
-  const artistName = song.artist?.name || "Unknown Artist";
-
   nowPlayingCover.src = coverBig;
   nowPlayingTitle.textContent = song.title;
-  nowPlayingArtist.textContent = artistName;
-rightSidebar.classList.remove("hidden");
-nowPlayingSidebar.style.display = "block";
+  nowPlayingArtist.textContent = song.artist?.name || "Unknown Artist";
+  rightSidebar.classList.remove("hidden");
+  nowPlayingSidebar.style.display = "block";
 
-  // Update recently played
-  recentlyPlayed = recentlyPlayed.filter(s => s.id !== song.id);
-  recentlyPlayed.push(song);
-  localStorage.setItem("recentlyPlayed", JSON.stringify(recentlyPlayed.slice(-6)));
-  if (homePage.style.display === 'block') loadHomeContent();
+  // Try to play the preview
+  audio.src = song.preview;
 
-  // Queue logic unchanged...
+  try {
+    await audio.play();
+    // Success → update recently played etc.
+    recentlyPlayed = recentlyPlayed.filter(s => s.id !== song.id);
+    recentlyPlayed.push(song);
+    localStorage.setItem("recentlyPlayed", JSON.stringify(recentlyPlayed.slice(-6)));
+    if (homePage.style.display === 'block') loadHomeContent();
+  } catch (err) {
+    // Playback failed (almost always dead preview)
+    console.warn("Playback failed for", song.title, song.preview);
+
+    // Show user-friendly message instead of silent failure
+    nowPlaying.innerText = `Preview unavailable for "${song.title}"`;
+    
+    // Optional: auto-skip to next song if in a playlist
+    setTimeout(() => {
+      if (queueFromPlaylist && currentPlaylist) {
+        const nextIdx = currentPlaylist.index + 1;
+        if (nextIdx < playlists[currentPlaylist.name].songs.length) {
+          currentPlaylist.index = nextIdx;
+          playSong(playlists[currentPlaylist.name].songs[nextIdx], true);
+          return;
+        }
+      }
+      // If no next song, just hide player after a moment
+      player.style.display = "none";
+    }, 2000);
+  }
+
+  // queue logic unchanged …
   if (fromPlaylist && currentPlaylist) {
     queueFromPlaylist = true;
   } else {
@@ -427,7 +460,6 @@ nowPlayingSidebar.style.display = "block";
     currentPlaylist = null;
   }
 }
-
   function startPlaylistPlayback(plName, startIdx = 0) {
     const pl = playlists[plName];
     if (!pl?.songs?.length) return;
@@ -436,26 +468,31 @@ nowPlayingSidebar.style.display = "block";
   }
 
 audio.onended = () => {
+  // If we're in a playlist and there's a next song → play it
   if (queueFromPlaylist && currentPlaylist) {
     const pl = playlists[currentPlaylist.name];
     const nextIdx = currentPlaylist.index + 1;
+
     if (nextIdx < pl.songs.length) {
       currentPlaylist.index = nextIdx;
       playSong(pl.songs[nextIdx], true);
-      return; // next song is playing → keep everything visible
+      return; // Next song is now playing → keep player/sidebar visible
     } else {
-      // End of playlist
+      // We've reached the end of the playlist
       queueFromPlaylist = false;
       currentPlaylist = null;
     }
   }
 
-  // No next song → hide everything smoothly
+  // No next song (or playlist ended) → clean up the UI smoothly
   setTimeout(() => {
     nowPlayingSidebar.style.display = "none";
     player.style.display = "none";
     nowPlaying.innerText = "No song playing";
-    rightSidebar.classList.add("hidden");   // ← collapses the whole sidebar
+
+    // OPTIONAL: collapse the whole right sidebar when nothing is playing
+    // (only do this if your <audio> element is NOT inside #right-sidebar)
+    rightSidebar.classList.add("hidden");
   }, 600);
 };
 
@@ -675,11 +712,8 @@ setInterval(() => {
 }, 60000); // check every minute
 
 
-if (!audio.src) {
-  nowPlayingSidebar.style.display = "none";
-}
-
-
-
-// Hide the entire right sidebar on page load
-rightSidebar.classList.add("hidden");
+// Initial state on page load – only hide the visible parts, never the whole sidebar
+nowPlayingSidebar.style.display = "none";
+player.style.display = "none";
+nowPlaying.innerText = "No song playing";
+rightSidebar.classList.add("hidden"); // ← now safe because <audio> is outside the sidebar (or you fixed the CSS)
