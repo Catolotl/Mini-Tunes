@@ -439,6 +439,38 @@
         position: relative;
       }
 
+/* BIG PLAYLIST HEADER - shown when viewing a playlist */
+.playlist-view-header {
+  text-align: center;
+  margin: 0 0 40px;
+  padding: 20px 0;
+}
+
+.playlist-big-cover {
+  width: 280px;
+  height: 280px;
+  object-fit: cover;
+  border-radius: 16px;
+  box-shadow: 0 16px 48px rgba(0,0,0,0.7);
+  margin: 0 auto 24px;
+  display: block;
+}
+
+.playlist-view-title {
+  font-size: 2.8rem;
+  font-weight: 900;
+  margin: 0;
+  background: linear-gradient(90deg, #fff, #ccc);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.playlist-view-song-count {
+  color: #aaa;
+  font-size: 1rem;
+  margin-top: 8px;
+}
+      
 /* Right Sidebar - mirror of left sidebar */
 #right-sidebar {
   width: 340px;                  /* your wide version */
