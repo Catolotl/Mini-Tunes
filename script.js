@@ -1,4 +1,16 @@
+const rightSidebar = document.getElementById("right-sidebar");
+const nowPlayingSidebar = document.getElementById("now-playing-sidebar");
+const nowPlayingCover = document.getElementById("now-playing-cover");
+const nowPlayingTitle = document.getElementById("now-playing-title");
+const nowPlayingArtist = document.getElementById("now-playing-artist");
+const addCurrentBtn = document.getElementById("add-current-to-playlist");
+let currentSong = null; // we'll store the currently playing song here
 
+
+addCurrentBtn.onclick = async () => {
+  if (!currentSong) return;
+  await addSongToPlaylist(currentSong);
+};
 
 // ===== CUSTOM DIALOG FUNCTIONS =====
   function showInputDialog(title, message, defaultValue = '') {
@@ -383,24 +395,37 @@ function updateUserProfile() {
   }
 
   // === PLAY SONG + QUEUE ===
-  function playSong(song, fromPlaylist = false) {
-    audio.src = song.preview;
-    nowPlaying.innerText = `Now playing: ${song.title} — ${song.artist?.name || ''}`;
-    player.style.display = "block";
-    audio.play().catch(() => {});
-    // Update recently played (max 6)
-    recentlyPlayed = recentlyPlayed.filter(s => s.id !== song.id);
-    recentlyPlayed.push(song);
-    localStorage.setItem("recentlyPlayed", JSON.stringify(recentlyPlayed.slice(-6)));
-    if (homePage.style.display === 'block') loadHomeContent();
-    // Queue logic
-    if (fromPlaylist && currentPlaylist) {
-      queueFromPlaylist = true;
-    } else {
-      queueFromPlaylist = false;
-      currentPlaylist = null;
-    }
+function playSong(song, fromPlaylist = false) {
+  currentSong = song; // ← NEW: remember the song
+
+  audio.src = song.preview;
+  nowPlaying.innerText = `Now playing: ${song.title} — ${song.artist?.name || ''}`;
+  player.style.display = "block";
+  audio.play().catch(() => {});
+
+  // === UPDATE RIGHT SIDEBAR ===
+  const coverBig = song.album?.cover_big || song.album?.cover_medium || 'https://via.placeholder.com/240';
+  const artistName = song.artist?.name || "Unknown Artist";
+
+  nowPlayingCover.src = coverBig;
+  nowPlayingTitle.textContent = song.title;
+  nowPlayingArtist.textContent = artistName;
+  nowPlayingSidebar.style.display = "block";
+
+  // Update recently played
+  recentlyPlayed = recentlyPlayed.filter(s => s.id !== song.id);
+  recentlyPlayed.push(song);
+  localStorage.setItem("recentlyPlayed", JSON.stringify(recentlyPlayed.slice(-6)));
+  if (homePage.style.display === 'block') loadHomeContent();
+
+  // Queue logic unchanged...
+  if (fromPlaylist && currentPlaylist) {
+    queueFromPlaylist = true;
+  } else {
+    queueFromPlaylist = false;
+    currentPlaylist = null;
   }
+}
 
   function startPlaylistPlayback(plName, startIdx = 0) {
     const pl = playlists[plName];
@@ -409,19 +434,31 @@ function updateUserProfile() {
     playSong(pl.songs[startIdx], true);
   }
 
-  audio.onended = () => {
-    if (queueFromPlaylist && currentPlaylist) {
-      const pl = playlists[currentPlaylist.name];
-      const nextIdx = currentPlaylist.index + 1;
-      if (nextIdx < pl.songs.length) {
-        currentPlaylist.index = nextIdx;
-        playSong(pl.songs[nextIdx], true);
-      } else {
-        queueFromPlaylist = false;
-        currentPlaylist = null;
-      }
+audio.onended = () => {
+  if (queueFromPlaylist && currentPlaylist) {
+    const pl = playlists[currentPlaylist.name];
+    const nextIdx = currentPlaylist.index + 1;
+    if (nextIdx < pl.songs.length) {
+      currentPlaylist.index = nextIdx;
+      playSong(pl.songs[nextIdx], true);
+      return; // there's a next song → don't hide anything yet
+    } else {
+      // End of playlist
+      queueFromPlaylist = false;
+      currentPlaylist = null;
     }
-  };
+  }
+
+  // No next song (either no queue or end of playlist)
+  // Hide the right sidebar + bottom player smoothly
+  setTimeout(() => {
+    if (!audio.src || audio.ended || audio.paused) {
+      nowPlayingSidebar.style.display = "none";
+      player.style.display = "none";
+      nowPlaying.innerText = "No song playing";
+    }
+  }, 600); // small delay so the last moments of audio finish nicely
+};
 
   // === PLAYLISTS ===
   function savePlaylists() {
@@ -637,3 +674,8 @@ setInterval(() => {
     updateUserProfile();
   }
 }, 60000); // check every minute
+
+
+if (!audio.src) {
+  nowPlayingSidebar.style.display = "none";
+}
