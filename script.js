@@ -12,6 +12,25 @@ addCurrentBtn.onclick = async () => {
   await addSongToPlaylist(currentSong);
 };
 
+
+//DELETE IF NOT FUNCTIONAL
+
+
+// Fetch a fresh playable song by Deezer ID
+async function fetchFreshSong(songId) {
+  try {
+    const data = await deezerFetch(`track/${songId}`);
+    // deezerFetch returns an array with one object normally
+    return Array.isArray(data) ? data[0] : data;
+  } catch (e) {
+    console.error("Failed to refresh song", songId);
+    return null;
+  }
+}
+
+//DELETE IF NOT FUNCTIONAL
+
+
 // ===== CUSTOM DIALOG FUNCTIONS =====
   function showInputDialog(title, message, defaultValue = '') {
     return new Promise((resolve) => {
@@ -395,31 +414,58 @@ function updateUserProfile() {
   }
 
   // === PLAY SONG + QUEUE ===
-function playSong(song, fromPlaylist = false) {
-  currentSong = song; // ← NEW: remember the song
+async function playSong(song, fromPlaylist = false) {
+  let fullSong = song;
 
-  audio.src = song.preview;
-  nowPlaying.innerText = `Now playing: ${song.title} — ${song.artist?.name || ''}`;
+  // If the saved song doesn't have a working preview → it's from localStorage → refresh it
+  if (!song.preview && song.id) {
+    const fresh = await fetchFreshSong(song.id);
+    if (!fresh || !fresh.preview) {
+      await showAlert("Song Unavailable", "This track is no longer available on Deezer.");
+      // Stop playback and hide player
+      audio.pause();
+      audio.src = "";
+      nowPlayingSidebar.style.display = "none";
+      player.style.display = "none";
+      rightSidebar.classList.add("hidden");
+      return;
+    }
+    fullSong = fresh;
+  }
+
+  currentSong = fullSong; // ← important: remember the fresh version with working preview
+
+  audio.src = fullSong.preview;
+  nowPlaying.innerText = `Now playing: ${fullSong.title} — ${fullSong.artist?.name || ''}`;
   player.style.display = "block";
-  audio.play().catch(() => {});
+  audio.play().catch(err => {
+    console.error("Playback failed:", err);
+  });
 
   // === UPDATE RIGHT SIDEBAR ===
-  const coverBig = song.album?.cover_big || song.album?.cover_medium || 'https://via.placeholder.com/240';
-  const artistName = song.artist?.name || "Unknown Artist";
-
+  const coverBig = fullSong.album?.cover_big || fullSong.album?.cover_medium || 'https://via.placeholder.com/240';
+  const artistName = fullSong.artist?.name || "Unknown Artist";
   nowPlayingCover.src = coverBig;
-  nowPlayingTitle.textContent = song.title;
+  nowPlayingTitle.textContent = fullSong.title;
   nowPlayingArtist.textContent = artistName;
-rightSidebar.classList.remove("hidden");
-nowPlayingSidebar.style.display = "block";
+  rightSidebar.classList.remove("hidden");
+  nowPlayingSidebar.style.display = "block";
 
-  // Update recently played
-  recentlyPlayed = recentlyPlayed.filter(s => s.id !== song.id);
-  recentlyPlayed.push(song);
+  // === UPDATE RECENTLY PLAYED (only save safe data, no preview URL!) ===
+  const cleanSong = {
+    id: fullSong.id,
+    title: fullSong.title,
+    artist: fullSong.artist,
+    album: fullSong.album
+  };
+
+  recentlyPlayed = recentlyPlayed.filter(s => s.id !== fullSong.id);
+  recentlyPlayed.push(cleanSong);
   localStorage.setItem("recentlyPlayed", JSON.stringify(recentlyPlayed.slice(-6)));
+
   if (homePage.style.display === 'block') loadHomeContent();
 
-  // Queue logic unchanged...
+  // Queue logic
   if (fromPlaylist && currentPlaylist) {
     queueFromPlaylist = true;
   } else {
@@ -427,35 +473,42 @@ nowPlayingSidebar.style.display = "block";
     currentPlaylist = null;
   }
 }
+async function startPlaylistPlayback(plName, startIdx = 0) {
+  const pl = playlists[plName];
+  if (!pl?.songs?.length || startIdx >= pl.songs.length) return;
 
-  function startPlaylistPlayback(plName, startIdx = 0) {
-    const pl = playlists[plName];
-    if (!pl?.songs?.length) return;
-    currentPlaylist = { name: plName, index: startIdx };
-    playSong(pl.songs[startIdx], true);
+  const songStub = pl.songs[startIdx];
+  const fresh = await fetchFreshSong(songStub.id);
+
+  if (!fresh || !fresh.preview) {
+    await showAlert("Can't play", "This song is no longer available on Deezer.");
+    // Optionally skip to next song or stop queue
+    return;
   }
 
-audio.onended = () => {
+  currentPlaylist = { name: plName, index: startIdx };
+  playSong(fresh, true);
+}
+
+audio.onended = async () => {  // ← add "async" here
   if (queueFromPlaylist && currentPlaylist) {
     const pl = playlists[currentPlaylist.name];
     const nextIdx = currentPlaylist.index + 1;
     if (nextIdx < pl.songs.length) {
       currentPlaylist.index = nextIdx;
-      playSong(pl.songs[nextIdx], true);
-      return; // next song is playing → keep everything visible
+      await startPlaylistPlayback(currentPlaylist.name, nextIdx);  // ← now awaits fresh song
+      return;
     } else {
-      // End of playlist
       queueFromPlaylist = false;
       currentPlaylist = null;
     }
   }
 
-  // No next song → hide everything smoothly
   setTimeout(() => {
     nowPlayingSidebar.style.display = "none";
     player.style.display = "none";
     nowPlaying.innerText = "No song playing";
-    rightSidebar.classList.add("hidden");   // ← collapses the whole sidebar
+    rightSidebar.classList.add("hidden");
   }, 600);
 };
 
@@ -546,15 +599,14 @@ function loadPlaylist(name) {
 
   results.innerHTML = `
     <div class="playlist-view-header">
-      <img class="playlist-big-cover" 
-           src="${cover}" 
+      <img class="playlist-big-cover"
+           src="${cover}"
            alt="${name} cover"
-           style="cursor:pointer;" 
+           style="cursor:pointer;"
            onclick="uploadPlaylistCoverFunc('${name}')">
       <h1 class="playlist-view-title">${name}</h1>
       <p class="playlist-view-song-count">${pl.songs.length} song${pl.songs.length !== 1 ? 's' : ''}</p>
     </div>
-
     <div class="playlist-header" style="justify-content:flex-end; margin: -20px 0 30px;">
       <div class="btns">
         <button onclick="sharePlaylist('${pl.id}')">Share</button>
@@ -564,34 +616,52 @@ function loadPlaylist(name) {
   `;
 
   const songsContainer = document.createElement('div');
-  
+
   if (pl.songs.length === 0) {
     songsContainer.innerHTML = '<p style="text-align:center; color:#888; padding:40px; font-size:1.1em;">This playlist is empty.<br>Add some songs!</p>';
   } else {
-    pl.songs.forEach((song, idx) => {
+    pl.songs.forEach((songStub, idx) => {
       const div = document.createElement('div');
       div.className = 'song-card';
-      const artistName = song.artist?.name || "Unknown Artist";
-      const songCover = song.album?.cover_medium || 'https://via.placeholder.com/64';
+
+      const artistName = songStub.artist?.name || "Unknown Artist";
+      const songCover = songStub.album?.cover_medium || 'https://via.placeholder.com/64';
 
       div.innerHTML = `
         <div style="display:flex; align-items:center; gap:16px;">
           <img class="cover" src="${songCover}" alt="Cover">
           <div>
-            <strong>${song.title}</strong><br>
+            <strong>${songStub.title}</strong><br>
             <small style="color:#aaa;">${artistName}</small>
           </div>
         </div>
         <div style="color:#888; font-size:1.3em;">⋯</div>
       `;
 
-      div.onclick = () => startPlaylistPlayback(name, idx);
+      // Fixed: fetch fresh preview before playing
+      div.onclick = async () => {
+        const fresh = await fetchFreshSong(songStub.id);
+        if (fresh) {
+          startPlaylistPlayback(name, idx);
+        } else {
+          await showAlert("Can't play", "This song is no longer available on Deezer.");
+        }
+      };
+
       songsContainer.appendChild(div);
     });
   }
 
   results.appendChild(songsContainer);
-}
+}  // ← THIS IS THE END OF loadPlaylist — nothing else should be inside it!
+
+
+async function addSongToPlaylist(song) { ... }   // your fixed version with { id, title, artist, album }
+window.uploadPlaylistCoverFunc = function(playlistName) { ... }
+function loadHomeContent() { ... }               // with the fixed recently played click handler
+function showHome() { ... }
+function showSearch() { ... }
+// ... then the rest: homeNav.onclick, init code, etc.
 
   async function addSongToPlaylist(song) {
     const names = Object.keys(playlists);
@@ -601,7 +671,12 @@ function loadPlaylist(name) {
     }
     const pl = await showPlaylistSelect(playlists);
     if (pl && playlists[pl]) {
-      playlists[pl].songs.push(song);
+      playlists[pl].songs.push({
+  id: song.id,
+  title: song.title,
+  artist: song.artist,
+  album: song.album
+});
       savePlaylists();
       await showAlert('Success', `Added to ${pl}`);
       loadHomeContent();
@@ -632,7 +707,11 @@ function loadPlaylist(name) {
     if (recent.length) {
       const grid = document.createElement('div');
       grid.className = 'grid-container';
-      recent.forEach(s => renderGridCard(s, grid, playSong));
+      recent.forEach(s => renderGridCard(s, grid, (stub) => {
+  fetchFreshSong(stub.id).then(fresh => {
+    if (fresh) playSong(fresh);
+  });
+}));
       recentlyPlayedDiv.appendChild(grid);
     } else {
       recentlyPlayedDiv.innerHTML = '<p style="color:#666; font-style:italic;">No songs played yet.</p>';
