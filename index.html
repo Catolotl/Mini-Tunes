@@ -14,6 +14,7 @@
         --text-secondary: #b3b3;
         --accent: #fff;
         --border: #000;
+        --theme-color: #32CD32;
       }
       * { box-sizing: border-box; }
       body {
@@ -24,9 +25,8 @@
         display:flex;
         height:100vh;
         overflow:hidden;
+        transition: background 0.8s ease;
       }
-      /* ---------- 3×2 GRID CARD (recent & playlists) ---------- */
-      /* ---------- RECENTLY PLAYED CARDS ---------- */
       .grid-container {
         display: grid;
         grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
@@ -73,7 +73,6 @@
         -webkit-box-orient: vertical;
         line-height: 1.4;
       }
-      /* ---------- PLAYLIST HEADER (Name + Share + Delete) ---------- */
       .playlist-header {
         display: flex;
         align-items: center;
@@ -102,7 +101,6 @@
         background: var(--accent);
         color: #fff;
       }
-      /* Header */
       header {
         position:fixed;
         top:0; left:0; width:100%;
@@ -114,7 +112,7 @@
         align-items:center;
         border-bottom:5px solid var(--border);
         z-index:20;
-        border-radius: 15px; /* Rounded edges */
+        border-radius: 15px;
       }
       header h2 {
         margin:0;
@@ -126,13 +124,13 @@
       }
       .header-right { display:flex; align-items:center; gap:12px; }
       #premium-btn {
-        background: #32CD32;
+        background: var(--theme-color);
         padding:8px 18px;
         border-radius:12px;
         cursor:pointer;
         font-weight:600;
         font-size:0.9em;
-        transition:0.2s;
+        transition:background 0.3s ease, transform 0.2s;
       }
       #premium-btn:hover { transform:scale(1.03); }
       #profile-btn {
@@ -152,7 +150,6 @@
         width:100%; height:100%; object-fit:cover;
       }
       #profile-btn:hover { background:#444; }
-      /* Profile Popup */
       #profile-popup {
         position:fixed; top:80px; right:24px;
         background:var(--card);
@@ -186,7 +183,6 @@
         width:100%; height:80px; background:var(--card); border:none; border-radius:8px; color:var(--text); padding:8px; margin-top:8px; resize:none;
       }
       #bio-input:focus { outline:none; box-shadow:0 0 0 2px var(--accent); }
-      /* Sidebar */
       #sidebar {
         width:340px;
         background:var(--surface);
@@ -195,7 +191,7 @@
         border-right:5px solid var(--border);
         display:flex;
         flex-direction:column;
-        border-radius: 15px; /* Rounded edges */
+        border-radius: 15px;
       }
       .nav-item {
         display:flex;
@@ -251,7 +247,6 @@
         font-size: 0.75rem;
         padding: 4px 8px;
       }
-      /* Content */
       #content {
         flex:1;
         padding:90px 32px 20px 32px;
@@ -278,7 +273,6 @@
         box-shadow:0 6px 12px rgba(0,0,0,0.3);
       }
       .cover { width:64px; height:64px; object-fit:cover; border-radius:12px; box-shadow:0 2px 4px rgba(0,0,0,0.3); }
-      /* Player */
       #player {
         position:sticky;
         bottom:0;
@@ -291,7 +285,6 @@
         backdrop-filter: blur(10px);
       }
       #now-playing { margin:0 0 8px; font-weight:500; font-size:0.95em; }
-      /* Inputs */
       input, button, textarea { font-family: inherit; }
       input {
         width:100%;
@@ -317,7 +310,6 @@
         font-weight:500;
       }
       button:hover { background:#333; }
-      /* Skeleton */
       .skeleton {
         height:78px;
         background:linear-gradient(90deg,#202020,#2a2a2a,#202020);
@@ -327,7 +319,6 @@
         margin-bottom:14px;
       }
       @keyframes loading { 0% { background-position:200% 0; } 100% { background-position:-200% 0; } }
-      /* Welcome */
       #welcome {
         font-size:1.8em;
         margin-bottom:24px;
@@ -336,7 +327,6 @@
         -webkit-background-clip: text;
         -webkit-text-fill-color: transparent;
       }
-      /* Premium Popup */
       #premium-popup {
         position:fixed;
         background:var(--card);
@@ -358,8 +348,6 @@
         color: #eee;
         display: none;
       }
-
-      /* ===== CUSTOM MODAL DIALOGS ===== */
       .modal-overlay {
         position: fixed;
         top: 0; left: 0;
@@ -410,8 +398,6 @@
       .modal-buttons .primary:hover {
         background: #6a00d8;
       }
-
-      /* Select Playlist Modal */
       .playlist-select-list {
         max-height: 200px;
         overflow-y: auto;
@@ -428,194 +414,239 @@
       .playlist-select-item:hover {
         background: #333;
       }
-      /* ADD THIS NEW CSS RULE */
       #main-wrapper {
         display: flex;
-        height: calc(100vh - 10px); /* Adjust height for body margins (5px top + 5px bottom) */
+        height: calc(100vh - 10px);
         flex: 1;
-        border: 5px solid var(--border); /* 5px border around the whole thing */
-        border-radius: 15px; /* Rounded edges */
+        border: 5px solid var(--border);
+        border-radius: 15px;
         overflow: hidden;
         position: relative;
       }
-
-/* BIG PLAYLIST HEADER - shown when viewing a playlist */
-.playlist-view-header {
-  text-align: center;
-  margin: 0 0 40px;
-  padding: 20px 0;
-}
-
-.playlist-big-cover {
-  width: 280px;
-  height: 280px;
-  object-fit: cover;
-  border-radius: 16px;
-  box-shadow: 0 16px 48px rgba(0,0,0,0.7);
-  margin: 0 auto 24px;
-  display: block;
-}
-
-.playlist-view-title {
-  font-size: 2.8rem;
-  font-weight: 900;
-  margin: 0;
-  background: linear-gradient(90deg, #fff, #ccc);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-}
-
-.playlist-view-song-count {
-  color: #aaa;
-  font-size: 1rem;
-  margin-top: 8px;
-}
-      
-/* Right Sidebar - mirror of left sidebar */
-#right-sidebar {
-  width: 340px;                  /* your wide version */
-  background: var(--surface);
-  padding-top: 90px;
-  border-left: 5px solid var(--border);
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  overflow-y: auto;
-  flex-shrink: 0;                 /* prevents squishing */
-  transition: width 0.4s ease;    /* smooth slide in/out */
-}
-
-#right-sidebar.hidden {
-  width: 0 !important;
-  padding: 0;
-  overflow: hidden;
-}
-      
-#now-playing-sidebar {
-  width: 100%;
-  padding: 20px;
-  text-align: center;
-  display: none; /* hidden until a song plays */
-}
-
-#now-playing-cover {
-  width: 290px;
-  height: 290px;
-  object-fit: cover;
-  border-radius: 16px;
-  margin: 0 auto 24px;
-  display: block;
-  box-shadow: 0 12px 32px rgba(0,0,0,0.7);
-}
-
-#now-playing-info {
-  margin-top: 12px;
-}
-
-#now-playing-title {
-  font-size: 1.1em;
-  font-weight: 700;
-  display: block;
-  margin-bottom: 4px;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-#now-playing-artist {
-  color: #aaa;
-  margin: 0 0 16px;
-  font-size: 0.95em;
-}
-
-#add-current-to-playlist {
-  background: var(--hover);
-  color: var(--text);
-  border: none;
-  padding: 10px 20px;
-  border-radius: 12px;
-  cursor: pointer;
-  font-weight: 600;
-  width: 80%;
-  transition: 0.2s;
-}
-
-#add-current-to-playlist:hover {
-  background: var(--accent);
-  color: #000;
-}
-      
+      .playlist-view-header {
+        text-align: center;
+        margin: 0 0 40px;
+        padding: 20px 0;
+      }
+      .playlist-big-cover {
+        width: 280px;
+        height: 280px;
+        object-fit: cover;
+        border-radius: 16px;
+        box-shadow: 0 16px 48px rgba(0,0,0,0.7);
+        margin: 0 auto 24px;
+        display: block;
+      }
+      .playlist-view-title {
+        font-size: 2.8rem;
+        font-weight: 900;
+        margin: 0;
+        background: linear-gradient(90deg, #fff, #ccc);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+      }
+      .playlist-view-song-count {
+        color: #aaa;
+        font-size: 1rem;
+        margin-top: 8px;
+      }
+      #right-sidebar {
+        width: 340px;
+        background: var(--surface);
+        padding-top: 90px;
+        border-left: 5px solid var(--border);
+        display: flex;
+        flex-direction: column;
+        overflow-y: auto;
+        flex-shrink: 0;
+        transition: width 0.4s ease;
+      }
+      #right-sidebar.hidden {
+        width: 0 !important;
+        padding: 0;
+        overflow: hidden;
+      }
+      #now-playing-sidebar {
+        width: 100%;
+        padding: 20px;
+        text-align: center;
+        display: none;
+      }
+      #now-playing-cover {
+        width: 290px;
+        height: 290px;
+        object-fit: cover;
+        border-radius: 16px;
+        margin: 0 auto 24px;
+        display: block;
+        box-shadow: 0 12px 32px rgba(0,0,0,0.7);
+      }
+      #now-playing-info {
+        margin-top: 12px;
+      }
+      #now-playing-title {
+        font-size: 1.1em;
+        font-weight: 700;
+        display: block;
+        margin-bottom: 4px;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+      }
+      #now-playing-artist {
+        color: #aaa;
+        margin: 0 0 16px;
+        font-size: 0.95em;
+      }
+      #add-current-to-playlist {
+        background: var(--hover);
+        color: var(--text);
+        border: none;
+        padding: 10px 20px;
+        border-radius: 12px;
+        cursor: pointer;
+        font-weight: 600;
+        width: 80%;
+        transition: 0.2s;
+        margin: 0;
+      }
+      #add-current-to-playlist:hover {
+        background: var(--accent);
+        color: #000;
+      }
+      #lyrics-section {
+        width: 100%;
+        padding: 20px;
+        margin-top: 20px;
+        display: none;
+      }
+      #lyrics-section h4 {
+        margin: 0 0 12px;
+        font-size: 1.1em;
+        font-weight: 600;
+        text-align: center;
+      }
+      #lyrics-container {
+        background: rgba(255, 255, 255, 0.05);
+        backdrop-filter: blur(10px);
+        border-radius: 12px;
+        padding: 20px;
+        max-height: 400px;
+        overflow-y: auto;
+        transition: background 0.8s ease;
+      }
+      #lyrics-text {
+        color: #fff;
+        line-height: 1.8;
+        font-size: 0.95em;
+        white-space: pre-wrap;
+        text-align: center;
+      }
+      #lyrics-text.loading {
+        color: #aaa;
+        font-style: italic;
+      }
+      #lyrics-container::-webkit-scrollbar {
+        width: 8px;
+      }
+      #lyrics-container::-webkit-scrollbar-track {
+        background: rgba(0, 0, 0, 0.2);
+        border-radius: 4px;
+      }
+      #lyrics-container::-webkit-scrollbar-thumb {
+        background: rgba(255, 255, 255, 0.3);
+        border-radius: 4px;
+      }
+      #lyrics-container::-webkit-scrollbar-thumb:hover {
+        background: rgba(255, 255, 255, 0.5);
+      }
     </style>
   </head>
   <body>
-    
     <div id="main-wrapper">
-    
-    <header>
-      <h2>Tunes</h2>
-      <div class="header-right">
-        <div id="premium-btn">Premium</div>
-        <div id="profile-btn">?</div>
-      </div>
-    </header>
-
-    <div id="profile-popup">
-      <img id="profile-avatar" src="https://via.placeholder.com/80" alt="Profile">
-      <h4 id="profile-name">User</h4>
-      <p>Customize your experience</p>
-      <button class="upload-btn" id="change-avatar-btn">Change Avatar</button>
-      <input type="file" id="upload-avatar" accept="image/*">
-      <textarea id="bio-input" placeholder="Write your bio... (private)"></textarea>
-      <button class="upload-btn" id="change-name">Change Name</button>
-    </div>
-
-    <div id="sidebar">
-      <div id="home-nav" class="nav-item active">
-        <svg viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path></svg>
-        <span>Home</span>
-      </div>
-      <div id="search-nav" class="nav-item">
-        <svg viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l4.5 4.5a1 1 0 0 1-1.42 1.42l-4.5-4.5v-.79l-.27-.27A6.5 6.5 0 1 1 9.5 3zm0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5z"></path></svg>
-        <span>Search</span>
-      </div>
-      <div class="playlists-header">Your Playlists</div>
-    </div>
-
-    <div id="content">
-      <div id="home-page">
-        <div id="welcome">Good day', User</div>
-        <div class="section">
-          <h3>Recently Played</h3>
-          <div id="recently-played"></div>
+      <header>
+        <h2>Tunes</h2>
+        <div class="header-right">
+          <div id="premium-btn">Premium</div>
+          <div id="profile-btn">?</div>
         </div>
-        <div class="section">
-          <h3>Your Playlists</h3>
-          <div id="your-playlists"></div>
+      </header>
+
+      <div id="profile-popup">
+        <img id="profile-avatar" src="https://via.placeholder.com/80" alt="Profile">
+        <h4 id="profile-name">User</h4>
+        <p>Customize your experience</p>
+        <button class="upload-btn" id="change-avatar-btn">Change Avatar</button>
+        <input type="file" id="upload-avatar" accept="image/*">
+        <textarea id="bio-input" placeholder="Write your bio... (private)"></textarea>
+        <button class="upload-btn" id="change-name">Change Name</button>
+      </div>
+
+      <div id="sidebar">
+        <div id="home-nav" class="nav-item active">
+          <svg viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path></svg>
+          <span>Home</span>
+        </div>
+        <div id="search-nav" class="nav-item">
+          <svg viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l4.5 4.5a1 1 0 0 1-1.42 1.42l-4.5-4.5v-.79l-.27-.27A6.5 6.5 0 1 1 9.5 3zm0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5z"></path></svg>
+          <span>Search</span>
+        </div>
+        <div class="playlists-header">Your Playlists</div>
+      </div>
+
+      <div id="content">
+        <div id="home-page">
+          <div id="welcome">Good day, User</div>
+          <div class="section">
+            <h3>Recently Played</h3>
+            <div id="recently-played"></div>
+          </div>
+          <div class="section">
+            <h3>Your Playlists</h3>
+            <div id="your-playlists"></div>
+          </div>
+          <div class="section">
+            <h3>DJ Suggestions</h3>
+            <input id="recommend-input" placeholder="Have your personal DJ recommend songs based on other songs">
+            <div id="ai-recommendations"></div>
+          </div>
+        </div>
+        <div id="search-page" style="display:none;">
+          <input id="search" placeholder="Search for songs, artists, albums...">
+          <div id="popular-section">
+            <h3>Popular Right Now</h3>
+            <div id="popular"></div>
+          </div>
+          <h3 id="search-results-title">Search Results</h3>
+          <div id="results"></div>
+        </div>
+        <div id="player">
+          <p id="now-playing">Now playing...</p>
+          <audio id="audio" controls=""></audio>
+        </div>
+        <div id="lyrics-viewer" style="margin-top:24px; padding:16px; background:var(--card); border-radius:12px; display:none;">
+          <h4>Lyrics</h4>
+          <p id="lyrics-text-old">Loading lyrics...</p>
+        </div>
+      </div>
+
+      <div id="right-sidebar">
+        <div id="now-playing-sidebar">
+          <h3>Audio Menu</h3>
+          <img id="now-playing-cover" src="https://via.placeholder.com/240" alt="Cover">
+          <div id="now-playing-info">
+            <strong id="now-playing-title">Nothing playing</strong>
+            <p id="now-playing-artist"></p>
+            <button id="add-current-to-playlist">Add to Playlist</button>
+          </div>
         </div>
 
-        <div class="section">
-          <h3>DJ Suggestions</h3>
-          <input id="recommend-input" placeholder="Have your personal DJ recommend songs based on other songs">
-          <div id="ai-recommendations"></div>
+        <div id="lyrics-section">
+          <h4>Lyrics</h4>
+          <div id="lyrics-container">
+            <p id="lyrics-text" class="loading">No lyrics available</p>
+          </div>
         </div>
-        
-      </div>
-      <div id="search-page" style="display:none;">
-        <input id="search" placeholder="Search for songs, artists, albums...">
-        <div id="popular-section">
-          <h3>Popular Right Now</h3>
-          <div id="popular"></div>
-        </div>
-        <h3 id="search-results-title">Search Results</h3>
-        <div id="results"></div>
-      </div>
-      <div id="player">
-        <p id="now-playing">Now playing...</p>
-        <audio id="audio" controls=""></audio>
-      </div>
-      <div id="lyrics-viewer" style="margin-top:24px; padding:16px; background:var(--card); border-radius:12px; display:none;">
-        <h4>Lyrics</h4>
-        <p id="lyrics-text">Loading lyrics...</p>
       </div>
     </div>
 
@@ -627,7 +658,6 @@
 
     <input type="file" id="upload-playlist-cover" accept="image/*" style="display:none;">
 
-    <!-- Custom Modal Dialogs -->
     <div id="input-modal" class="modal-overlay">
       <div class="modal-box">
         <h3 id="input-modal-title">Input</h3>
@@ -670,23 +700,7 @@
         </div>
       </div>
     </div>
-    </div>
 
-    <!-- ADD THIS RIGHT AFTER THE </div> of #content and BEFORE the closing </div> of #main-wrapper -->
-    <div id="right-sidebar">
-      <div id="now-playing-sidebar">
-        <h3>Audio Menu</h3>
-        <img id="now-playing-cover" src="https://via.placeholder.com/240" alt="Cover">
-        <div id="now-playing-info">
-          <strong id="now-playing-title">Nothing playing</strong>
-          <p id="now-playing-artist"></p>
-          <button id="add-current-to-playlist">Add to Playlist</button>
-        </div>
-      </div>
-    </div>
-    
-
-<script src="script.js" ></script>
-      
+    <script src="script.js"></script>
   </body>
 </html>
