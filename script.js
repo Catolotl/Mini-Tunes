@@ -393,7 +393,25 @@ function renderGridCard(item, container, clickHandler) {
 }
 
 // === PLAY SONG + QUEUE ===
-function playSong(song, fromPlaylist = false) {
+async function playSong(song, fromPlaylist = false) {
+  // Validate and refresh song data if needed
+  if (!song.preview || !song.id) {
+    await showAlert('Invalid Song', 'This song cannot be played. Try searching for it again.');
+    return;
+  }
+
+  // If song looks incomplete, try to fetch fresh data
+  if (!song.album || !song.artist?.id) {
+    try {
+      const freshData = await deezerFetch(`track/${song.id}`);
+      if (freshData && freshData.preview) {
+        song = freshData;
+      }
+    } catch (err) {
+      console.warn('Could not refresh song data:', err);
+    }
+  }
+
   currentSong = song;
 
   audio.src = song.preview;
@@ -423,9 +441,23 @@ function playSong(song, fromPlaylist = false) {
   rightSidebar.classList.remove("hidden");
   nowPlayingSidebar.style.display = "block";
 
-  // Update recently played
+  // Update recently played with complete song structure
+  const songToStore = {
+    id: song.id,
+    title: song.title,
+    preview: song.preview,
+    artist: {
+      id: song.artist?.id,
+      name: song.artist?.name || 'Unknown Artist'
+    },
+    album: {
+      cover_medium: song.album?.cover_medium || song.cover_medium || 'https://via.placeholder.com/64',
+      cover_big: song.album?.cover_big || song.album?.cover_medium || song.cover_medium || 'https://via.placeholder.com/240'
+    }
+  };
+  
   recentlyPlayed = recentlyPlayed.filter(s => s.id !== song.id);
-  recentlyPlayed.push(song);
+  recentlyPlayed.push(songToStore);
   localStorage.setItem("recentlyPlayed", JSON.stringify(recentlyPlayed.slice(-6)));
   if (homePage.style.display === 'block') loadHomeContent();
 
@@ -634,7 +666,21 @@ async function addSongToPlaylist(song) {
   }
   const pl = await showPlaylistSelect(playlists);
   if (pl && playlists[pl]) {
-    playlists[pl].songs.push(song);
+    // Store complete song object with all necessary fields
+    const songToStore = {
+      id: song.id,
+      title: song.title,
+      preview: song.preview,
+      artist: {
+        id: song.artist?.id,
+        name: song.artist?.name || 'Unknown Artist'
+      },
+      album: {
+        cover_medium: song.album?.cover_medium || song.cover_medium || 'https://via.placeholder.com/64',
+        cover_big: song.album?.cover_big || song.album?.cover_medium || song.cover_medium || 'https://via.placeholder.com/240'
+      }
+    };
+    playlists[pl].songs.push(songToStore);
     savePlaylists();
     await showAlert('Success', `Added to ${pl}`);
     loadHomeContent();
