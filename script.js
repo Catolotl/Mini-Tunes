@@ -4,14 +4,12 @@ const nowPlayingCover = document.getElementById("now-playing-cover");
 const nowPlayingTitle = document.getElementById("now-playing-title");
 const nowPlayingArtist = document.getElementById("now-playing-artist");
 const addCurrentBtn = document.getElementById("add-current-to-playlist");
-let currentSong = null; // we'll store the currently playing song here
 
-addCurrentBtn.onclick = async () => {
-  if (!currentSong) return;
-  await addSongToPlaylist(currentSong);
-};
+let currentSong = null;
+let currentPlaylist = null; // { name, index }
+let queueFromPlaylist = false;
 
-// ===== CUSTOM DIALOG FUNCTIONS =====
+// ====================== DIALOGS ======================
 function showInputDialog(title, message, defaultValue = '') {
   return new Promise((resolve) => {
     const modal = document.getElementById('input-modal');
@@ -29,22 +27,11 @@ function showInputDialog(title, message, defaultValue = '') {
 
     const cleanup = () => {
       modal.classList.remove('active');
-      okBtn.onclick = null;
-      cancelBtn.onclick = null;
-      inputEl.onkeydown = null;
+      okBtn.onclick = cancelBtn.onclick = inputEl.onkeydown = null;
     };
 
-    okBtn.onclick = () => {
-      const value = inputEl.value.trim();
-      cleanup();
-      resolve(value || null);
-    };
-
-    cancelBtn.onclick = () => {
-      cleanup();
-      resolve(null);
-    };
-
+    okBtn.onclick = () => { cleanup(); resolve(inputEl.value.trim() || null); };
+    cancelBtn.onclick = () => { cleanup(); resolve(null); };
     inputEl.onkeydown = (e) => {
       if (e.key === 'Enter') okBtn.click();
       if (e.key === 'Escape') cancelBtn.click();
@@ -85,19 +72,11 @@ function showConfirm(title, message) {
 
     const cleanup = () => {
       modal.classList.remove('active');
-      okBtn.onclick = null;
-      cancelBtn.onclick = null;
+      okBtn.onclick = cancelBtn.onclick = null;
     };
 
-    okBtn.onclick = () => {
-      cleanup();
-      resolve(true);
-    };
-
-    cancelBtn.onclick = () => {
-      cleanup();
-      resolve(false);
-    };
+    okBtn.onclick = () => { cleanup(); resolve(true); };
+    cancelBtn.onclick = () => { cleanup(); resolve(false); };
   });
 }
 
@@ -120,16 +99,14 @@ function showPlaylistSelect(playlists) {
     });
 
     modal.classList.add('active');
-
     cancelBtn.onclick = () => {
       modal.classList.remove('active');
-      cancelBtn.onclick = null;
       resolve(null);
     };
   });
 }
 
-// DOM Elements
+// ====================== DOM ELEMENTS ======================
 const premiumBtn = document.getElementById("premium-btn");
 const premiumPopup = document.getElementById("premium-popup");
 const profileBtn = document.getElementById("profile-btn");
@@ -140,6 +117,7 @@ const profileAvatar = document.getElementById("profile-avatar");
 const changeAvatarBtn = document.getElementById("change-avatar-btn");
 const uploadAvatar = document.getElementById("upload-avatar");
 const bioInput = document.getElementById("bio-input");
+
 const searchInput = document.getElementById("search");
 const results = document.getElementById("results");
 const audio = document.getElementById("audio");
@@ -148,6 +126,7 @@ const nowPlaying = document.getElementById("now-playing");
 const sidebar = document.getElementById("sidebar");
 const lyricsViewer = document.getElementById("lyrics-viewer");
 const lyricsText = document.getElementById("lyrics-text");
+
 const homePage = document.getElementById("home-page");
 const searchPage = document.getElementById("search-page");
 const homeNav = document.getElementById("home-nav");
@@ -162,35 +141,26 @@ const popularSection = document.getElementById("popular-section");
 const searchResultsTitle = document.getElementById("search-results-title");
 const uploadPlaylistCover = document.getElementById("upload-playlist-cover");
 
-// State
+// ====================== STATE ======================
 let userName = localStorage.getItem("userName") || "User";
 let userAvatar = localStorage.getItem("userAvatar") || "https://via.placeholder.com/80";
 let userBio = localStorage.getItem("userBio") || "";
 let recentlyPlayed = JSON.parse(localStorage.getItem("recentlyPlayed") || "[]");
 let playlists = JSON.parse(localStorage.getItem("miniPlaylists") || "{}");
-let currentPlaylist = null;
-let queueFromPlaylist = false;
 
+// ====================== UTILS ======================
 function getTimeBasedGreeting() {
   const hour = new Date().getHours();
-
-  if (hour >= 5 && hour < 12) {
-    return "Good morning";
-  } else if (hour >= 12 && hour < 17) {
-    return "Good afternoon";
-  } else if (hour >= 17 && hour < 22) {
-    return "Good evening";
-  } else {
-    return "Good night";
-  }
+  if (hour >= 5 && hour < 12) return "Good morning";
+  if (hour < 17) return "Good afternoon";
+  if (hour < 22) return "Good evening";
+  return "Good night";
 }
 
-// Generate ID
 function generateId() {
-  return Math.random().toString(36).substr(2, 9);
+  return Date.now().toString(36) + Math.random().toString(36).substr(2, 5);
 }
 
-// Migrate old playlists
 function ensurePlaylistIds() {
   let changed = false;
   for (const name in playlists) {
@@ -202,50 +172,45 @@ function ensurePlaylistIds() {
   if (changed) savePlaylists();
 }
 
-// Update Profile
+function savePlaylists() {
+  ensurePlaylistIds();
+  localStorage.setItem("miniPlaylists", JSON.stringify(playlists));
+}
+
+// ====================== PROFILE ======================
 function updateUserProfile() {
   userName = localStorage.getItem("userName") || "User";
   userAvatar = localStorage.getItem("userAvatar") || "https://via.placeholder.com/80";
   userBio = localStorage.getItem("userBio") || "";
 
-  const greeting = getTimeBasedGreeting();
-  welcome.innerText = `${greeting}, ${userName}!`;
-
-  profileName.innerText = userName;
+  welcome.textContent = `${getTimeBasedGreeting()}, ${userName}!`;
+  profileName.textContent = userName;
   profileAvatar.src = userAvatar;
   bioInput.value = userBio;
 
-  if (userAvatar !== "https://via.placeholder.com/80") {
-    const img = document.createElement('img');
-    img.src = userAvatar;
-    profileBtn.innerHTML = '';
-    profileBtn.appendChild(img);
+  if (userAvatar.includes("placeholder")) {
+    profileBtn.textContent = userName.charAt(0).toUpperCase();
+    profileBtn.style.background = "var(--accent)";
   } else {
-    profileBtn.innerText = userName.charAt(0).toUpperCase();
+    profileBtn.innerHTML = `<img src="${userAvatar}" style="width:100%;height:100%;border-radius:50%;">`;
   }
 }
 updateUserProfile();
 
-// Bio save
-bioInput.addEventListener('input', () => {
-  localStorage.setItem("userBio", bioInput.value);
-});
+bioInput.addEventListener('input', () => localStorage.setItem("userBio", bioInput.value));
 
-// Avatar upload
 changeAvatarBtn.onclick = () => uploadAvatar.click();
 uploadAvatar.addEventListener('change', (e) => {
   const file = e.target.files[0];
-  if (file) {
-    const reader = new FileReader();
-    reader.onload = (ev) => {
-      localStorage.setItem("userAvatar", ev.target.result);
-      updateUserProfile();
-    };
-    reader.readAsDataURL(file);
-  }
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = (ev) => {
+    localStorage.setItem("userAvatar", ev.target.result);
+    updateUserProfile();
+  };
+  reader.readAsDataURL(file);
 });
 
-// Change name
 changeNameBtn.onclick = async () => {
   const newName = await showInputDialog('Change Name', 'Enter your name:', userName);
   if (newName && newName.trim()) {
@@ -257,21 +222,25 @@ changeNameBtn.onclick = async () => {
 
 // Popups
 premiumBtn.onclick = () => premiumPopup.style.display = "block";
-function closePremium() { premiumPopup.style.display = "none"; }
+window.closePremium = () => premiumPopup.style.display = "none";
+
 profileBtn.onclick = () => {
   profilePopup.style.display = profilePopup.style.display === "block" ? "none" : "block";
 };
+
 document.addEventListener("click", (e) => {
-  if (!profileBtn.contains(e.target) && !profilePopup.contains(e.target)) profilePopup.style.display = "none";
-  if (!premiumBtn.contains(e.target) && !premiumPopup.contains(e.target)) premiumPopup.style.display = "none";
+  if (!profileBtn.contains(e.target) && !profilePopup.contains(e.target))
+    profilePopup.style.display = "none";
+  if (!premiumBtn.contains(e.target) && !premiumPopup.contains(e.target))
+    premiumPopup.style.display = "none";
 });
 
-// Deezer fetch
+// ====================== DEEZER API ======================
 async function deezerFetch(path) {
   const url = `https://api.deezer.com/${path}&output=jsonp`;
   return new Promise((resolve) => {
     const callbackName = "dzcb_" + Math.random().toString(36).substring(2);
-    window[callbackName] = function (data) {
+    window[callbackName] = (data) => {
       resolve(data.data || data || []);
       delete window[callbackName];
       const script = document.querySelector(`script[src^="${url}"]`);
@@ -283,94 +252,72 @@ async function deezerFetch(path) {
   });
 }
 
-// Search
+// ====================== SEARCH & POPULAR ======================
 let searchTimeout;
-searchInput.addEventListener("input", async () => {
+searchInput.addEventListener("input", () => {
   clearTimeout(searchTimeout);
   const q = searchInput.value.trim();
   showSearch();
   results.innerHTML = "";
   searchResultsTitle.style.display = 'none';
-  if (!q) { popularSection.style.display = 'block'; return; }
-  popularSection.style.display = 'none';
+  popularSection.style.display = q ? 'none' : 'block';
+
+  if (!q) return;
+
   searchResultsTitle.style.display = 'block';
-  showSkeletons(results, 5);
+  showSkeletons(results, 8);
+
   searchTimeout = setTimeout(async () => {
     try {
       const songs = await deezerFetch(`search?q=${encodeURIComponent(q)}`);
       results.innerHTML = "";
-      if (songs.length === 0) {
-        results.innerHTML = "<p style='color:#aaa; text-align:center; padding:20px;'>No results found.</p>";
+      if (!songs.length) {
+        results.innerHTML = "<p style='color:#aaa;text-align:center;padding:40px;'>No results found.</p>";
       } else {
         renderSongs(songs, results);
       }
     } catch (err) {
-      results.innerHTML = "<p style='color:#f66; text-align:center;'>Search failed. Try again.</p>";
+      results.innerHTML = "<p style='color:#f66;text-align:center;'>Search failed.</p>";
     }
   }, 400);
 });
 
-// Popular
 async function loadPopular() {
   popular.innerHTML = "";
-  showSkeletons(popular, 5);
+  showSkeletons(popular, 10);
   try {
     const songs = await deezerFetch('chart/0/tracks?limit=20');
     renderSongs(songs, popular);
-  } catch (err) {
+  } catch {
     popular.innerHTML = "<p style='color:#f66;'>Failed to load popular songs.</p>";
   }
 }
 
 // AI Recommendations
 let recommendTimeout;
-recommendInput.addEventListener("input", async () => {
+recommendInput.addEventListener("input", () => {
   clearTimeout(recommendTimeout);
   const q = recommendInput.value.trim();
   aiRecommendations.innerHTML = "";
   if (!q) return;
-  showSkeletons(aiRecommendations, 5);
+
+  showSkeletons(aiRecommendations, 6);
   recommendTimeout = setTimeout(async () => {
     try {
-      const searchResults = await deezerFetch(`search/track?q=${encodeURIComponent(q)}&limit=1`);
-      if (!searchResults.length) {
-        aiRecommendations.innerHTML = "<p style='color:#aaa;'>No song found.</p>";
-        return;
-      }
-      const song = searchResults[0];
-      const recommendations = await deezerFetch(`artist/${song.artist.id}/radio?limit=12`);
-      aiRecommendations.innerHTML = `<p style='margin-bottom:12px; color:#aaa;'>Songs like <strong>${song.title}</strong>:</p>`;
-      renderSongs(recommendations, aiRecommendations);
-    } catch (err) {
+      const [song] = await deezerFetch(`search/track?q=${encodeURIComponent(q)}&limit=1`);
+      if (!song) throw new Error("No song");
+      const recs = await deezerFetch(`artist/${song.artist.id}/radio?limit=12`);
+      aiRecommendations.innerHTML = `<p style='margin-bottom:12px;color:#aaa;'>Songs like <strong>${song.title}</strong>:</p>`;
+      renderSongs(recs, aiRecommendations);
+    } catch {
       aiRecommendations.innerHTML = "<p style='color:#f66;'>Recommendation failed.</p>";
     }
-  }, 500);
+  }, 600);
 });
 
-// Render song card (for search, popular, AI)
-function renderSongs(songs, container) {
-  songs.forEach(song => {
-    const div = document.createElement("div");
-    div.className = "song-card";
-    const artistName = song.artist ? song.artist.name : (song.name || "Unknown");
-    const cover = song.album ? song.album.cover_medium : (song.cover_medium || 'https://via.placeholder.com/64');
-    div.innerHTML = `
-      <div style='display:flex; align-items:center; gap:16px;'>
-        <img class="cover" src="${cover}" alt="Cover" />
-        <div>
-          <strong>${song.title}</strong><br>
-          <small style="color:#aaa;">${artistName}</small>
-        </div>
-      </div>
-      <button>Add</button>
-    `;
-    div.querySelector('button').onclick = (e) => { e.stopPropagation(); addSongToPlaylist(song); };
-    div.onclick = () => playSong(song);
-    container.appendChild(div);
-  });
-}
-
+// ====================== RENDERING ======================
 function showSkeletons(container, count) {
+  container.innerHTML = ""; // clear old skeletons
   for (let i = 0; i < count; i++) {
     const sk = document.createElement("div");
     sk.className = "skeleton";
@@ -378,12 +325,42 @@ function showSkeletons(container, count) {
   }
 }
 
-// === GRID CARD RENDERER ===
+function renderSongs(songs, container) {
+  container.innerHTML = "";
+  songs.forEach(song => {
+    const div = document.createElement("div");
+    div.className = "song-card";
+
+    const artistName = song.artist?.name || "Unknown Artist";
+    const cover = song.album?.cover_medium || song.cover_medium || 'https://via.placeholder.com/64';
+
+    div.innerHTML = `
+      <div style="display:flex;align-items:center;gap:16px;">
+        <img class="cover" src="${cover}" alt="Cover">
+        <div>
+          <strong>${song.title}</strong><br>
+          <small style="color:#aaa;">${artistName}</small>
+        </div>
+      </div>
+      <button class="add-btn">Add</button>
+    `;
+
+    div.querySelector('.add-btn').onclick = (e) => {
+      e.stopPropagation();
+      addSongToPlaylist(song);
+    };
+    div.onclick = () => playSong(song);
+
+    container.appendChild(div);
+  });
+}
+
 function renderGridCard(item, container, clickHandler) {
   const div = document.createElement('div');
   div.className = 'grid-card';
-  const cover = item.album?.cover_medium || item.cover_medium || 'https://via.placeholder.com/180?text=♪';
+  const cover = item.album?.cover_medium || item.cover_medium || item.cover || 'https://via.placeholder.com/180?text=♪';
   const title = item.title || item.name || 'Untitled';
+
   div.innerHTML = `
     <img class="grid-cover" src="${cover}" alt="cover">
     <div class="grid-title">${title}</div>
@@ -392,76 +369,64 @@ function renderGridCard(item, container, clickHandler) {
   container.appendChild(div);
 }
 
-// === PLAY SONG + QUEUE ===
+// ====================== PLAYER ======================
 async function playSong(song, fromPlaylist = false) {
-  // Validate and refresh song data if needed
-  if (!song.preview || !song.id) {
-    await showAlert('Invalid Song', 'This song cannot be played. Try searching for it again.');
+  if (!song?.preview || !song.id) {
+    await showAlert('Invalid Song', 'This song cannot be played.');
     return;
   }
 
-  // If song looks incomplete, try to fetch fresh data
+  // Refresh data if incomplete
   if (!song.album || !song.artist?.id) {
     try {
-      const freshData = await deezerFetch(`track/${song.id}`);
-      if (freshData && freshData.preview) {
-        song = freshData;
-      }
-    } catch (err) {
-      console.warn('Could not refresh song data:', err);
-    }
+      const fresh = await deezerFetch(`track/${song.id}`);
+      if (fresh?.preview) song = fresh;
+    } catch (e) { console.warn("Failed to refresh song data", e); }
   }
 
   currentSong = song;
-
   audio.src = song.preview;
-  nowPlaying.innerText = `Now playing: ${song.title} — ${song.artist?.name || ''}`;
+
+  nowPlaying.textContent = `Now playing: ${song.title} — ${song.artist?.name || 'Unknown'}`;
   player.style.display = "block";
-  
-  // Better autoplay handling with catch
-  const playPromise = audio.play();
-  
-  if (playPromise !== undefined) {
-    playPromise.catch(async (error) => {
-      console.error("Autoplay failed:", error);
-      await showAlert('Autoplay Blocked', 'Click OK to start playback. (Your browser blocked autoplay)');
-      audio.play().catch(() => {
-        showAlert('Playback Failed', 'Unable to play this song.');
-      });
-    });
-  }
 
-  // === UPDATE RIGHT SIDEBAR ===
-  const coverBig = song.album?.cover_big || song.album?.cover_medium || 'https://via.placeholder.com/240';
-  const artistName = song.artist?.name || "Unknown Artist";
-
-  nowPlayingCover.src = coverBig;
+  // Update right sidebar
+  const bigCover = song.album?.cover_big || song.album?.cover_medium || 'https://via.placeholder.com/240';
+  nowPlayingCover.src = bigCover;
   nowPlayingTitle.textContent = song.title;
-  nowPlayingArtist.textContent = artistName;
+  nowPlayingArtist.textContent = song.artist?.name || 'Unknown Artist';
   rightSidebar.classList.remove("hidden");
   nowPlayingSidebar.style.display = "block";
 
-  // Update recently played with complete song structure
-  const songToStore = {
+  // Autoplay with proper handling
+  try {
+    await audio.play();
+  } catch (err) {
+    console.log("Autoplay blocked:", err);
+    await showAlert('Autoplay Blocked', 'Tap OK to start playing.');
+    try { await audio.play(); } catch { }
+  }
+
+  // Update recently played
+  const songToSave = {
     id: song.id,
     title: song.title,
     preview: song.preview,
-    artist: {
-      id: song.artist?.id,
-      name: song.artist?.name || 'Unknown Artist'
-    },
+    artist: { id: song.artist?.id, name: song.artist?.name || "Unknown" },
     album: {
-      cover_medium: song.album?.cover_medium || song.cover_medium || 'https://via.placeholder.com/64',
-      cover_big: song.album?.cover_big || song.album?.cover_medium || song.cover_medium || 'https://via.placeholder.com/240'
+      cover_medium: song.album?.cover_medium || 'https://via.placeholder.com/64',
+      cover_big: song.album?.cover_big || 'https://via.placeholder.com/240'
     }
   };
-  
-  recentlyPlayed = recentlyPlayed.filter(s => s.id !== song.id);
-  recentlyPlayed.push(songToStore);
-  localStorage.setItem("recentlyPlayed", JSON.stringify(recentlyPlayed.slice(-6)));
-  if (homePage.style.display === 'block') loadHomeContent();
 
-  // Queue logic unchanged...
+  recentlyPlayed = recentlyPlayed.filter(s => s.id !== song.id);
+  recentlyPlayed.push(songToSave);
+  if (recentlyPlayed.length > 20) recentlyPlayed.shift();
+  localStorage.setItem("recentlyPlayed", JSON.stringify(recentlyPlayed));
+
+  if (homePage.style.display === "block") loadHomeContent();
+
+  // Queue handling
   if (fromPlaylist && currentPlaylist) {
     queueFromPlaylist = true;
   } else {
@@ -474,131 +439,180 @@ function startPlaylistPlayback(plName, startIdx = 0) {
   const pl = playlists[plName];
   if (!pl?.songs?.length) return;
   currentPlaylist = { name: plName, index: startIdx };
+  queueFromPlaylist = true;
   playSong(pl.songs[startIdx], true);
 }
 
-audio.onended = async () => {
+// Next song when current ends
+audio.onended = () => {
   if (queueFromPlaylist && currentPlaylist) {
     const pl = playlists[currentPlaylist.name];
-    const nextIdx = currentPlaylist.index + 1;
-    if (nextIdx < pl.songs.length) {
-      currentPlaylist.index = nextIdx;
-      playSong(pl.songs[nextIdx], true);
-      return; // next song is playing → keep everything visible
-    } else {
-      // End of playlist
-      queueFromPlaylist = false;
-      currentPlaylist = null;
-    }
-  }
-
-  // No next song → hide everything smoothly
-  setTimeout(() => {
-    nowPlayingSidebar.style.display = "none";
-    player.style.display = "none";
-    nowPlaying.innerText = "No song playing";
-    rightSidebar.classList.add("hidden");
-  }, 600);
-};
-
-// Add error handling for playback failures
-audio.onerror = async () => {
-  await showAlert('Playback Error', 'This song cannot be played. It may have been removed or is unavailable in your region.');
-  
-  // Try to play next song in queue if available
-  if (queueFromPlaylist && currentPlaylist) {
-    const pl = playlists[currentPlaylist.name];
-    const nextIdx = currentPlaylist.index + 1;
-    if (nextIdx < pl.songs.length) {
-      currentPlaylist.index = nextIdx;
-      playSong(pl.songs[nextIdx], true);
+    const next = currentPlaylist.index + 1;
+    if (next < pl.songs.length) {
+      currentPlaylist.index = next;
+      playSong(pl.songs[next], true);
       return;
     }
   }
-  
-  // Otherwise hide player
-  setTimeout(() => {
-    nowPlayingSidebar.style.display = "none";
-    player.style.display = "none";
-    rightSidebar.classList.add("hidden");
-  }, 300);
+  // End of queue → hide player
+  queueFromPlaylist = false;
+  currentPlaylist = null;
+  setTimeout(hidePlayer, 800);
 };
 
-// === PLAYLISTS ===
-function savePlaylists() {
-  ensurePlaylistIds();
-  localStorage.setItem("miniPlaylists", JSON.stringify(playlists));
+audio.onerror = async () => {
+  await showAlert('Playback Error', 'This song is unavailable.');
+
+  if (queueFromPlaylist && currentPlaylist) {
+    const pl = playlists[currentPlaylist.name];
+    const next = currentPlaylist.index + 1;
+    if (next < pl.songs.length) {
+      currentPlaylist.index = next;
+      playSong(pl.songs[next], true);
+      return;
+    }
+  }
+  hidePlayer();
+};
+
+function hidePlayer() {
+  nowPlayingSidebar.style.display = "none";
+  player.style.display = "none";
+  rightSidebar.classList.add("hidden");
+  nowPlaying.textContent = "No song playing";
 }
 
+// Add current song to playlist button
+addCurrentBtn.onclick = async () => {
+  if (!currentSong) return;
+  await addSongToPlaylist(currentSong);
+};
+
+// ====================== PLAYLISTS ======================
 function renderSidebarPlaylists() {
-  const playlistItems = sidebar.querySelectorAll('.playlist-item');
-  playlistItems.forEach(item => item.remove());
+  // Clear old items except the static ones (if any)
+  sidebar.querySelectorAll('.playlist-item').forEach(el => el.remove());
+
   // + New Playlist
   const newBtn = document.createElement('div');
-  newBtn.className='playlist-item';
-  newBtn.innerHTML='<strong style="color:var(--accent);">+ New Playlist</strong>';
+  newBtn.className = 'playlist-item new-playlist';
+  newBtn.innerHTML = '<strong style="color:var(--accent);">+ New Playlist</strong>';
   newBtn.onclick = async () => {
     const name = await showInputDialog('New Playlist', 'Enter playlist name:');
     if (!name?.trim()) return;
-    const id = generateId();
-    playlists[name] = { id, songs: [], cover: null };
+    if (playlists[name.trim()]) {
+      await showAlert('Oops', 'A playlist with that name already exists.');
+      return;
+    }
+    playlists[name.trim()] = { id: generateId(), songs: [], cover: null };
     savePlaylists();
     renderSidebarPlaylists();
     loadHomeContent();
   };
   sidebar.appendChild(newBtn);
-  // Existing Playlists
-  for (const name in playlists) {
+
+  // Existing playlists
+  Object.keys(playlists).forEach(name => {
     const pl = playlists[name];
     const cover = pl.cover || 'https://via.placeholder.com/42x42.png?text=♪';
+
     const div = document.createElement('div');
-    div.className='playlist-item';
+    div.className = 'playlist-item';
     div.innerHTML = `
-      <img class='playlist-cover' src='${cover}'/>
+      <img class="playlist-cover" src="${cover}" alt="cover">
       <strong style="flex:1;">${name}</strong>
       <div class="playlist-actions">
         <button onclick="editPlaylist('${name}')">Edit</button>
         <button onclick="uploadPlaylistCoverFunc('${name}')">Cover</button>
       </div>
     `;
-    // Click on cover or name → open playlist
-    div.onclick = (e) => {
-      if (!e.target.closest('.playlist-actions')) loadPlaylist(name);
-    };
+
+    div.addEventListener('click', (e) => {
+      if (e.target.closest('.playlist-actions')) return;
+      loadPlaylist(name);
+    });
+
     sidebar.appendChild(div);
-  }
+  });
 }
 
-window.editPlaylist = async function(name) {
-  const newName = await showInputDialog('Rename Playlist', 'Enter new name:', name);
-  if (newName && newName !== name) {
-    playlists[newName] = playlists[name];
-    delete playlists[name];
-    savePlaylists();
-    renderSidebarPlaylists();
-    loadHomeContent();
+async function editPlaylist(oldName) {
+  const newName = await showInputDialog('Rename Playlist', 'New name:', oldName);
+  if (!newName || newName === oldName) return;
+  if (playlists[newName]) {
+    await showAlert('Error', 'Playlist name already exists.');
+    return;
   }
-};
+  playlists[newName] = playlists[oldName];
+  delete playlists[oldName];
+  savePlaylists();
+  renderSidebarPlaylists();
+  loadHomeContent();
+}
 
-window.sharePlaylist = async function(id) {
+async function sharePlaylist(id) {
   const url = `${location.origin}${location.pathname}?playlist=${id}`;
   try {
     await navigator.clipboard.writeText(url);
-    await showAlert('Link Copied!', `Share this link with friends:\n${url}`);
+    await showAlert('Copied!', 'Playlist link copied to clipboard.');
   } catch {
     await showAlert('Share Link', url);
   }
-};
+}
 
-window.deletePlaylist = async function(name) {
-  const confirmed = await showConfirm('Delete Playlist', `Delete "${name}"?`);
-  if (confirmed) {
+async function deletePlaylist(name) {
+  const ok = await showConfirm('Delete Playlist', `Delete "${name}" permanently?`);
+  if (ok) {
     delete playlists[name];
     savePlaylists();
     renderSidebarPlaylists();
     loadHomeContent();
   }
-};
+}
+
+function uploadPlaylistCoverFunc(name) {
+  uploadPlaylistCover.onchange = (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = (ev) => {
+      playlists[name].cover = ev.target.result;
+      savePlaylists();
+      renderSidebarPlaylists();
+      loadHomeContent();
+      // Update current view if open
+      const bigCover = document.querySelector('.playlist-big-cover');
+      if (bigCover) bigCover.src = ev.target.result;
+    };
+    reader.readAsDataURL(file);
+  };
+  uploadPlaylistCover.click();
+}
+
+async function addSongToPlaylist(song) {
+  if (!Object.keys(playlists).length) {
+    await showAlert('No Playlists', 'Create a playlist first!');
+    return;
+  }
+  const plName = await showPlaylistSelect(playlists);
+  if (!plName) return;
+
+  const songToStore = {
+    id: song.id,
+    title: song.title,
+    preview: song.preview,
+    artist: { id: song.artist?.id, name: song.artist?.name || "Unknown" },
+    album: {
+      cover_medium: song.album?.cover_medium || 'https://via.placeholder.com/64',
+      cover_big: song.album?.cover_big || 'https://via.placeholder.com/240'
+    }
+  };
+
+  playlists[plName].songs.push(songToStore);
+  savePlaylists();
+  await showAlert('Added!', `Song added to "${plName}"`);
+  loadHomeContent();
+}
 
 function loadPlaylist(name) {
   showSearch();
@@ -611,101 +625,46 @@ function loadPlaylist(name) {
 
   results.innerHTML = `
     <div class="playlist-view-header">
-      <img class="playlist-big-cover" 
-           src="${cover}" 
-           alt="${name} cover"
-           style="cursor:pointer;" 
-           onclick="uploadPlaylistCoverFunc('${name}')">
+      <img class="playlist-big-cover" src="${cover}" alt="cover" style="cursor:pointer;" onclick="uploadPlaylistCoverFunc('${name}')">
       <h1 class="playlist-view-title">${name}</h1>
       <p class="playlist-view-song-count">${pl.songs.length} song${pl.songs.length !== 1 ? 's' : ''}</p>
     </div>
-
-    <div class="playlist-header" style="justify-content:flex-end; margin: -20px 0 30px;">
-      <div class="btns">
-        <button onclick="sharePlaylist('${pl.id}')">Share</button>
-        <button onclick="deletePlaylist('${name}')">Delete</button>
-      </div>
+    <div class="playlist-header" style="justify-content:flex-end;margin:20px 0;">
+      <button onclick="sharePlaylist('${pl.id}')">Share</button>
+      <button onclick="deletePlaylist('${name}')">Delete</button>
     </div>
   `;
 
-  const songsContainer = document.createElement('div');
-  
-  if (pl.songs.length === 0) {
-    songsContainer.innerHTML = '<p style="text-align:center; color:#888; padding:40px; font-size:1.1em;">This playlist is empty.<br>Add some songs!</p>';
+  const container = document.createElement('div');
+  if (!pl.songs.length) {
+    container.innerHTML = '<p style="text-align:center;color:#888;padding:60px;">This playlist is empty.<br>Add some songs!</p>';
   } else {
-    pl.songs.forEach((song, idx) => {
+    pl.songs.forEach((song, i) => {
       const div = document.createElement('div');
       div.className = 'song-card';
-      const artistName = song.artist?.name || "Unknown Artist";
-      const songCover = song.album?.cover_medium || 'https://via.placeholder.com/64';
+      const artist = song.artist?.name || "Unknown";
+      const coverSrc = song.album?.cover_medium || 'https://via.placeholder.com/64';
 
       div.innerHTML = `
-        <div style="display:flex; align-items:center; gap:16px;">
-          <img class="cover" src="${songCover}" alt="Cover">
+        <div style="display:flex;align-items:center;gap:16px;">
+          <img class="cover" src="${coverSrc}" alt="cover">
           <div>
             <strong>${song.title}</strong><br>
-            <small style="color:#aaa;">${artistName}</small>
+            <small style="color:#aaa;">${artist}</small>
           </div>
         </div>
-        <div style="color:#888; font-size:1.3em;">⋯</div>
+        <div style="color:#888;font-size:1.4em;">⋯</div>
       `;
-
-      div.onclick = () => startPlaylistPlayback(name, idx);
-      songsContainer.appendChild(div);
+      div.onclick = () => startPlaylistPlayback(name, i);
+      container.appendChild(div);
     });
   }
-
-  results.appendChild(songsContainer);
+  results.appendChild(container);
 }
 
-async function addSongToPlaylist(song) {
-  const names = Object.keys(playlists);
-  if (!names.length) {
-    await showAlert('No Playlists', 'Create a playlist first!');
-    return;
-  }
-  const pl = await showPlaylistSelect(playlists);
-  if (pl && playlists[pl]) {
-    // Store complete song object with all necessary fields
-    const songToStore = {
-      id: song.id,
-      title: song.title,
-      preview: song.preview,
-      artist: {
-        id: song.artist?.id,
-        name: song.artist?.name || 'Unknown Artist'
-      },
-      album: {
-        cover_medium: song.album?.cover_medium || song.cover_medium || 'https://via.placeholder.com/64',
-        cover_big: song.album?.cover_big || song.album?.cover_medium || song.cover_medium || 'https://via.placeholder.com/240'
-      }
-    };
-    playlists[pl].songs.push(songToStore);
-    savePlaylists();
-    await showAlert('Success', `Added to ${pl}`);
-    loadHomeContent();
-  }
-}
-
-window.uploadPlaylistCoverFunc = function(playlistName) {
-  uploadPlaylistCover.onchange = e => {
-    const file = e.target.files[0];
-    if (!file) return;
-    const reader = new FileReader();
-    reader.onload = ev => {
-      playlists[playlistName].cover = ev.target.result;
-      savePlaylists();
-      renderSidebarPlaylists();
-      loadHomeContent();
-    };
-    reader.readAsDataURL(file);
-  };
-  uploadPlaylistCover.click();
-};
-
-// === HOME CONTENT (3x2 grids) ===
+// ====================== HOME PAGE ======================
 function loadHomeContent() {
-  // Recently Played (6 max)
+  // Recently Played
   recentlyPlayedDiv.innerHTML = '';
   const recent = recentlyPlayed.slice(-6).reverse();
   if (recent.length) {
@@ -714,26 +673,30 @@ function loadHomeContent() {
     recent.forEach(s => renderGridCard(s, grid, playSong));
     recentlyPlayedDiv.appendChild(grid);
   } else {
-    recentlyPlayedDiv.innerHTML = '<p style="color:#666; font-style:italic;">No songs played yet.</p>';
+    recentlyPlayedDiv.innerHTML = '<p style="color:#666;font-style:italic;">No recently played songs.</p>';
   }
+
   // Your Playlists
   yourPlaylists.innerHTML = '';
-  const plNames = Object.keys(playlists);
-  if (plNames.length) {
+  const names = Object.keys(playlists);
+  if (names.length) {
     const grid = document.createElement('div');
     grid.className = 'grid-container';
-    plNames.forEach(name => {
+    names.forEach(name => {
       const pl = playlists[name];
-      const fakeSong = { title: name, album: { cover_medium: pl.cover || 'https://via.placeholder.com/180?text=♪' } };
-      renderGridCard(fakeSong, grid, () => loadPlaylist(name));
+      const fake = {
+        title: name,
+        cover: pl.cover || 'https://via.placeholder.com/180?text=♪'
+      };
+      renderGridCard(fake, grid, () => loadPlaylist(name));
     });
     yourPlaylists.appendChild(grid);
   } else {
-    yourPlaylists.innerHTML = '<p style="color:#666; font-style:italic;">No playlists yet. Create one!</p>';
+    yourPlaylists.innerHTML = '<p style="color:#666;font-style:italic;">No playlists yet. Create one!</p>';
   }
 }
 
-// Navigation
+// ====================== NAVIGATION ======================
 function showHome() {
   homePage.style.display = 'block';
   searchPage.style.display = 'none';
@@ -749,44 +712,39 @@ function showSearch() {
   homeNav.classList.remove('active');
   searchNav.classList.add('active');
   searchInput.style.display = 'block';
-  searchResultsTitle.style.display = 'none';
-  results.innerHTML = '';
+  searchInput.focus();
 }
 
 homeNav.onclick = showHome;
 searchNav.onclick = showSearch;
 
-// Init
+// ====================== INIT ======================
 ensurePlaylistIds();
 renderSidebarPlaylists();
 showHome();
 loadPopular();
 
-// URL playlist load
-const params = new URLSearchParams(location.search);
-const plId = params.get("playlist");
-if (plId) {
+// Load shared playlist from URL
+const urlParams = new URLSearchParams(location.search);
+const sharedId = urlParams.get('playlist');
+if (sharedId) {
   setTimeout(() => {
     for (const name in playlists) {
-      if (playlists[name].id === plId) {
+      if (playlists[name].id === sharedId) {
         loadPlaylist(name);
         break;
       }
     }
-  }, 500);
+  }, 600);
 }
 
-// Update greeting at midnight automatically
+// Update greeting at midnight
 setInterval(() => {
-  const now = new Date();
-  if (now.getHours() === 0 && now.getMinutes() === 0) {
+  if (new Date().getHours() === 0 && new Date().getMinutes() === 0) {
     updateUserProfile();
   }
-}, 60000); // check every minute
+}, 60000);
 
-if (!audio.src) {
-  nowPlayingSidebar.style.display = "none";
-}
-
-// Hide the entire right sidebar on page load
+// Initial hide
+if (!audio.src) hidePlayer();
 rightSidebar.classList.add("hidden");
