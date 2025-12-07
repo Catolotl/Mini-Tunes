@@ -235,21 +235,29 @@ document.addEventListener("click", (e) => {
     premiumPopup.style.display = "none";
 });
 
-// ====================== DEEZER API ======================
-async function deezerFetch(path) {
-  const url = `https://api.deezer.com/${path}&output=jsonp`;
-  return new Promise((resolve) => {
-    const callbackName = "dzcb_" + Math.random().toString(36).substring(2);
-    window[callbackName] = (data) => {
-      resolve(data.data || data || []);
-      delete window[callbackName];
-      const script = document.querySelector(`script[src^="${url}"]`);
-      if (script) script.remove();
-    };
-    const script = document.createElement("script");
-    script.src = `${url}&callback=${callbackName}`;
-    document.body.appendChild(script);
-  });
+// ====================== ITUNES API ======================
+async function itunesFetch(query, limit = 20) {
+  const url = `https://itunes.apple.com/search?term=${encodeURIComponent(query)}&media=music&entity=song&limit=${limit}`;
+  try {
+    const res = await fetch(url);
+    const data = await res.json();
+    return (data.results || []).map(track => ({
+      id: track.trackId,
+      title: track.trackName,
+      preview: track.previewUrl,
+      artist: {
+        id: track.artistId,
+        name: track.artistName
+      },
+      album: {
+        cover_medium: track.artworkUrl100?.replace('100x100', '200x200') || track.artworkUrl100,
+        cover_big: track.artworkUrl100?.replace('100x100', '600x600') || track.artworkUrl100
+      }
+    }));
+  } catch (err) {
+    console.error('iTunes API error:', err);
+    return [];
+  }
 }
 
 // ====================== SEARCH & POPULAR ======================
@@ -269,7 +277,7 @@ searchInput.addEventListener("input", () => {
 
   searchTimeout = setTimeout(async () => {
     try {
-      const songs = await deezerFetch(`search?q=${encodeURIComponent(q)}`);
+      const songs = await itunesFetch(q);
       results.innerHTML = "";
       if (!songs.length) {
         results.innerHTML = "<p style='color:#aaa;text-align:center;padding:40px;'>No results found.</p>";
@@ -286,7 +294,7 @@ async function loadPopular() {
   popular.innerHTML = "";
   showSkeletons(popular, 10);
   try {
-    const songs = await deezerFetch('chart/0/tracks?limit=20');
+    const songs = await itunesFetch('top songs 2024', 20);
     renderSongs(songs, popular);
   } catch {
     popular.innerHTML = "<p style='color:#f66;'>Failed to load popular songs.</p>";
@@ -304,11 +312,13 @@ recommendInput.addEventListener("input", () => {
   showSkeletons(aiRecommendations, 6);
   recommendTimeout = setTimeout(async () => {
     try {
-      const [song] = await deezerFetch(`search/track?q=${encodeURIComponent(q)}&limit=1`);
-      if (!song) throw new Error("No song");
-      const recs = await deezerFetch(`artist/${song.artist.id}/radio?limit=12`);
-      aiRecommendations.innerHTML = `<p style='margin-bottom:12px;color:#aaa;'>Songs like <strong>${song.title}</strong>:</p>`;
-      renderSongs(recs, aiRecommendations);
+      const songs = await itunesFetch(q, 12);
+      if (!songs.length) throw new Error("No songs");
+      const mainSong = songs[0];
+      // Get similar songs by same artist or genre
+      const similar = await itunesFetch(`${mainSong.artist.name} songs`, 12);
+      aiRecommendations.innerHTML = `<p style='margin-bottom:12px;color:#aaa;'>Songs like <strong>${mainSong.title}</strong>:</p>`;
+      renderSongs(similar, aiRecommendations);
     } catch {
       aiRecommendations.innerHTML = "<p style='color:#f66;'>Recommendation failed.</p>";
     }
@@ -379,8 +389,8 @@ async function playSong(song, fromPlaylist = false) {
   // Refresh data if incomplete
   if (!song.album || !song.artist?.id) {
     try {
-      const fresh = await deezerFetch(`track/${song.id}`);
-      if (fresh?.preview) song = fresh;
+      const fresh = await itunesFetch(song.title + ' ' + song.artist?.name, 1);
+      if (fresh[0]?.preview) song = fresh[0];
     } catch (e) { console.warn("Failed to refresh song data", e); }
   }
 
