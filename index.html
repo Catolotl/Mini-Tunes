@@ -702,5 +702,359 @@
     </div>
 
     <script src="script.js"></script>
+    <script>
+      // ====================== COLOR EXTRACTION & GRADIENT ======================
+function extractColorsFromImage(imageUrl) {
+  return new Promise((resolve) => {
+    const img = new Image();
+    img.crossOrigin = "Anonymous";
+    img.onload = () => {
+      const canvas = document.createElement('canvas');
+      const ctx = canvas.getContext('2d');
+      canvas.width = img.width;
+      canvas.height = img.height;
+      ctx.drawImage(img, 0, 0);
+
+      try {
+        const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+        const colors = [];
+        
+        // Sample pixels from the image
+        for (let i = 0; i < imageData.data.length; i += 4 * 10) {
+          const r = imageData.data[i];
+          const g = imageData.data[i + 1];
+          const b = imageData.data[i + 2];
+          
+          // Skip very dark or very light colors
+          const brightness = (r + g + b) / 3;
+          if (brightness > 30 && brightness < 220) {
+            colors.push({ r, g, b });
+          }
+        }
+
+        // Find dominant color
+        if (colors.length > 0) {
+          const avgColor = colors.reduce((acc, c) => ({
+            r: acc.r + c.r,
+            g: acc.g + c.g,
+            b: acc.b + c.b
+          }), { r: 0, g: 0, b: 0 });
+
+          avgColor.r = Math.floor(avgColor.r / colors.length);
+          avgColor.g = Math.floor(avgColor.g / colors.length);
+          avgColor.b = Math.floor(avgColor.b / colors.length);
+
+          resolve(avgColor);
+        } else {
+          resolve({ r: 0, g: 20, h: 20 }); // Default dark teal
+        }
+      } catch (e) {
+        // CORS error or other issue - use default
+        resolve({ r: 0, g: 20, b: 20 });
+      }
+    };
+    img.onerror = () => resolve({ r: 0, g: 20, b: 20 });
+    img.src = imageUrl;
+  });
+}
+
+function applyGradientFromColor(color) {
+  const { r, g, b } = color;
+  const darkerR = Math.max(0, Math.floor(r * 0.3));
+  const darkerG = Math.max(0, Math.floor(g * 0.3));
+  const darkerB = Math.max(0, Math.floor(b * 0.3));
+  
+  const gradient = `linear-gradient(to bottom, rgb(${r}, ${g}, ${b}), rgb(${darkerR}, ${darkerG}, ${darkerB}), #000)`;
+  document.body.style.background = gradient;
+}
+
+// Modify the playSong function to update gradient
+const originalPlaySong = window.playSong;
+window.playSong = async function(song, fromPlaylist = false) {
+  await originalPlaySong.call(this, song, fromPlaylist);
+  
+  // Extract color and apply gradient
+  if (song?.album?.cover_medium || song?.album?.cover_big) {
+    const coverUrl = song.album.cover_big || song.album.cover_medium;
+    const color = await extractColorsFromImage(coverUrl);
+    applyGradientFromColor(color);
+  }
+};
+
+// ====================== AUTO-GENERATED PLAYLISTS ======================
+function generateAutoPlaylists() {
+  const recent = JSON.parse(localStorage.getItem("recentlyPlayed") || "[]");
+  if (recent.length === 0) return;
+
+  // Get artist play counts
+  const artistCounts = {};
+  recent.forEach(song => {
+    const artist = song.artist?.name || "Unknown";
+    artistCounts[artist] = (artistCounts[artist] || 0) + 1;
+  });
+
+  // Sort artists by play count
+  const sortedArtists = Object.entries(artistCounts)
+    .sort((a, b) => b[1] - a[1])
+    .slice(0, 5);
+
+  // Create "Top Artists Mix" playlist
+  const topArtistsMix = recent
+    .filter(song => sortedArtists.some(([artist]) => artist === song.artist?.name))
+    .slice(-20);
+
+  // Create "Recent Favorites" playlist (last 15 songs)
+  const recentFavorites = recent.slice(-15);
+
+  return {
+    "🎵 Recent Favorites": {
+      songs: recentFavorites,
+      auto: true,
+      cover: recentFavorites[recentFavorites.length - 1]?.album?.cover_medium
+    },
+    "⭐ Top Artists Mix": {
+      songs: topArtistsMix,
+      auto: true,
+      cover: topArtistsMix[topArtistsMix.length - 1]?.album?.cover_medium
+    }
+  };
+}
+
+function renderAutoPlaylists() {
+  const autoPlaylists = generateAutoPlaylists();
+  if (!autoPlaylists) return;
+
+  const homeYourPlaylists = document.getElementById("your-playlists");
+  if (!homeYourPlaylists) return;
+
+  // Create auto-playlists section on home page
+  const autoSection = document.createElement('div');
+  autoSection.style.marginBottom = '32px';
+  
+  const title = document.createElement('h3');
+  title.textContent = 'Made For You';
+  title.style.margin = '0 0 16px';
+  title.style.fontSize = '1.3em';
+  title.style.fontWeight = '600';
+  title.style.color = '#eee';
+  
+  const grid = document.createElement('div');
+  grid.className = 'grid-container';
+  
+  Object.entries(autoPlaylists).forEach(([name, playlist]) => {
+    const div = document.createElement('div');
+    div.className = 'grid-card';
+    const cover = playlist.cover || 'https://via.placeholder.com/180?text=♪';
+    
+    div.innerHTML = `
+      <img class="grid-cover" src="${cover}" alt="cover">
+      <div class="grid-title">${name}</div>
+      <div class="grid-artist">${playlist.songs.length} songs</div>
+    `;
+    
+    div.onclick = () => loadAutoPlaylist(name, playlist);
+    grid.appendChild(div);
+  });
+  
+  autoSection.appendChild(title);
+  autoSection.appendChild(grid);
+  
+  // Insert before "Recently Played"
+  const recentlyPlayed = document.getElementById("recently-played").parentElement;
+  recentlyPlayed.parentElement.insertBefore(autoSection, recentlyPlayed);
+}
+
+function loadAutoPlaylist(name, playlist) {
+  const searchPage = document.getElementById('search-page');
+  const homePage = document.getElementById('home-page');
+  const searchInput = document.getElementById('search');
+  const results = document.getElementById('results');
+  const popularSection = document.getElementById('popular-section');
+  const searchResultsTitle = document.getElementById('search-results-title');
+  
+  homePage.style.display = 'none';
+  searchPage.style.display = 'block';
+  searchInput.style.display = 'none';
+  popularSection.style.display = 'none';
+  searchResultsTitle.style.display = 'none';
+
+  const cover = playlist.cover || 'https://via.placeholder.com/280?text=♪';
+
+  results.innerHTML = `
+    <div class="playlist-view-header">
+      <img class="playlist-big-cover" src="${cover}" alt="cover">
+      <h1 class="playlist-view-title">${name}</h1>
+      <p class="playlist-view-song-count">${playlist.songs.length} song${playlist.songs.length !== 1 ? 's' : ''}</p>
+    </div>
+  `;
+
+  const container = document.createElement('div');
+  if (!playlist.songs.length) {
+    container.innerHTML = '<p style="text-align:center;color:#888;padding:60px;">This playlist is empty.</p>';
+  } else {
+    playlist.songs.forEach((song, i) => {
+      const div = document.createElement('div');
+      div.className = 'song-card';
+      const artist = song.artist?.name || "Unknown";
+      const coverSrc = song.album?.cover_medium || 'https://via.placeholder.com/64';
+
+      div.innerHTML = `
+        <div style="display:flex;align-items:center;gap:16px;">
+          <img class="cover" src="${coverSrc}" alt="cover">
+          <div>
+            <strong>${song.title}</strong><br>
+            <small style="color:#aaa;">${artist}</small>
+          </div>
+        </div>
+      `;
+      div.onclick = () => {
+        window.currentSong = song;
+        window.playSong(song);
+      };
+      container.appendChild(div);
+    });
+  }
+  results.appendChild(container);
+}
+
+// ====================== TOP ARTISTS SIDEBAR ======================
+function renderTopArtistsSidebar() {
+  const sidebar = document.getElementById('sidebar');
+  const recent = JSON.parse(localStorage.getItem("recentlyPlayed") || "[]");
+  
+  if (recent.length === 0) return;
+
+  // Calculate artist play counts
+  const artistCounts = {};
+  const artistData = {};
+  
+  recent.forEach(song => {
+    const artist = song.artist?.name || "Unknown";
+    artistCounts[artist] = (artistCounts[artist] || 0) + 1;
+    
+    if (!artistData[artist]) {
+      artistData[artist] = {
+        name: artist,
+        cover: song.album?.cover_medium || 'https://via.placeholder.com/42',
+        songs: []
+      };
+    }
+    artistData[artist].songs.push(song);
+  });
+
+  // Get top 5 artists
+  const topArtists = Object.entries(artistCounts)
+    .sort((a, b) => b[1] - a[1])
+    .slice(0, 5)
+    .map(([artist]) => artistData[artist]);
+
+  if (topArtists.length === 0) return;
+
+  // Create header
+  const header = document.createElement('div');
+  header.className = 'playlists-header';
+  header.textContent = 'Top Artists';
+  sidebar.appendChild(header);
+
+  // Render artists
+  topArtists.forEach(artist => {
+    const div = document.createElement('div');
+    div.className = 'playlist-item';
+    div.innerHTML = `
+      <img class="playlist-cover" src="${artist.cover}" alt="artist">
+      <strong style="flex:1;">${artist.name}</strong>
+      <small style="color:#666;">${artist.songs.length}</small>
+    `;
+    
+    div.onclick = () => loadArtistPlaylist(artist);
+    sidebar.appendChild(div);
+  });
+}
+
+function loadArtistPlaylist(artist) {
+  const searchPage = document.getElementById('search-page');
+  const homePage = document.getElementById('home-page');
+  const searchInput = document.getElementById('search');
+  const results = document.getElementById('results');
+  const popularSection = document.getElementById('popular-section');
+  const searchResultsTitle = document.getElementById('search-results-title');
+  
+  homePage.style.display = 'none';
+  searchPage.style.display = 'block';
+  searchInput.style.display = 'none';
+  popularSection.style.display = 'none';
+  searchResultsTitle.style.display = 'none';
+
+  const cover = artist.cover || 'https://via.placeholder.com/280?text=♪';
+
+  results.innerHTML = `
+    <div class="playlist-view-header">
+      <img class="playlist-big-cover" src="${cover}" alt="cover">
+      <h1 class="playlist-view-title">${artist.name}</h1>
+      <p class="playlist-view-song-count">${artist.songs.length} song${artist.songs.length !== 1 ? 's' : ''}</p>
+    </div>
+  `;
+
+  const container = document.createElement('div');
+  artist.songs.forEach((song, i) => {
+    const div = document.createElement('div');
+    div.className = 'song-card';
+    const coverSrc = song.album?.cover_medium || 'https://via.placeholder.com/64';
+
+    div.innerHTML = `
+      <div style="display:flex;align-items:center;gap:16px;">
+        <img class="cover" src="${coverSrc}" alt="cover">
+        <div>
+          <strong>${song.title}</strong><br>
+          <small style="color:#aaa;">${artist.name}</small>
+        </div>
+      </div>
+    `;
+    div.onclick = () => {
+      window.currentSong = song;
+      window.playSong(song);
+    };
+    container.appendChild(div);
+  });
+  results.appendChild(container);
+}
+
+// ====================== INITIALIZE ======================
+// Override loadHomeContent to include auto playlists
+const originalLoadHomeContent = window.loadHomeContent;
+window.loadHomeContent = function() {
+  originalLoadHomeContent.call(this);
+  renderAutoPlaylists();
+};
+
+// Initialize on page load
+window.addEventListener('load', () => {
+  renderTopArtistsSidebar();
+  
+  // Refresh top artists when returning to home
+  const homeNav = document.getElementById('home-nav');
+  const originalHomeClick = homeNav.onclick;
+  homeNav.onclick = function() {
+    originalHomeClick.call(this);
+    
+    // Clear and re-render top artists
+    const sidebar = document.getElementById('sidebar');
+    const existingHeader = Array.from(sidebar.children).find(el => 
+      el.className === 'playlists-header' && el.textContent === 'Top Artists'
+    );
+    if (existingHeader) {
+      let next = existingHeader.nextElementSibling;
+      while (next && next.className === 'playlist-item' && next.querySelector('small')) {
+        const toRemove = next;
+        next = next.nextElementSibling;
+        toRemove.remove();
+      }
+      existingHeader.remove();
+    }
+    
+    renderTopArtistsSidebar();
+  };
+});
+    </script>
   </body>
 </html>
