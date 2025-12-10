@@ -6,8 +6,77 @@ const nowPlayingArtist = document.getElementById("now-playing-artist");
 const addCurrentBtn = document.getElementById("add-current-to-playlist");
 
 let currentSong = null;
-let currentPlaylist = null; // { name, index }
+let currentPlaylist = null;
 let queueFromPlaylist = false;
+let youtubePlayer = null;
+let playerReady = false;
+
+// ====================== YOUTUBE PLAYER ======================
+// Load YouTube IFrame API
+const tag = document.createElement('script');
+tag.src = "https://www.youtube.com/iframe_api";
+const firstScriptTag = document.getElementsByTagName('script')[0];
+firstScriptTag.parentNode.insertBefore(tag, firstScriptTag);
+
+// YouTube player container (hidden)
+const ytContainer = document.createElement('div');
+ytContainer.id = 'youtube-player';
+ytContainer.style.display = 'none';
+document.body.appendChild(ytContainer);
+
+window.onYouTubeIframeAPIReady = function() {
+  youtubePlayer = new YT.Player('youtube-player', {
+    height: '0',
+    width: '0',
+    events: {
+      'onReady': () => { playerReady = true; },
+      'onStateChange': onPlayerStateChange
+    }
+  });
+};
+
+function onPlayerStateChange(event) {
+  if (event.data === YT.PlayerState.ENDED) {
+    handleSongEnd();
+  } else if (event.data === YT.PlayerState.PLAYING) {
+    updateNowPlaying();
+  }
+}
+
+function handleSongEnd() {
+  if (queueFromPlaylist && currentPlaylist) {
+    const pl = playlists[currentPlaylist.name];
+    const next = currentPlaylist.index + 1;
+    if (next < pl.songs.length) {
+      currentPlaylist.index = next;
+      playSong(pl.songs[next], true);
+      return;
+    }
+  }
+  queueFromPlaylist = false;
+  currentPlaylist = null;
+  setTimeout(hidePlayer, 800);
+}
+
+async function searchYouTube(query) {
+  try {
+    // Using a public YouTube search workaround (scraping search page)
+    const searchUrl = `https://www.youtube.com/results?search_query=${encodeURIComponent(query)}`;
+    const response = await fetch(searchUrl);
+    const html = await response.text();
+    
+    // Extract video IDs from the page
+    const videoIdRegex = /"videoId":"([^"]{11})"/g;
+    const matches = [...html.matchAll(videoIdRegex)];
+    
+    if (matches.length > 0) {
+      return matches[0][1]; // Return first video ID
+    }
+  } catch (err) {
+    console.error('YouTube search error:', err);
+  }
+  return null;
+}
 
 // ====================== DIALOGS ======================
 function showInputDialog(title, message, defaultValue = '') {
@@ -315,7 +384,6 @@ recommendInput.addEventListener("input", () => {
       const songs = await itunesFetch(q, 12);
       if (!songs.length) throw new Error("No songs");
       const mainSong = songs[0];
-      // Get similar songs by same artist or genre
       const similar = await itunesFetch(`${mainSong.artist.name} songs`, 12);
       aiRecommendations.innerHTML = `<p style='margin-bottom:12px;color:#aaa;'>Songs like <strong>${mainSong.title}</strong>:</p>`;
       renderSongs(similar, aiRecommendations);
@@ -327,7 +395,7 @@ recommendInput.addEventListener("input", () => {
 
 // ====================== RENDERING ======================
 function showSkeletons(container, count) {
-  container.innerHTML = ""; // clear old skeletons
+  container.innerHTML = "";
   for (let i = 0; i < count; i++) {
     const sk = document.createElement("div");
     sk.className = "skeleton";
@@ -380,48 +448,62 @@ function renderGridCard(item, container, clickHandler) {
 }
 
 // ====================== PLAYER ======================
+function updateNowPlaying() {
+  if (!currentSong) return;
+  nowPlaying.textContent = `Now playing: ${currentSong.title} — ${currentSong.artist?.name || 'Unknown'}`;
+  player.style.display = "block";
+
+  const bigCover = currentSong.album?.cover_big || currentSong.album?.cover_medium || 'https://via.placeholder.com/240';
+  nowPlayingCover.src = bigCover;
+  nowPlayingTitle.textContent = currentSong.title;
+  nowPlayingArtist.textContent = currentSong.artist?.name || 'Unknown Artist';
+  rightSidebar.classList.remove("hidden");
+  nowPlayingSidebar.style.display = "block";
+}
+
 async function playSong(song, fromPlaylist = false) {
-  if (!song?.preview || !song.id) {
+  if (!song?.title) {
     await showAlert('Invalid Song', 'This song cannot be played.');
     return;
   }
 
-  // Refresh data if incomplete
-  if (!song.album || !song.artist?.id) {
-    try {
-      const fresh = await itunesFetch(song.title + ' ' + song.artist?.name, 1);
-      if (fresh[0]?.preview) song = fresh[0];
-    } catch (e) { console.warn("Failed to refresh song data", e); }
+  // Wait for YouTube player to be ready
+  let attempts = 0;
+  while (!playerReady && attempts < 50) {
+    await new Promise(resolve => setTimeout(resolve, 100));
+    attempts++;
+  }
+
+  if (!playerReady) {
+    await showAlert('Player Error', 'YouTube player not ready. Please refresh.');
+    return;
   }
 
   currentSong = song;
-  audio.src = song.preview;
 
-  nowPlaying.textContent = `Now playing: ${song.title} — ${song.artist?.name || 'Unknown'}`;
-  player.style.display = "block";
-
-  // Update right sidebar
-  const bigCover = song.album?.cover_big || song.album?.cover_medium || 'https://via.placeholder.com/240';
-  nowPlayingCover.src = bigCover;
-  nowPlayingTitle.textContent = song.title;
-  nowPlayingArtist.textContent = song.artist?.name || 'Unknown Artist';
-  rightSidebar.classList.remove("hidden");
-  nowPlayingSidebar.style.display = "block";
-
-  // Autoplay with proper handling
-  try {
-    await audio.play();
-  } catch (err) {
-    console.log("Autoplay blocked:", err);
-    await showAlert('Autoplay Blocked', 'Tap OK to start playing.');
-    try { await audio.play(); } catch { }
+  // Search YouTube for the song
+  const searchQuery = `${song.title} ${song.artist?.name || ''} official audio`;
+  nowPlaying.textContent = `Loading: ${song.title}...`;
+  
+  const videoId = await searchYouTube(searchQuery);
+  
+  if (!videoId) {
+    await showAlert('Not Found', 'Could not find this song on YouTube.');
+    return;
   }
+
+  // Store YouTube video ID with song
+  currentSong.youtubeId = videoId;
+
+  // Play on YouTube
+  youtubePlayer.loadVideoById(videoId);
+  updateNowPlaying();
 
   // Update recently played
   const songToSave = {
-    id: song.id,
+    id: song.id || generateId(),
     title: song.title,
-    preview: song.preview,
+    youtubeId: videoId,
     artist: { id: song.artist?.id, name: song.artist?.name || "Unknown" },
     album: {
       cover_medium: song.album?.cover_medium || 'https://via.placeholder.com/64',
@@ -429,7 +511,7 @@ async function playSong(song, fromPlaylist = false) {
     }
   };
 
-  recentlyPlayed = recentlyPlayed.filter(s => s.id !== song.id);
+  recentlyPlayed = recentlyPlayed.filter(s => s.id !== songToSave.id);
   recentlyPlayed.push(songToSave);
   if (recentlyPlayed.length > 20) recentlyPlayed.shift();
   localStorage.setItem("recentlyPlayed", JSON.stringify(recentlyPlayed));
@@ -453,43 +535,14 @@ function startPlaylistPlayback(plName, startIdx = 0) {
   playSong(pl.songs[startIdx], true);
 }
 
-// Next song when current ends
-audio.onended = () => {
-  if (queueFromPlaylist && currentPlaylist) {
-    const pl = playlists[currentPlaylist.name];
-    const next = currentPlaylist.index + 1;
-    if (next < pl.songs.length) {
-      currentPlaylist.index = next;
-      playSong(pl.songs[next], true);
-      return;
-    }
-  }
-  // End of queue → hide player
-  queueFromPlaylist = false;
-  currentPlaylist = null;
-  setTimeout(hidePlayer, 800);
-};
-
-audio.onerror = async () => {
-  await showAlert('Playback Error', 'This song is unavailable.');
-
-  if (queueFromPlaylist && currentPlaylist) {
-    const pl = playlists[currentPlaylist.name];
-    const next = currentPlaylist.index + 1;
-    if (next < pl.songs.length) {
-      currentPlaylist.index = next;
-      playSong(pl.songs[next], true);
-      return;
-    }
-  }
-  hidePlayer();
-};
-
 function hidePlayer() {
   nowPlayingSidebar.style.display = "none";
   player.style.display = "none";
   rightSidebar.classList.add("hidden");
   nowPlaying.textContent = "No song playing";
+  if (youtubePlayer) {
+    youtubePlayer.stopVideo();
+  }
 }
 
 // Add current song to playlist button
@@ -500,10 +553,8 @@ addCurrentBtn.onclick = async () => {
 
 // ====================== PLAYLISTS ======================
 function renderSidebarPlaylists() {
-  // Clear old items except the static ones (if any)
   sidebar.querySelectorAll('.playlist-item').forEach(el => el.remove());
 
-  // + New Playlist
   const newBtn = document.createElement('div');
   newBtn.className = 'playlist-item new-playlist';
   newBtn.innerHTML = '<strong style="color:var(--accent);">+ New Playlist</strong>';
@@ -521,7 +572,6 @@ function renderSidebarPlaylists() {
   };
   sidebar.appendChild(newBtn);
 
-  // Existing playlists
   Object.keys(playlists).forEach(name => {
     const pl = playlists[name];
     const cover = pl.cover || 'https://via.placeholder.com/42x42.png?text=♪';
@@ -590,7 +640,6 @@ function uploadPlaylistCoverFunc(name) {
       savePlaylists();
       renderSidebarPlaylists();
       loadHomeContent();
-      // Update current view if open
       const bigCover = document.querySelector('.playlist-big-cover');
       if (bigCover) bigCover.src = ev.target.result;
     };
@@ -608,9 +657,9 @@ async function addSongToPlaylist(song) {
   if (!plName) return;
 
   const songToStore = {
-    id: song.id,
+    id: song.id || generateId(),
     title: song.title,
-    preview: song.preview,
+    youtubeId: song.youtubeId,
     artist: { id: song.artist?.id, name: song.artist?.name || "Unknown" },
     album: {
       cover_medium: song.album?.cover_medium || 'https://via.placeholder.com/64',
@@ -674,7 +723,6 @@ function loadPlaylist(name) {
 
 // ====================== HOME PAGE ======================
 function loadHomeContent() {
-  // Recently Played
   recentlyPlayedDiv.innerHTML = '';
   const recent = recentlyPlayed.slice(-6).reverse();
   if (recent.length) {
@@ -686,7 +734,6 @@ function loadHomeContent() {
     recentlyPlayedDiv.innerHTML = '<p style="color:#666;font-style:italic;">No recently played songs.</p>';
   }
 
-  // Your Playlists
   yourPlaylists.innerHTML = '';
   const names = Object.keys(playlists);
   if (names.length) {
@@ -734,7 +781,6 @@ renderSidebarPlaylists();
 showHome();
 loadPopular();
 
-// Load shared playlist from URL
 const urlParams = new URLSearchParams(location.search);
 const sharedId = urlParams.get('playlist');
 if (sharedId) {
@@ -747,14 +793,3 @@ if (sharedId) {
     }
   }, 600);
 }
-
-// Update greeting at midnight
-setInterval(() => {
-  if (new Date().getHours() === 0 && new Date().getMinutes() === 0) {
-    updateUserProfile();
-  }
-}, 60000);
-
-// Initial hide
-if (!audio.src) hidePlayer();
-rightSidebar.classList.add("hidden");
