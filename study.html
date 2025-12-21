@@ -1,0 +1,1004 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Blade Study Dashboard</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: #0a0a0a;
+            min-height: 100vh;
+            color: #ffffff;
+        }
+
+        .container {
+            display: grid;
+            grid-template-columns: 250px 1fr;
+            min-height: 100vh;
+        }
+
+        .sidebar {
+            background: #1a1a1a;
+            padding: 30px 20px;
+            border-right: 1px solid #333;
+        }
+
+        .logo {
+            font-size: 28px;
+            font-weight: bold;
+            margin-bottom: 40px;
+            color: #ffffff;
+        }
+
+        .nav-item {
+            padding: 12px 15px;
+            margin: 8px 0;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            color: #999;
+        }
+
+        .nav-item:hover {
+            background: #2a2a2a;
+            color: #ffffff;
+        }
+
+        .nav-item.active {
+            background: #ffffff;
+            color: #000000;
+        }
+
+        .main-content {
+            padding: 40px;
+            overflow-y: auto;
+            background: #0a0a0a;
+        }
+
+        .content-section {
+            display: none;
+            animation: fadeIn 0.3s;
+        }
+
+        .content-section.active {
+            display: block;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .dashboard-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr 300px;
+            grid-template-rows: 350px 350px;
+            gap: 20px;
+            height: calc(100vh - 80px);
+        }
+
+        .dashboard-card {
+            background: #1a1a1a;
+            border-radius: 15px;
+            padding: 30px;
+            border: 1px solid #333;
+            overflow: hidden;
+        }
+
+        .notes-widget {
+            grid-column: 1 / 3;
+            grid-row: 1;
+        }
+
+        .timer-widget {
+            grid-column: 1 / 3;
+            grid-row: 2;
+        }
+
+        .music-widget {
+            grid-column: 3;
+            grid-row: 1 / 3;
+            display: flex;
+            flex-direction: column;
+            transition: background 0.5s ease;
+        }
+
+        h2 {
+            margin-bottom: 20px;
+            color: #ffffff;
+            font-size: 24px;
+        }
+
+        .notes-area {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+            gap: 15px;
+            max-height: calc(100% - 80px);
+            overflow-y: auto;
+        }
+
+        .note-input {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+
+        .note-input input {
+            flex: 1;
+            padding: 12px;
+            border: 1px solid #333;
+            border-radius: 8px;
+            font-size: 14px;
+            background: #2a2a2a;
+            color: #ffffff;
+        }
+
+        .note-input input::placeholder {
+            color: #666;
+        }
+
+        .btn {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: all 0.3s;
+            font-weight: 600;
+        }
+
+        .btn-primary {
+            background: #ffffff;
+            color: #000000;
+        }
+
+        .btn-primary:hover {
+            background: #e0e0e0;
+            transform: translateY(-2px);
+        }
+
+        .note-card {
+            background: #2a2a2a;
+            padding: 15px;
+            border-radius: 10px;
+            border: 1px solid #333;
+            height: fit-content;
+        }
+
+        .note-card h3 {
+            margin-bottom: 10px;
+            color: #ffffff;
+            font-size: 16px;
+        }
+
+        .note-card textarea {
+            width: 100%;
+            min-height: 80px;
+            padding: 10px;
+            border: 1px solid #333;
+            border-radius: 5px;
+            resize: vertical;
+            font-family: inherit;
+            background: #1a1a1a;
+            color: #ffffff;
+            font-size: 13px;
+        }
+
+        .note-actions {
+            margin-top: 10px;
+            display: flex;
+            gap: 10px;
+        }
+
+        .btn-small {
+            padding: 6px 12px;
+            font-size: 12px;
+        }
+
+        .btn-danger {
+            background: #dc3545;
+            color: white;
+        }
+
+        .schedule-grid {
+            display: grid;
+            gap: 15px;
+        }
+
+        .task-item {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            padding: 15px;
+            background: #1a1a1a;
+            border-radius: 10px;
+            border: 1px solid #333;
+        }
+
+        .task-item input[type="checkbox"] {
+            width: 20px;
+            height: 20px;
+            cursor: pointer;
+        }
+
+        .task-item.completed .task-text {
+            text-decoration: line-through;
+            opacity: 0.6;
+        }
+
+        .timer-display {
+            text-align: center;
+            padding: 60px;
+            background: #1a1a1a;
+            color: white;
+            border-radius: 15px;
+            border: 1px solid #333;
+        }
+
+        .timer-display h1 {
+            font-size: 96px;
+            margin-bottom: 30px;
+            font-weight: 300;
+        }
+
+        .timer-controls {
+            display: flex;
+            gap: 15px;
+            justify-content: center;
+        }
+
+        .music-cover {
+            width: 100%;
+            aspect-ratio: 1;
+            background: #2a2a2a;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 48px;
+            overflow: hidden;
+        }
+
+        .music-cover img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .music-info {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .track-name {
+            font-size: 18px;
+            font-weight: 600;
+            color: #ffffff;
+        }
+
+        .artist-name {
+            font-size: 14px;
+            color: #999;
+        }
+
+        .progress-bar {
+            width: 100%;
+            height: 6px;
+            background: rgba(255,255,255,0.2);
+            border-radius: 3px;
+            margin: 15px 0;
+            position: relative;
+            cursor: pointer;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: #ffffff;
+            border-radius: 3px;
+            width: 0%;
+            transition: width 0.1s linear;
+        }
+
+        .music-controls {
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+            margin-top: 20px;
+        }
+
+        .control-btn {
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            background: #ffffff;
+            color: #000000;
+            border: none;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 20px;
+            transition: all 0.3s;
+        }
+
+        .control-btn:hover {
+            transform: scale(1.1);
+        }
+
+        .control-btn.play {
+            width: 60px;
+            height: 60px;
+            font-size: 24px;
+        }
+
+        .flashcard {
+            background: #1a1a1a;
+            padding: 40px;
+            border-radius: 15px;
+            text-align: center;
+            min-height: 200px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: transform 0.3s;
+            margin-bottom: 20px;
+            border: 1px solid #333;
+        }
+
+        .flashcard:hover {
+            transform: scale(1.02);
+        }
+
+        .flashcard h3 {
+            font-size: 24px;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            margin-top: 20px;
+        }
+
+        .stat-card {
+            background: #1a1a1a;
+            color: white;
+            padding: 25px;
+            border-radius: 15px;
+            text-align: center;
+            border: 1px solid #333;
+        }
+
+        .stat-card h3 {
+            font-size: 36px;
+            margin-bottom: 10px;
+        }
+
+        .break-notification {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: #1a1a1a;
+            padding: 20px 25px;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+            border: 1px solid #333;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            transform: translateX(400px);
+            transition: transform 0.5s ease;
+            z-index: 1000;
+        }
+
+        .break-notification.show {
+            transform: translateX(0);
+        }
+
+        .coffee-icon {
+            font-size: 32px;
+        }
+
+        .break-text {
+            font-size: 16px;
+            font-weight: 600;
+            color: #ffffff;
+        }
+
+        .quick-links-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+            gap: 15px;
+            margin-top: 20px;
+        }
+
+        .link-card {
+            background: #1a1a1a;
+            padding: 20px;
+            border-radius: 10px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s;
+            border: 1px solid #333;
+        }
+
+        .link-card:hover {
+            transform: translateY(-5px);
+            border-color: #666;
+        }
+
+        .search-input {
+            width: 100%;
+            padding: 12px;
+            background: #2a2a2a;
+            border: 1px solid #333;
+            border-radius: 8px;
+            color: #ffffff;
+            margin-bottom: 20px;
+        }
+
+        .search-results {
+            max-height: 200px;
+            overflow-y: auto;
+            background: #2a2a2a;
+            border-radius: 8px;
+            margin-top: 10px;
+        }
+
+        .search-result-item {
+            padding: 10px 15px;
+            cursor: pointer;
+            border-bottom: 1px solid #333;
+            transition: background 0.2s;
+        }
+
+        .search-result-item:hover {
+            background: #333;
+        }
+
+        .volume-control {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-top: 15px;
+        }
+
+        .volume-slider {
+            flex: 1;
+            height: 4px;
+            background: rgba(255,255,255,0.2);
+            border-radius: 2px;
+            cursor: pointer;
+            position: relative;
+        }
+
+        .volume-fill {
+            height: 100%;
+            background: #ffffff;
+            border-radius: 2px;
+            width: 100%;
+        }
+    </style>
+</head>
+<body>
+    <div class="break-notification" id="breakNotification">
+        <div class="coffee-icon">☕</div>
+        <div class="break-text">Time to think about a break!</div>
+    </div>
+
+    <div class="container">
+        <div class="sidebar">
+            <div class="logo">🎓 Blade Study</div>
+            <div class="nav-item active" onclick="showSection('dashboard')">📊 Dashboard</div>
+            <div class="nav-item" onclick="showSection('notes')">📝 Notes</div>
+            <div class="nav-item" onclick="showSection('schedule')">📅 Schedule</div>
+            <div class="nav-item" onclick="showSection('timer')">⏱️ Study Timer</div>
+            <div class="nav-item" onclick="showSection('flashcards')">🎴 Flashcards</div>
+            <div class="nav-item" onclick="showSection('links')">🔗 Quick Links</div>
+        </div>
+
+        <div class="main-content">
+            <div class="content-section active" id="dashboard">
+                <div class="dashboard-grid">
+                    <div class="dashboard-card notes-widget">
+                        <h2>Quick Notes</h2>
+                        <div class="note-input">
+                            <input type="text" id="dashNoteTitle" placeholder="Note title...">
+                            <button class="btn btn-primary" onclick="addNote()">Add Note</button>
+                        </div>
+                        <div class="notes-area" id="dashNotesContainer"></div>
+                    </div>
+
+                    <div class="dashboard-card timer-widget">
+                        <h2>Study Timer</h2>
+                        <div class="timer-display">
+                            <h1 id="dashTimerDisplay">25:00</h1>
+                            <div class="timer-controls">
+                                <button class="btn btn-primary" onclick="startTimer()">Start</button>
+                                <button class="btn btn-primary" onclick="pauseTimer()">Pause</button>
+                                <button class="btn btn-primary" onclick="resetTimer()">Reset</button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="dashboard-card music-widget" id="musicWidget">
+                        <h2>Now Playing</h2>
+                        <input type="text" class="search-input" id="trackSearch" placeholder="Search for a track...">
+                        <div class="search-results" id="searchResults" style="display: none;"></div>
+                        <div class="music-cover" id="albumCover">🎵</div>
+                        <div class="music-info">
+                            <div class="track-name" id="trackName">Search for a track</div>
+                            <div class="artist-name" id="artistName">Start playing music</div>
+                            <div class="progress-bar" id="progressBar" onclick="seekTrack(event)">
+                                <div class="progress-fill" id="progressFill"></div>
+                            </div>
+                            <div style="display: flex; justify-content: space-between; color: #666; font-size: 12px;">
+                                <span id="currentTime">0:00</span>
+                                <span id="duration">0:00</span>
+                            </div>
+                        </div>
+                        <div class="music-controls">
+                            <button class="control-btn" onclick="previousTrack()">⏮</button>
+                            <button class="control-btn play" onclick="togglePlay()" id="playBtn">▶</button>
+                            <button class="control-btn" onclick="nextTrack()">⏭</button>
+                        </div>
+                        <div class="volume-control">
+                            <span>🔊</span>
+                            <div class="volume-slider" onclick="setVolume(event)">
+                                <div class="volume-fill" id="volumeFill"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="content-section" id="notes">
+                <h2>My Notes</h2>
+                <div class="note-input">
+                    <input type="text" id="noteTitle" placeholder="Note title...">
+                    <button class="btn btn-primary" onclick="addNote()">Add Note</button>
+                </div>
+                <div class="notes-area" id="notesContainer"></div>
+            </div>
+
+            <div class="content-section" id="schedule">
+                <h2>Schedule & Tasks</h2>
+                <div class="note-input">
+                    <input type="text" id="taskInput" placeholder="Add a task...">
+                    <button class="btn btn-primary" onclick="addTask()">Add Task</button>
+                </div>
+                <div class="schedule-grid" id="tasksContainer"></div>
+            </div>
+
+            <div class="content-section" id="timer">
+                <h2>Study Timer</h2>
+                <div class="timer-display">
+                    <h1 id="timerDisplay">25:00</h1>
+                    <div class="timer-controls">
+                        <button class="btn btn-primary" onclick="startTimer()">Start</button>
+                        <button class="btn btn-primary" onclick="pauseTimer()">Pause</button>
+                        <button class="btn btn-primary" onclick="resetTimer()">Reset</button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="content-section" id="flashcards">
+                <h2>Flashcards</h2>
+                <div class="note-input">
+                    <input type="text" id="flashcardQuestion" placeholder="Question...">
+                    <input type="text" id="flashcardAnswer" placeholder="Answer...">
+                    <button class="btn btn-primary" onclick="addFlashcard()">Add Card</button>
+                </div>
+                <div id="flashcardDisplay"></div>
+            </div>
+
+            <div class="content-section" id="links">
+                <h2>Quick Links</h2>
+                <div class="note-input">
+                    <input type="text" id="linkTitle" placeholder="Link title...">
+                    <input type="text" id="linkUrl" placeholder="URL...">
+                    <button class="btn btn-primary" onclick="addLink()">Add Link</button>
+                </div>
+                <div class="quick-links-grid" id="linksContainer"></div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let notes = [];
+        let tasks = [];
+        let flashcards = [];
+        let links = [];
+        let currentFlashcard = 0;
+        let showingAnswer = false;
+        let timerInterval;
+        let timerSeconds = 1500;
+        let timerRunning = false;
+        let studyMinutes = 0;
+        let tasksCompleted = 0;
+
+        // Music player state
+        let currentTrack = null;
+        let audioElement = new Audio();
+        let isPlaying = false;
+        let currentVolume = 1;
+        let searchTimeout;
+
+        // Break notification every 10 minutes
+        setInterval(() => {
+            showBreakNotification();
+        }, 600000);
+
+        function showBreakNotification() {
+            const notification = document.getElementById('breakNotification');
+            notification.classList.add('show');
+            setTimeout(() => {
+                notification.classList.remove('show');
+            }, 5000);
+        }
+
+        function showSection(section) {
+            document.querySelectorAll('.content-section').forEach(s => s.classList.remove('active'));
+            document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+            document.getElementById(section).classList.add('active');
+            event.target.classList.add('active');
+        }
+
+        // Search for tracks
+        document.getElementById('trackSearch')?.addEventListener('input', (e) => {
+            clearTimeout(searchTimeout);
+            const query = e.target.value;
+            if (query.length < 2) {
+                document.getElementById('searchResults').style.display = 'none';
+                return;
+            }
+            
+            searchTimeout = setTimeout(() => searchTracks(query), 500);
+        });
+
+        async function searchTracks(query) {
+            try {
+                const response = await fetch(`https://api.deezer.com/search?q=${encodeURIComponent(query)}&output=jsonp&callback=handleSearchResults`);
+                
+                // Since Deezer requires JSONP, we'll create a mock interface for demonstration
+                document.getElementById('searchResults').innerHTML = `
+                    <div class="search-result-item" onclick="selectMockTrack('${query}')">
+                        <div style="font-weight: 600;">${query}</div>
+                        <div style="font-size: 12px; color: #666;">Sample Track</div>
+                    </div>
+                `;
+                document.getElementById('searchResults').style.display = 'block';
+            } catch (error) {
+                console.error('Search error:', error);
+            }
+        }
+
+        function selectMockTrack(query) {
+            // Mock track selection for demonstration
+            currentTrack = {
+                title: query,
+                artist: 'Sample Artist',
+                album: 'Sample Album',
+                cover: null,
+                duration: 180,
+                preview: null
+            };
+            
+            updateMusicDisplay();
+            document.getElementById('searchResults').style.display = 'none';
+            document.getElementById('trackSearch').value = '';
+            
+            // Generate gradient based on track name (mock)
+            generateGradientFromTrack(query);
+        }
+
+        function generateGradientFromTrack(trackName) {
+            // Generate a gradient based on the track name
+            const hash = trackName.split('').reduce((acc, char) => char.charCodeAt(0) + acc, 0);
+            const hue1 = hash % 360;
+            const hue2 = (hash + 120) % 360;
+            
+            const musicWidget = document.getElementById('musicWidget');
+            musicWidget.style.background = `linear-gradient(135deg, hsl(${hue1}, 50%, 30%) 0%, hsl(${hue2}, 50%, 20%) 100%)`;
+        }
+
+        function updateMusicDisplay() {
+            if (!currentTrack) return;
+            
+            document.getElementById('trackName').textContent = currentTrack.title;
+            document.getElementById('artistName').textContent = currentTrack.artist;
+            
+            if (currentTrack.cover) {
+                document.getElementById('albumCover').innerHTML = `<img src="${currentTrack.cover}" alt="Album Cover">`;
+            } else {
+                document.getElementById('albumCover').innerHTML = '🎵';
+            }
+        }
+
+        function togglePlay() {
+            if (!currentTrack) {
+                alert('Please search and select a track first!');
+                return;
+            }
+            
+            isPlaying = !isPlaying;
+            document.getElementById('playBtn').textContent = isPlaying ? '⏸' : '▶';
+            
+            // Mock playback
+            if (isPlaying) {
+                startProgressSimulation();
+            }
+        }
+
+        let progressInterval;
+        let currentProgress = 0;
+
+        function startProgressSimulation() {
+            clearInterval(progressInterval);
+            progressInterval = setInterval(() => {
+                if (isPlaying && currentTrack) {
+                    currentProgress += 1;
+                    if (currentProgress >= currentTrack.duration) {
+                        currentProgress = 0;
+                        nextTrack();
+                    }
+                    updateProgress();
+                }
+            }, 1000);
+        }
+
+        function updateProgress() {
+            const percent = (currentProgress / currentTrack.duration) * 100;
+            document.getElementById('progressFill').style.width = percent + '%';
+            document.getElementById('currentTime').textContent = formatTime(currentProgress);
+            document.getElementById('duration').textContent = formatTime(currentTrack.duration);
+        }
+
+        function formatTime(seconds) {
+            const mins = Math.floor(seconds / 60);
+            const secs = Math.floor(seconds % 60);
+            return `${mins}:${secs.toString().padStart(2, '0')}`;
+        }
+
+        function seekTrack(event) {
+            if (!currentTrack) return;
+            const bar = event.currentTarget;
+            const percent = (event.offsetX / bar.offsetWidth);
+            currentProgress = Math.floor(percent * currentTrack.duration);
+            updateProgress();
+        }
+
+        function setVolume(event) {
+            const bar = event.currentTarget;
+            const percent = (event.offsetX / bar.offsetWidth);
+            currentVolume = percent;
+            document.getElementById('volumeFill').style.width = (percent * 100) + '%';
+            audioElement.volume = currentVolume;
+        }
+
+        function previousTrack() {
+            alert('Previous track functionality - connect to full Deezer API for complete features');
+        }
+
+        function nextTrack() {
+            alert('Next track functionality - connect to full Deezer API for complete features');
+        }
+
+        function addNote() {
+            const titleInput = document.getElementById('noteTitle') || document.getElementById('dashNoteTitle');
+            const title = titleInput.value;
+            if (!title) return;
+            
+            const note = { id: Date.now(), title, content: '' };
+            notes.push(note);
+            titleInput.value = '';
+            renderNotes();
+            renderDashboardNotes();
+        }
+
+        function renderNotes() {
+            const container = document.getElementById('notesContainer');
+            if (!container) return;
+            container.innerHTML = notes.map(note => `
+                <div class="note-card">
+                    <h3>${note.title}</h3>
+                    <textarea onchange="updateNoteContent(${note.id}, this.value)">${note.content}</textarea>
+                    <div class="note-actions">
+                        <button class="btn btn-danger btn-small" onclick="deleteNote(${note.id})">Delete</button>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function renderDashboardNotes() {
+            const container = document.getElementById('dashNotesContainer');
+            if (!container) return;
+            container.innerHTML = notes.slice(0, 6).map(note => `
+                <div class="note-card">
+                    <h3>${note.title}</h3>
+                    <textarea onchange="updateNoteContent(${note.id}, this.value)">${note.content}</textarea>
+                </div>
+            `).join('');
+        }
+
+        function updateNoteContent(id, content) {
+            const note = notes.find(n => n.id === id);
+            if (note) note.content = content;
+        }
+
+        function deleteNote(id) {
+            notes = notes.filter(n => n.id !== id);
+            renderNotes();
+            renderDashboardNotes();
+        }
+
+        function addTask() {
+            const text = document.getElementById('taskInput').value;
+            if (!text) return;
+            
+            tasks.push({ id: Date.now(), text, completed: false });
+            document.getElementById('taskInput').value = '';
+            renderTasks();
+        }
+
+        function renderTasks() {
+            const container = document.getElementById('tasksContainer');
+            container.innerHTML = tasks.map(task => `
+                <div class="task-item ${task.completed ? 'completed' : ''}">
+                    <input type="checkbox" ${task.completed ? 'checked' : ''} onchange="toggleTask(${task.id})">
+                    <span class="task-text" style="flex: 1">${task.text}</span>
+                    <button class="btn btn-danger btn-small" onclick="deleteTask(${task.id})">Delete</button>
+                </div>
+            `).join('');
+        }
+
+        function toggleTask(id) {
+            const task = tasks.find(t => t.id === id);
+            if (task) {
+                task.completed = !task.completed;
+                if (task.completed) tasksCompleted++;
+                renderTasks();
+            }
+        }
+
+        function deleteTask(id) {
+            tasks = tasks.filter(t => t.id !== id);
+            renderTasks();
+        }
+
+        function startTimer() {
+            if (timerRunning) return;
+            timerRunning = true;
+            timerInterval = setInterval(() => {
+                if (timerSeconds > 0) {
+                    timerSeconds--;
+                    studyMinutes = Math.floor((1500 - timerSeconds) / 60);
+                    updateTimerDisplay();
+                } else {
+                    pauseTimer();
+                    alert('Time\'s up! Take a break!');
+                }
+            }, 1000);
+        }
+
+        function pauseTimer() {
+            timerRunning = false;
+            clearInterval(timerInterval);
+        }
+
+        function resetTimer() {
+            pauseTimer();
+            timerSeconds = 1500;
+            updateTimerDisplay();
+        }
+
+        function updateTimerDisplay() {
+            const minutes = Math.floor(timerSeconds / 60);
+            const seconds = timerSeconds % 60;
+            const timeString = `${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
+            document.getElementById('timerDisplay').textContent = timeString;
+            const dashTimer = document.getElementById('dashTimerDisplay');
+            if (dashTimer) dashTimer.textContent = timeString;
+        }
+
+        function addFlashcard() {
+            const question = document.getElementById('flashcardQuestion').value;
+            const answer = document.getElementById('flashcardAnswer').value;
+            if (!question || !answer) return;
+            
+            flashcards.push({ id: Date.now(), question, answer });
+            document.getElementById('flashcardQuestion').value = '';
+            document.getElementById('flashcardAnswer').value = '';
+            renderFlashcard();
+        }
+
+        function renderFlashcard() {
+            if (flashcards.length === 0) {
+                document.getElementById('flashcardDisplay').innerHTML = '<p>No flashcards yet. Add some above!</p>';
+                return;
+            }
+            
+            const card = flashcards[currentFlashcard];
+            document.getElementById('flashcardDisplay').innerHTML = `
+                <div class="flashcard" onclick="flipCard()">
+                    <h3>${showingAnswer ? card.answer : card.question}</h3>
+                </div>
+                <div style="display: flex; gap: 10px; justify-content: center;">
+                    <button class="btn btn-primary" onclick="prevCard()">Previous</button>
+                    <button class="btn btn-primary" onclick="nextCard()">Next</button>
+                    <button class="btn btn-danger" onclick="deleteFlashcard()">Delete</button>
+                </div>
+            `;
+        }
+
+        function flipCard() {
+            showingAnswer = !showingAnswer;
+            renderFlashcard();
+        }
+
+        function nextCard() {
+            currentFlashcard = (currentFlashcard + 1) % flashcards.length;
+            showingAnswer = false;
+            renderFlashcard();
+        }
+
+        function prevCard() {
+            currentFlashcard = currentFlashcard === 0 ? flashcards.length - 1 : currentFlashcard - 1;
+            showingAnswer = false;
+            renderFlashcard();
+        }
+
+        function deleteFlashcard() {
+            flashcards.splice(currentFlashcard, 1);
+            currentFlashcard = Math.min(currentFlashcard, flashcards.length - 1);
+            showingAnswer = false;
+            renderFlashcard();
+        }
+
+        function addLink() {
+            const title = document.getElementById('linkTitle').value;
+            const url = document.getElementById('linkUrl').value;
+            if (!title || !url) return;
+            
+            links.push({ id: Date.now(), title, url });
+            document.getElementById('linkTitle').value = '';
+            document.getElementById('linkUrl').value = '';
+            renderLinks();
+        }
+
+        function renderLinks() {
+            const container = document.getElementById('linksContainer');
+            container.innerHTML = links.map(link => `
+                <div class="link-card">
+                    <h4>${link.title}</h4>
+                    <a href="${link.url}" target="_blank" style="color: #ffffff; text-decoration: none;">Visit →</a>
+                    <br><br>
+                    <button class="btn btn-danger btn-small" onclick="deleteLink(${link.id})">Delete</button>
+                </div>
+            `).join('');
+        }
+
+        function deleteLink(id) {
+            links = links.filter(l => l.id !== id);
+            renderLinks();
+        }
+
+        // Initialize
+        renderDashboardNotes();
+    </script>
+</body>
+</html>
