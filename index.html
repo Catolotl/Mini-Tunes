@@ -11,7 +11,7 @@
         --card: #181818;
         --hover: #282828;
         --text: #fff;
-        --text-secondary: #b3b3;
+        --text-secondary: #b3b3b3;
         --accent: #fff;
         --border: #000;
         --theme-color: #32CD32;
@@ -1069,11 +1069,6 @@ function renderTopArtistsSidebar() {
 
   if (topArtists.length === 0) return;
 
-  // Create header
-  const header = document.createElement('div');
-  header.className = 'playlists-header';
-  header.textContent = 'Top Artists';
-  sidebar.appendChild(header);
 
   // Render artists
   topArtists.forEach(artist => {
