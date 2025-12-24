@@ -560,17 +560,52 @@
       #lyrics-container::-webkit-scrollbar-thumb:hover {
         background: rgba(255, 255, 255, 0.5);
       }
+
+
+      .header-center {
+  display: flex;
+  gap: 8px;
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
+}
+
+.header-center .nav-item {
+  padding: 8px 16px;
+  border-radius: 20px;
+  border-bottom: none;
+  font-size: 0.9em;
+}
+
+.header-center .nav-item span {
+  font-weight: 500;
+}
+
+.header-center .nav-item svg {
+  width: 16px;
+  height: 16px;
+}
     </style>
   </head>
   <body>
     <div id="main-wrapper">
-      <header>
-        <h2>Tunes</h2>
-        <div class="header-right">
-          <div id="premium-btn">Premium</div>
-          <div id="profile-btn">?</div>
-        </div>
-      </header>
+<header>
+  <h2>Tunes</h2>
+  <div class="header-center">
+    <div id="home-nav" class="nav-item active">
+      <svg viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path></svg>
+      <span>Home</span>
+    </div>
+    <div id="search-nav" class="nav-item">
+      <svg viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l4.5 4.5a1 1 0 0 1-1.42 1.42l-4.5-4.5v-.79l-.27-.27A6.5 6.5 0 1 1 9.5 3zm0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5z"></path></svg>
+      <span>Search</span>
+    </div>
+  </div>
+  <div class="header-right">
+    <div id="premium-btn">Premium</div>
+    <div id="profile-btn">?</div>
+  </div>
+</header>
 
       <div id="profile-popup">
         <img id="profile-avatar" src="https://via.placeholder.com/80" alt="Profile">
@@ -583,14 +618,6 @@
       </div>
 
       <div id="sidebar">
-        <div id="home-nav" class="nav-item active">
-          <svg viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path></svg>
-          <span>Home</span>
-        </div>
-        <div id="search-nav" class="nav-item">
-          <svg viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l4.5 4.5a1 1 0 0 1-1.42 1.42l-4.5-4.5v-.79l-.27-.27A6.5 6.5 0 1 1 9.5 3zm0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5z"></path></svg>
-          <span>Search</span>
-        </div>
         <div class="playlists-header">Your Playlists</div>
       </div>
 
