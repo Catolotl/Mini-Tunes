@@ -370,10 +370,14 @@ function renderGridCard(item, container, clickHandler) {
   div.className = 'grid-card';
   const cover = item.album?.cover_medium || item.cover_medium || item.cover || 'https://via.placeholder.com/180?text=♪';
   const title = item.title || item.name || 'Untitled';
+  const artist = item.artist?.name || '';
 
   div.innerHTML = `
     <img class="grid-cover" src="${cover}" alt="cover">
-    <div class="grid-title">${title}</div>
+    <div>
+      <div class="grid-title">${title}</div>
+      ${artist ? `<div class="grid-artist">${artist}</div>` : ''}
+    </div>
   `;
   div.onclick = () => clickHandler(item);
   container.appendChild(div);
