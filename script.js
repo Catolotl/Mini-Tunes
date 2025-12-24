@@ -676,7 +676,21 @@ function loadPlaylist(name) {
 function loadHomeContent() {
   // Recently Played
   recentlyPlayedDiv.innerHTML = '';
-  const recent = recentlyPlayed.slice(-6).reverse();
+
+
+
+
+  
+
+  
+  const recent = recentlyPlayed.slice(-8).reverse();
+
+
+
+
+
+
+  
   if (recent.length) {
     const grid = document.createElement('div');
     grid.className = 'grid-container';
