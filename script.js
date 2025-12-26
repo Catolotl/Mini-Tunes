@@ -9,6 +9,30 @@ let currentSong = null;
 let currentPlaylist = null; // { name, index }
 let queueFromPlaylist = false;
 
+
+
+// Add near the top with other state variables
+let recentlyPlayedAlbums = JSON.parse(localStorage.getItem("recentlyPlayedAlbums") || "[]");
+
+function saveRecentAlbum(album) {
+  const albumToSave = {
+    id: album.id,
+    title: album.title,
+    artist: album.artist,
+    cover: album.cover,
+    cover_medium: album.cover_medium
+  };
+
+  recentlyPlayedAlbums = recentlyPlayedAlbums.filter(a => a.id !== album.id);
+  recentlyPlayedAlbums.push(albumToSave);
+  if (recentlyPlayedAlbums.length > 20) recentlyPlayedAlbums.shift();
+  localStorage.setItem("recentlyPlayedAlbums", JSON.stringify(recentlyPlayedAlbums));
+  
+  if (homePage.style.display === "block") loadHomeContent();
+}
+
+
+
 // ====================== DIALOGS ======================
 function showInputDialog(title, message, defaultValue = '') {
   return new Promise((resolve) => {
@@ -273,15 +297,53 @@ searchInput.addEventListener("input", () => {
   if (!q) return;
 
   searchResultsTitle.style.display = 'block';
-  showSkeletons(results, 8);
+  showSkeletons(results, 12);
 
   searchTimeout = setTimeout(async () => {
     try {
-      const songs = await itunesFetch(q);
+      const [songs, albums] = await Promise.all([
+        itunesFetch(q, 20),
+        itunesAlbumFetch(q, 4)
+      ]);
+      
       results.innerHTML = "";
-      if (!songs.length) {
+      
+      if (!songs.length && !albums.length) {
         results.innerHTML = "<p style='color:#aaa;text-align:center;padding:40px;'>No results found.</p>";
-      } else {
+        return;
+      }
+
+      // Render albums first
+      if (albums.length) {
+        const albumSection = document.createElement('div');
+        albumSection.innerHTML = '<h3 style="margin:0 0 16px;font-size:1.2em;font-weight:600;color:#eee;">Albums</h3>';
+        const albumGrid = document.createElement('div');
+        albumGrid.className = 'grid-container';
+        albumGrid.style.marginBottom = '32px';
+        
+        albums.forEach(album => {
+          const div = document.createElement('div');
+          div.className = 'grid-card';
+          div.innerHTML = `
+            <img class="grid-cover" src="${album.cover_medium}" alt="cover">
+            <div>
+              <div class="grid-title">${album.title}</div>
+              <div class="grid-artist">${album.artist.name}</div>
+            </div>
+          `;
+          div.onclick = () => loadAlbum(album);
+          albumGrid.appendChild(div);
+        });
+        
+        albumSection.appendChild(albumGrid);
+        results.appendChild(albumSection);
+      }
+
+      // Render songs
+      if (songs.length) {
+        const songSection = document.createElement('div');
+        songSection.innerHTML = '<h3 style="margin:0 0 16px;font-size:1.2em;font-weight:600;color:#eee;">Songs</h3>';
+        results.appendChild(songSection);
         renderSongs(songs, results);
       }
     } catch (err) {
@@ -300,6 +362,76 @@ async function loadPopular() {
     popular.innerHTML = "<p style='color:#f66;'>Failed to load popular songs.</p>";
   }
 }
+
+
+
+
+
+
+
+
+// Add this after the existing itunesFetch function
+async function itunesAlbumFetch(query, limit = 4) {
+  const url = `https://itunes.apple.com/search?term=${encodeURIComponent(query)}&media=music&entity=album&limit=${limit}`;
+  try {
+    const res = await fetch(url);
+    const data = await res.json();
+    return (data.results || []).map(album => ({
+      id: album.collectionId,
+      title: album.collectionName,
+      artist: {
+        id: album.artistId,
+        name: album.artistName
+      },
+      cover: album.artworkUrl100?.replace('100x100', '600x600') || album.artworkUrl100,
+      cover_medium: album.artworkUrl100?.replace('100x100', '200x200') || album.artworkUrl100,
+      trackCount: album.trackCount,
+      releaseDate: album.releaseDate
+    }));
+  } catch (err) {
+    console.error('iTunes Album API error:', err);
+    return [];
+  }
+}
+
+async function itunesAlbumTracksFetch(albumId) {
+  const url = `https://itunes.apple.com/lookup?id=${albumId}&entity=song`;
+  try {
+    const res = await fetch(url);
+    const data = await res.json();
+    const tracks = (data.results || []).slice(1); // Skip first result (it's the album info)
+    return tracks.map(track => ({
+      id: track.trackId,
+      title: track.trackName,
+      preview: track.previewUrl,
+      trackNumber: track.trackNumber,
+      artist: {
+        id: track.artistId,
+        name: track.artistName
+      },
+      album: {
+        id: track.collectionId,
+        name: track.collectionName,
+        cover_medium: track.artworkUrl100?.replace('100x100', '200x200') || track.artworkUrl100,
+        cover_big: track.artworkUrl100?.replace('100x100', '600x600') || track.artworkUrl100
+      }
+    }));
+  } catch (err) {
+    console.error('iTunes Album Tracks API error:', err);
+    return [];
+  }
+}
+
+
+
+
+
+
+
+
+
+
+
 
 // AI Recommendations
 let recommendTimeout;
@@ -336,7 +468,7 @@ function showSkeletons(container, count) {
 }
 
 function renderSongs(songs, container) {
-  container.innerHTML = "";
+  // Don't clear - just append songs
   songs.forEach(song => {
     const div = document.createElement("div");
     div.className = "song-card";
@@ -676,24 +808,70 @@ function loadPlaylist(name) {
   results.appendChild(container);
 }
 
+
+
+// Add this function near the loadPlaylist function
+async function loadAlbum(album) {
+  showSearch();
+  searchInput.style.display = 'none';
+  popularSection.style.display = 'none';
+  searchResultsTitle.style.display = 'none';
+
+  const cover = album.cover || 'https://via.placeholder.com/280?text=♪';
+
+  results.innerHTML = `
+    <div class="playlist-view-header">
+      <img class="playlist-big-cover" src="${cover}" alt="cover">
+      <h1 class="playlist-view-title">${album.title}</h1>
+      <p class="playlist-view-song-count">${album.artist.name} • Album</p>
+    </div>
+  `;
+
+  // Show loading
+  const loadingDiv = document.createElement('div');
+  loadingDiv.innerHTML = '<p style="text-align:center;color:#888;padding:40px;">Loading tracks...</p>';
+  results.appendChild(loadingDiv);
+
+  // Fetch album tracks
+  const tracks = await itunesAlbumTracksFetch(album.id);
+  loadingDiv.remove();
+
+  const container = document.createElement('div');
+  if (!tracks.length) {
+    container.innerHTML = '<p style="text-align:center;color:#888;padding:60px;">No tracks found.</p>';
+  } else {
+    tracks.forEach((song, i) => {
+      const div = document.createElement('div');
+      div.className = 'song-card';
+      const coverSrc = song.album?.cover_medium || album.cover_medium;
+
+      div.innerHTML = `
+        <div style="display:flex;align-items:center;gap:16px;">
+          <img class="cover" src="${coverSrc}" alt="cover">
+          <div>
+            <strong>${song.title}</strong><br>
+            <small style="color:#aaa;">${song.artist.name}</small>
+          </div>
+        </div>
+      `;
+      div.onclick = () => playSong(song);
+      container.appendChild(div);
+    });
+  }
+  results.appendChild(container);
+
+  // Add to recently played albums
+  saveRecentAlbum(album);
+}
+
+
+
+
 // ====================== HOME PAGE ======================
 function loadHomeContent() {
   // Recently Played
   recentlyPlayedDiv.innerHTML = '';
-
-
-
-
-  
-
-  
   const recent = recentlyPlayed.slice(-8).reverse();
-
-
-
-
-
-
   
   if (recent.length) {
     const grid = document.createElement('div');
@@ -722,7 +900,26 @@ function loadHomeContent() {
   } else {
     yourPlaylists.innerHTML = '<p style="color:#666;font-style:italic;">No playlists yet. Create one!</p>';
   }
+
+  // Recently Played Albums - ADD THIS HERE
+  const recentAlbums = recentlyPlayedAlbums.slice(-4).reverse();
+  if (recentAlbums.length) {
+    const albumSection = document.createElement('div');
+    albumSection.className = 'section';
+    albumSection.innerHTML = '<h3>Recently Played Albums</h3>';
+    
+    const grid = document.createElement('div');
+    grid.className = 'grid-container';
+    recentAlbums.forEach(album => renderGridCard(album, grid, () => loadAlbum(album)));
+    albumSection.appendChild(grid);
+    
+    // Insert after Recently Played section
+    const recentSection = recentlyPlayedDiv.parentElement;
+    recentSection.parentElement.insertBefore(albumSection, recentSection.nextSibling);
+  }
 }
+
+
 
 // ====================== NAVIGATION ======================
 function showHome() {
