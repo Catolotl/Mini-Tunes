@@ -998,23 +998,27 @@ function loadAutoPlaylist(name, playlist) {
     container.innerHTML = '<p style="text-align:center;color:#888;padding:60px;">This playlist is empty.</p>';
   } else {
     playlist.songs.forEach((song, i) => {
-  const div = document.createElement('div');
-  div.className = 'song-card';
-  const artist = song.artist?.name || "Unknown";
-  const coverSrc = song.album?.cover_medium || 'https://via.placeholder.com/64';
+      const div = document.createElement('div');
+      div.className = 'song-card';
+      const artist = song.artist?.name || "Unknown";
+      const coverSrc = song.album?.cover_medium || 'https://via.placeholder.com/64';
 
-  div.innerHTML = `
-    <div style="display:flex;align-items:center;gap:16px;">
-      <img class="cover" src="${coverSrc}" alt="cover">
-      <div>
-        <strong>${song.title}</strong><br>
-        <small style="color:#aaa;">${artist}</small>
-      </div>
-    </div>
-  `;
-  div.onclick = () => startAutoPlaylistPlayback(playlist, i);  // ✅ CORRECT - uses queue
-  container.appendChild(div);
-});
+      div.innerHTML = `
+        <div style="display:flex;align-items:center;gap:16px;">
+          <img class="cover" src="${coverSrc}" alt="cover">
+          <div>
+            <strong>${song.title}</strong><br>
+            <small style="color:#aaa;">${artist}</small>
+          </div>
+        </div>
+      `;
+      div.onclick = () => {
+        window.currentSong = song;
+        window.playSong(song);
+      };
+      container.appendChild(div);
+    });
+  }
   results.appendChild(container);
 }
 
@@ -1125,14 +1129,10 @@ function loadArtistPlaylist(artist) {
         </div>
       </div>
     `;
-div.onclick = () => {
-  // Create a playlist object with the artist's songs
-  const artistPlaylist = {
-    name: artist.name,
-    songs: artist.songs
-  };
-  startAutoPlaylistPlayback(artistPlaylist, i);  // ✅ Use queue system
-};
+    div.onclick = () => {
+      window.currentSong = song;
+      window.playSong(song);
+    };
     container.appendChild(div);
   });
   results.appendChild(container);
