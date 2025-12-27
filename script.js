@@ -589,40 +589,15 @@ function startPlaylistPlayback(plName, startIdx = 0) {
   playSong(pl.songs[startIdx], true);
 }
 
-function startAutoPlaylistPlayback(playlist, startIdx = 0) {
-  if (!playlist?.songs?.length) return;
-  
-  // Store the auto-playlist as current playlist with a special marker
-  currentPlaylist = { 
-    name: `__auto__${playlist.name}`, 
-    index: startIdx,
-    songs: playlist.songs // Store the songs array
-  };
-  queueFromPlaylist = true;
-  playSong(playlist.songs[startIdx], true);
-}
-
 // Next song when current ends
 audio.onended = () => {
   if (queueFromPlaylist && currentPlaylist) {
-    // Check if it's a user playlist or auto-playlist
-    if (currentPlaylist.name.startsWith('__auto__')) {
-      // Auto-playlist - use stored songs array
-      const next = currentPlaylist.index + 1;
-      if (next < currentPlaylist.songs.length) {
-        currentPlaylist.index = next;
-        playSong(currentPlaylist.songs[next], true);
-        return;
-      }
-    } else {
-      // User playlist - look up from playlists object
-      const pl = playlists[currentPlaylist.name];
-      const next = currentPlaylist.index + 1;
-      if (next < pl.songs.length) {
-        currentPlaylist.index = next;
-        playSong(pl.songs[next], true);
-        return;
-      }
+    const pl = playlists[currentPlaylist.name];
+    const next = currentPlaylist.index + 1;
+    if (next < pl.songs.length) {
+      currentPlaylist.index = next;
+      playSong(pl.songs[next], true);
+      return;
     }
   }
   // End of queue → hide player
@@ -927,28 +902,21 @@ function loadHomeContent() {
   }
 
   // Recently Played Albums - ADD THIS HERE
- // Recently Played Albums
-const recentAlbums = recentlyPlayedAlbums.slice(-4).reverse();
-// Remove existing album section if it exists
-const existingAlbumSection = document.querySelector('[data-section="recent-albums"]');
-if (existingAlbumSection) {
-  existingAlbumSection.remove();
-}
-
-if (recentAlbums.length) {
-  const albumSection = document.createElement('div');
-  albumSection.className = 'section';
-  albumSection.setAttribute('data-section', 'recent-albums'); // Add identifier
-  albumSection.innerHTML = '<h3>Recently Played Albums</h3>';
-  
-  const grid = document.createElement('div');
-  grid.className = 'grid-container';
-  recentAlbums.forEach(album => renderGridCard(album, grid, () => loadAlbum(album)));
-  albumSection.appendChild(grid);
-  
-  // Insert after Recently Played section
-  const recentSection = recentlyPlayedDiv.parentElement;
-  recentSection.parentElement.insertBefore(albumSection, recentSection.nextSibling);
+  const recentAlbums = recentlyPlayedAlbums.slice(-4).reverse();
+  if (recentAlbums.length) {
+    const albumSection = document.createElement('div');
+    albumSection.className = 'section';
+    albumSection.innerHTML = '<h3>Recently Played Albums</h3>';
+    
+    const grid = document.createElement('div');
+    grid.className = 'grid-container';
+    recentAlbums.forEach(album => renderGridCard(album, grid, () => loadAlbum(album)));
+    albumSection.appendChild(grid);
+    
+    // Insert after Recently Played section
+    const recentSection = recentlyPlayedDiv.parentElement;
+    recentSection.parentElement.insertBefore(albumSection, recentSection.nextSibling);
+  }
 }
 
 
