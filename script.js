@@ -901,28 +901,22 @@ function loadHomeContent() {
     yourPlaylists.innerHTML = '<p style="color:#666;font-style:italic;">No playlists yet. Create one!</p>';
   }
 
-// Recently Played Albums
-const recentAlbums = recentlyPlayedAlbums.slice(-4).reverse();
-// Remove existing album section if it exists
-const existingAlbumSection = document.querySelector('[data-section="recent-albums"]');
-if (existingAlbumSection) {
-  existingAlbumSection.remove();
-}
-
-if (recentAlbums.length) {
-  const albumSection = document.createElement('div');
-  albumSection.className = 'section';
-  albumSection.setAttribute('data-section', 'recent-albums'); // Add identifier
-  albumSection.innerHTML = '<h3>Recently Played Albums</h3>';
-  
-  const grid = document.createElement('div');
-  grid.className = 'grid-container';
-  recentAlbums.forEach(album => renderGridCard(album, grid, () => loadAlbum(album)));
-  albumSection.appendChild(grid);
-  
-  // Insert after Recently Played section
-  const recentSection = recentlyPlayedDiv.parentElement;
-  recentSection.parentElement.insertBefore(albumSection, recentSection.nextSibling);
+  // Recently Played Albums - ADD THIS HERE
+  const recentAlbums = recentlyPlayedAlbums.slice(-4).reverse();
+  if (recentAlbums.length) {
+    const albumSection = document.createElement('div');
+    albumSection.className = 'section';
+    albumSection.innerHTML = '<h3>Recently Played Albums</h3>';
+    
+    const grid = document.createElement('div');
+    grid.className = 'grid-container';
+    recentAlbums.forEach(album => renderGridCard(album, grid, () => loadAlbum(album)));
+    albumSection.appendChild(grid);
+    
+    // Insert after Recently Played section
+    const recentSection = recentlyPlayedDiv.parentElement;
+    recentSection.parentElement.insertBefore(albumSection, recentSection.nextSibling);
+  }
 }
 
 
@@ -978,3 +972,4 @@ setInterval(() => {
 
 // Initial hide
 if (!audio.src) hidePlayer();
+rightSidebar.classList.add("hidden");
