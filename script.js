@@ -8,8 +8,7 @@ const addCurrentBtn = document.getElementById("add-current-to-playlist");
 let currentSong = null;
 let currentPlaylist = null; // { name, index }
 let queueFromPlaylist = false;
-
-
+let currentAlbum = null; // NEW: Store current album for playback
 
 // Add near the top with other state variables
 let recentlyPlayedAlbums = JSON.parse(localStorage.getItem("recentlyPlayedAlbums") || "[]");
@@ -30,8 +29,6 @@ function saveRecentAlbum(album) {
   
   if (homePage.style.display === "block") loadHomeContent();
 }
-
-
 
 // ====================== DIALOGS ======================
 function showInputDialog(title, message, defaultValue = '') {
@@ -284,6 +281,57 @@ async function itunesFetch(query, limit = 20) {
   }
 }
 
+async function itunesAlbumFetch(query, limit = 4) {
+  const url = `https://itunes.apple.com/search?term=${encodeURIComponent(query)}&media=music&entity=album&limit=${limit}`;
+  try {
+    const res = await fetch(url);
+    const data = await res.json();
+    return (data.results || []).map(album => ({
+      id: album.collectionId,
+      title: album.collectionName,
+      artist: {
+        id: album.artistId,
+        name: album.artistName
+      },
+      cover: album.artworkUrl100?.replace('100x100', '600x600') || album.artworkUrl100,
+      cover_medium: album.artworkUrl100?.replace('100x100', '200x200') || album.artworkUrl100,
+      trackCount: album.trackCount,
+      releaseDate: album.releaseDate
+    }));
+  } catch (err) {
+    console.error('iTunes Album API error:', err);
+    return [];
+  }
+}
+
+async function itunesAlbumTracksFetch(albumId) {
+  const url = `https://itunes.apple.com/lookup?id=${albumId}&entity=song`;
+  try {
+    const res = await fetch(url);
+    const data = await res.json();
+    const tracks = (data.results || []).slice(1); // Skip first result (it's the album info)
+    return tracks.map(track => ({
+      id: track.trackId,
+      title: track.trackName,
+      preview: track.previewUrl,
+      trackNumber: track.trackNumber,
+      artist: {
+        id: track.artistId,
+        name: track.artistName
+      },
+      album: {
+        id: track.collectionId,
+        name: track.collectionName,
+        cover_medium: track.artworkUrl100?.replace('100x100', '200x200') || track.artworkUrl100,
+        cover_big: track.artworkUrl100?.replace('100x100', '600x600') || track.artworkUrl100
+      }
+    }));
+  } catch (err) {
+    console.error('iTunes Album Tracks API error:', err);
+    return [];
+  }
+}
+
 // ====================== SEARCH & POPULAR ======================
 let searchTimeout;
 searchInput.addEventListener("input", () => {
@@ -363,76 +411,6 @@ async function loadPopular() {
   }
 }
 
-
-
-
-
-
-
-
-// Add this after the existing itunesFetch function
-async function itunesAlbumFetch(query, limit = 4) {
-  const url = `https://itunes.apple.com/search?term=${encodeURIComponent(query)}&media=music&entity=album&limit=${limit}`;
-  try {
-    const res = await fetch(url);
-    const data = await res.json();
-    return (data.results || []).map(album => ({
-      id: album.collectionId,
-      title: album.collectionName,
-      artist: {
-        id: album.artistId,
-        name: album.artistName
-      },
-      cover: album.artworkUrl100?.replace('100x100', '600x600') || album.artworkUrl100,
-      cover_medium: album.artworkUrl100?.replace('100x100', '200x200') || album.artworkUrl100,
-      trackCount: album.trackCount,
-      releaseDate: album.releaseDate
-    }));
-  } catch (err) {
-    console.error('iTunes Album API error:', err);
-    return [];
-  }
-}
-
-async function itunesAlbumTracksFetch(albumId) {
-  const url = `https://itunes.apple.com/lookup?id=${albumId}&entity=song`;
-  try {
-    const res = await fetch(url);
-    const data = await res.json();
-    const tracks = (data.results || []).slice(1); // Skip first result (it's the album info)
-    return tracks.map(track => ({
-      id: track.trackId,
-      title: track.trackName,
-      preview: track.previewUrl,
-      trackNumber: track.trackNumber,
-      artist: {
-        id: track.artistId,
-        name: track.artistName
-      },
-      album: {
-        id: track.collectionId,
-        name: track.collectionName,
-        cover_medium: track.artworkUrl100?.replace('100x100', '200x200') || track.artworkUrl100,
-        cover_big: track.artworkUrl100?.replace('100x100', '600x600') || track.artworkUrl100
-      }
-    }));
-  } catch (err) {
-    console.error('iTunes Album Tracks API error:', err);
-    return [];
-  }
-}
-
-
-
-
-
-
-
-
-
-
-
-
 // AI Recommendations
 let recommendTimeout;
 recommendInput.addEventListener("input", () => {
@@ -459,7 +437,7 @@ recommendInput.addEventListener("input", () => {
 
 // ====================== RENDERING ======================
 function showSkeletons(container, count) {
-  container.innerHTML = ""; // clear old skeletons
+  container.innerHTML = "";
   for (let i = 0; i < count; i++) {
     const sk = document.createElement("div");
     sk.className = "skeleton";
@@ -468,7 +446,6 @@ function showSkeletons(container, count) {
 }
 
 function renderSongs(songs, container) {
-  // Don't clear - just append songs
   songs.forEach(song => {
     const div = document.createElement("div");
     div.className = "song-card";
@@ -589,15 +566,40 @@ function startPlaylistPlayback(plName, startIdx = 0) {
   playSong(pl.songs[startIdx], true);
 }
 
-// Next song when current ends
+// NEW: Start album playback
+function startAlbumPlayback(trackIndex) {
+  if (!currentAlbum || !currentAlbum.tracks[trackIndex]) return;
+  
+  currentPlaylist = { 
+    name: `album_${currentAlbum.id}`, 
+    index: trackIndex,
+    isAlbum: true
+  };
+  queueFromPlaylist = true;
+  playSong(currentAlbum.tracks[trackIndex], true);
+}
+
+// UPDATED: Next song when current ends - now handles albums
 audio.onended = () => {
   if (queueFromPlaylist && currentPlaylist) {
-    const pl = playlists[currentPlaylist.name];
-    const next = currentPlaylist.index + 1;
-    if (next < pl.songs.length) {
-      currentPlaylist.index = next;
-      playSong(pl.songs[next], true);
-      return;
+    // Handle album playback
+    if (currentPlaylist.isAlbum && currentAlbum) {
+      const next = currentPlaylist.index + 1;
+      if (next < currentAlbum.tracks.length) {
+        currentPlaylist.index = next;
+        playSong(currentAlbum.tracks[next], true);
+        return;
+      }
+    }
+    // Handle playlist playback
+    else {
+      const pl = playlists[currentPlaylist.name];
+      const next = currentPlaylist.index + 1;
+      if (next < pl.songs.length) {
+        currentPlaylist.index = next;
+        playSong(pl.songs[next], true);
+        return;
+      }
     }
   }
   // End of queue → hide player
@@ -606,16 +608,29 @@ audio.onended = () => {
   setTimeout(hidePlayer, 800);
 };
 
+// UPDATED: Error handling - now handles albums
 audio.onerror = async () => {
   await showAlert('Playback Error', 'This song is unavailable.');
 
   if (queueFromPlaylist && currentPlaylist) {
-    const pl = playlists[currentPlaylist.name];
-    const next = currentPlaylist.index + 1;
-    if (next < pl.songs.length) {
-      currentPlaylist.index = next;
-      playSong(pl.songs[next], true);
-      return;
+    // Handle album playback
+    if (currentPlaylist.isAlbum && currentAlbum) {
+      const next = currentPlaylist.index + 1;
+      if (next < currentAlbum.tracks.length) {
+        currentPlaylist.index = next;
+        playSong(currentAlbum.tracks[next], true);
+        return;
+      }
+    }
+    // Handle playlist playback
+    else {
+      const pl = playlists[currentPlaylist.name];
+      const next = currentPlaylist.index + 1;
+      if (next < pl.songs.length) {
+        currentPlaylist.index = next;
+        playSong(pl.songs[next], true);
+        return;
+      }
     }
   }
   hidePlayer();
@@ -636,7 +651,6 @@ addCurrentBtn.onclick = async () => {
 
 // ====================== PLAYLISTS ======================
 function renderSidebarPlaylists() {
-  // Clear old items except the static ones (if any)
   sidebar.querySelectorAll('.playlist-item').forEach(el => el.remove());
 
   // + New Playlist
@@ -726,7 +740,6 @@ function uploadPlaylistCoverFunc(name) {
       savePlaylists();
       renderSidebarPlaylists();
       loadHomeContent();
-      // Update current view if open
       const bigCover = document.querySelector('.playlist-big-cover');
       if (bigCover) bigCover.src = ev.target.result;
     };
@@ -808,9 +821,7 @@ function loadPlaylist(name) {
   results.appendChild(container);
 }
 
-
-
-// Add this function near the loadPlaylist function
+// UPDATED: Load album with sequential playback support
 async function loadAlbum(album) {
   showSearch();
   searchInput.style.display = 'none';
@@ -836,9 +847,17 @@ async function loadAlbum(album) {
   const tracks = await itunesAlbumTracksFetch(album.id);
   loadingDiv.remove();
 
+  // Store album info for playback
+  currentAlbum = {
+    id: album.id,
+    title: album.title,
+    tracks: tracks
+  };
+
   const container = document.createElement('div');
   if (!tracks.length) {
     container.innerHTML = '<p style="text-align:center;color:#888;padding:60px;">No tracks found.</p>';
+    currentAlbum = null;
   } else {
     tracks.forEach((song, i) => {
       const div = document.createElement('div');
@@ -854,7 +873,7 @@ async function loadAlbum(album) {
           </div>
         </div>
       `;
-      div.onclick = () => playSong(song);
+      div.onclick = () => startAlbumPlayback(i);
       container.appendChild(div);
     });
   }
@@ -863,9 +882,6 @@ async function loadAlbum(album) {
   // Add to recently played albums
   saveRecentAlbum(album);
 }
-
-
-
 
 // ====================== HOME PAGE ======================
 function loadHomeContent() {
@@ -901,7 +917,7 @@ function loadHomeContent() {
     yourPlaylists.innerHTML = '<p style="color:#666;font-style:italic;">No playlists yet. Create one!</p>';
   }
 
-  // Recently Played Albums - ADD THIS HERE
+  // Recently Played Albums
   const recentAlbums = recentlyPlayedAlbums.slice(-4).reverse();
   if (recentAlbums.length) {
     const albumSection = document.createElement('div');
@@ -913,13 +929,10 @@ function loadHomeContent() {
     recentAlbums.forEach(album => renderGridCard(album, grid, () => loadAlbum(album)));
     albumSection.appendChild(grid);
     
-    // Insert after Recently Played section
     const recentSection = recentlyPlayedDiv.parentElement;
     recentSection.parentElement.insertBefore(albumSection, recentSection.nextSibling);
   }
 }
-
-
 
 // ====================== NAVIGATION ======================
 function showHome() {
