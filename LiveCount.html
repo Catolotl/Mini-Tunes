@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Plays Counter</title>
+    <style>
+        body {
+            background: transparent;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+        }
+        .counter {
+            font-family: Arial, Helvetica, sans-serif;
+            color: #000;
+            background: transparent;
+            padding: 20px 40px;
+            border-radius: 12px;
+            text-shadow: 0 4px 12px rgba(255,255,255,0.8);
+            text-align: center;
+        }
+        .number {
+            font-size: 52px;
+            font-weight: bold;
+            display: block;
+        }
+        .odometer {
+            display: inline-block;
+            min-width: 220px;
+            text-align: center;
+        }
+        .label {
+            font-size: 30px;
+            font-weight: normal;
+            display: block;
+            margin-top: 8px;
+            opacity: 0.8;
+        }
+        .digit-container {
+            display: inline-block;
+            position: relative;
+            width: 0.6em;
+            height: 1.2em;
+            overflow: hidden;
+            vertical-align: top;
+        }
+        .digit-track {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            transition: transform 0.6s cubic-bezier(0.22, 0.61, 0.36, 1);
+        }
+        .digit {
+            display: block;
+            height: 1.2em;
+            line-height: 1.2em;
+            text-align: center;
+        }
+    </style>
+</head>
+<body>
+    <div class="counter">
+        <div class="number">
+            <span class="odometer" id="odometer">1,400</span>
+        </div>
+        <span class="label">Songs Played</span>
+    </div>
+
+    <script>
+        // Load from localStorage or default to 1400
+        let plays = parseInt(localStorage.getItem('idolPlays')) || 1400;
+        const odometerElement = document.getElementById('odometer');
+
+        function formatNumber(num) {
+            return num.toLocaleString('en-US');
+        }
+
+        function createDigitContainers(str) {
+            odometerElement.innerHTML = '';
+            for (let char of str) {
+                const container = document.createElement('span');
+                container.className = 'digit-container';
+
+                if (char === ',') {
+                    container.textContent = ',';
+                    container.style.width = '0.3em';
+                    odometerElement.appendChild(container);
+                    continue;
+                }
+
+                const track = document.createElement('span');
+                track.className = 'digit-track';
+
+                for (let i = 0; i <= 9; i++) {
+                    const digit = document.createElement('span');
+                    digit.className = 'digit';
+                    digit.textContent = i;
+                    track.appendChild(digit);
+                }
+
+                track.style.transform = `translateY(-${parseInt(char) * 10}%)`;
+
+                container.appendChild(track);
+                odometerElement.appendChild(container);
+            }
+        }
+
+        function updateOdometer(newValue) {
+            const oldStr = formatNumber(plays);
+            const newStr = formatNumber(newValue);
+            const oldDigits = oldStr.replace(/,/g, '');
+            const newDigits = newStr.replace(/,/g, '');
+
+            const maxLen = Math.max(oldDigits.length, newDigits.length);
+            const paddedOld = oldDigits.padStart(maxLen, '0');
+            const paddedNew = newDigits.padStart(maxLen, '0');
+
+            const containers = odometerElement.querySelectorAll('.digit-container:not([style*="width: 0.3em"])');
+
+            containers.forEach((container, i) => {
+                const oldDigit = parseInt(paddedOld[i] || '0');
+                const newDigit = parseInt(paddedNew[i] || '0');
+
+                if (oldDigit !== newDigit) {
+                    const track = container.querySelector('.digit-track');
+                    track.style.transform = `translateY(-${newDigit * 10}%)`;
+                }
+            });
+
+            plays = newValue;
+            localStorage.setItem('idolPlays', plays);
+        }
+
+        // Initial setup
+        createDigitContainers(formatNumber(plays));
+
+        // Indie pace growth
+        setTimeout(() => {
+            setInterval(() => {
+                const increment = Math.floor(Math.random() * 10) + 5; // 5–25 plays
+                updateOdometer(plays + increment);
+            }, Math.floor(Math.random() * 4000) + 4000);
+        }, 3000);
+    </script>
+</body>
+</html>
