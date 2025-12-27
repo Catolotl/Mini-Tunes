@@ -978,4 +978,3 @@ setInterval(() => {
 
 // Initial hide
 if (!audio.src) hidePlayer();
-rightSidebar.classList.add("hidden");
