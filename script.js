@@ -589,15 +589,40 @@ function startPlaylistPlayback(plName, startIdx = 0) {
   playSong(pl.songs[startIdx], true);
 }
 
+function startAutoPlaylistPlayback(playlist, startIdx = 0) {
+  if (!playlist?.songs?.length) return;
+  
+  // Store the auto-playlist as current playlist with a special marker
+  currentPlaylist = { 
+    name: `__auto__${playlist.name}`, 
+    index: startIdx,
+    songs: playlist.songs // Store the songs array
+  };
+  queueFromPlaylist = true;
+  playSong(playlist.songs[startIdx], true);
+}
+
 // Next song when current ends
 audio.onended = () => {
   if (queueFromPlaylist && currentPlaylist) {
-    const pl = playlists[currentPlaylist.name];
-    const next = currentPlaylist.index + 1;
-    if (next < pl.songs.length) {
-      currentPlaylist.index = next;
-      playSong(pl.songs[next], true);
-      return;
+    // Check if it's a user playlist or auto-playlist
+    if (currentPlaylist.name.startsWith('__auto__')) {
+      // Auto-playlist - use stored songs array
+      const next = currentPlaylist.index + 1;
+      if (next < currentPlaylist.songs.length) {
+        currentPlaylist.index = next;
+        playSong(currentPlaylist.songs[next], true);
+        return;
+      }
+    } else {
+      // User playlist - look up from playlists object
+      const pl = playlists[currentPlaylist.name];
+      const next = currentPlaylist.index + 1;
+      if (next < pl.songs.length) {
+        currentPlaylist.index = next;
+        playSong(pl.songs[next], true);
+        return;
+      }
     }
   }
   // End of queue → hide player
