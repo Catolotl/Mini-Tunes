@@ -918,10 +918,17 @@ function loadHomeContent() {
   }
 
   // Recently Played Albums
+  // Remove existing album section if it exists
+  const existingAlbumSection = document.querySelector('[data-section="recent-albums"]');
+  if (existingAlbumSection) {
+    existingAlbumSection.remove();
+  }
+
   const recentAlbums = recentlyPlayedAlbums.slice(-4).reverse();
   if (recentAlbums.length) {
     const albumSection = document.createElement('div');
     albumSection.className = 'section';
+    albumSection.setAttribute('data-section', 'recent-albums'); // Add identifier
     albumSection.innerHTML = '<h3>Recently Played Albums</h3>';
     
     const grid = document.createElement('div');
