@@ -948,12 +948,38 @@ async function loadAlbum(album) {
 function loadHomeContent() {
   recentlyPlayedDiv.innerHTML = '';
   const recent = recentlyPlayed.slice(-8).reverse();
-
   if (recent.length) {
-    const grid = document.createElement('div');
-    grid.className = 'grid-container';
-    recent.forEach(s => renderGridCard(s, grid, playSong));
-    recentlyPlayedDiv.appendChild(grid);
+    recent.forEach(s => {
+      const div = document.createElement('div');
+      div.className = 'song-card';
+
+      const artistName = s.artist?.name || "Unknown Artist";
+      const cover = s.album?.cover_medium || 'https://via.placeholder.com/64';
+      const isLiked = !!likedArtists[artistName];
+
+      div.innerHTML = `
+        <img class="cover" src="${cover}" alt="Cover">
+        <div class="song-info">
+          <div class="song-title">${s.title}</div>
+          <div class="song-artist">
+            ${artistName}
+            <span class="heart-btn ${isLiked ? 'liked' : ''}"
+                  onclick="event.stopPropagation(); toggleLikeArtist('${artistName}', '${cover}')">
+              ${isLiked ? '♥️' : '♡'}
+            </span>
+          </div>
+        </div>
+        <button class="add-btn">Add</button>
+      `;
+
+      div.querySelector('.add-btn').onclick = (e) => {
+        e.stopPropagation();
+        addSongToPlaylist(s);
+      };
+
+      div.onclick = () => playSong(s);
+      recentlyPlayedDiv.appendChild(div);
+    });
   } else {
     recentlyPlayedDiv.innerHTML = '<p style="color:#666;font-style:italic;">No recently played songs.</p>';
   }
@@ -985,7 +1011,6 @@ function loadHomeContent() {
     albumSection.className = 'section';
     albumSection.setAttribute('data-section', 'recent-albums');
     albumSection.innerHTML = '<h3>Recently Played Albums</h3>';
-
     const grid = document.createElement('div');
     grid.className = 'grid-container';
     recentAlbums.forEach(album => renderGridCard(album, grid, () => loadAlbum(album)));
