@@ -1029,7 +1029,7 @@ function renderTopArtistsSidebar() {
   
   // Remove existing top artists section
   const existingHeader = Array.from(sidebar.children).find(el => 
-    el.className === 'playlists-header' && el.textContent === 'ㅤ'
+    el.className === 'playlists-header' && el.textContent === 'Artists'
   );
   if (existingHeader) {
     let next = existingHeader.nextElementSibling;
