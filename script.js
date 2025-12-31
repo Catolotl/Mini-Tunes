@@ -949,18 +949,27 @@ function loadHomeContent() {
 recentlyPlayedDiv.innerHTML = '';
 const recent = recentlyPlayed.slice(-8).reverse();
 if (recent.length) {
-  const grid = document.createElement('div');
-  grid.className = 'grid-container'; // Optional: adds extra gap if needed
   recent.forEach(s => {
-    // Treat each recent song as a "fake" album/playlist item with song's cover
     const fakeItem = {
       title: s.title,
       artist: { name: s.artist?.name || "Unknown Artist" },
       cover_medium: s.album?.cover_medium || 'https://via.placeholder.com/180?text=♪'
     };
-    renderGridCard(fakeItem, grid, () => playSong(s));
+
+    const div = document.createElement('div');
+    div.className = 'grid-card';
+
+    div.innerHTML = `
+      <img class="grid-cover" src="${fakeItem.cover_medium}" alt="cover">
+      <div class="text-container">
+        <div class="grid-title">${fakeItem.title}</div>
+        <div class="grid-artist">${fakeItem.artist.name}</div>
+      </div>
+    `;
+
+    div.onclick = () => playSong(s);
+    recentlyPlayedDiv.appendChild(div);
   });
-  recentlyPlayedDiv.appendChild(grid);
 } else {
   recentlyPlayedDiv.innerHTML = '<p style="color:#666;font-style:italic;">No recently played songs.</p>';
 }
