@@ -735,7 +735,45 @@
 .grid-artist {
   font-size: 0.875rem;
 }
-      
+      /* Special style for Recently Played songs – keep classic horizontal song cards */
+#recently-played .song-card {
+  background: transparent;
+  padding: 12px 16px;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  transition: 0.25s;
+  cursor: pointer;
+  box-shadow: none;
+}
+
+#recently-played .song-card:hover {
+  background: var(--hover);
+  transform: translateY(-2px);
+}
+
+#recently-played .cover {
+  width: 56px;
+  height: 56px;
+  border-radius: 8px;
+  flex-shrink: 0;
+}
+
+#recently-played .song-info {
+  flex: 1;
+}
+
+#recently-played .song-title {
+  font-weight: 600;
+  font-size: 1rem;
+  margin-bottom: 4px;
+}
+
+#recently-played .song-artist {
+  font-size: 0.875rem;
+  color: var(--text-secondary);
+}
     </style>
   </head>
   <body>
