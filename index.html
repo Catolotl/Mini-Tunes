@@ -889,6 +889,64 @@
 #recently-played .grid-artist {
   font-size: 0.85rem;
 }
+      /* Force Recently Played back to classic horizontal song cards */
+#recently-played {
+  display: block !important; /* Override grid */
+  margin-top: 16px;
+}
+
+#recently-played .grid-card {
+  display: flex !important;
+  flex-direction: row !important;
+  align-items: center;
+  gap: 16px;
+  padding: 12px 16px;
+  background: transparent;
+  border-radius: 12px;
+  box-shadow: none;
+}
+
+#recently-played .grid-card:hover {
+  background: var(--hover);
+  transform: translateY(-2px);
+}
+
+#recently-played .grid-cover {
+  width: 64px !important;
+  height: 64px !important;
+  aspect-ratio: unset !important;
+  flex-shrink: 0;
+  border-radius: 8px;
+}
+
+#recently-played .grid-title {
+  font-size: 1rem;
+  font-weight: 600;
+  margin-bottom: 4px;
+  -webkit-line-clamp: 1;
+}
+
+#recently-played .grid-artist {
+  font-size: 0.875rem;
+  -webkit-line-clamp: 1;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Keep all other sections in full-cover grid style */
+#your-playlists .grid-container,
+[data-section="recent-albums"] .grid-container,
+[data-section="made-for-you"] .grid-container {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+  gap: 24px;
+}
+
+/* Clean cover display (no cropping issues) */
+.grid-cover {
+  object-fit: cover; /* Safe for square iTunes art */
+}
     </style>
   </head>
   <body>
