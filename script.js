@@ -656,7 +656,7 @@ function renderSidebarPlaylists() {
   // + New Playlist
   const newBtn = document.createElement('div');
   newBtn.className = 'playlist-item new-playlist';
-  newBtn.innerHTML = '<strong style="color:var(--accent);">+ New Playlist</strong>';
+  newBtn.innerHTML = '<strong style="color:var(--accent);">+ Create Playlist</strong>';
   newBtn.onclick = async () => {
     const name = await showInputDialog('New Playlist', 'Enter playlist name:');
     if (!name?.trim()) return;
