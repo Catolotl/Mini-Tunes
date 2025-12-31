@@ -947,6 +947,63 @@
 .grid-cover {
   object-fit: cover; /* Safe for square iTunes art */
 }
+      /* Clean horizontal Recently Played cards with proper long text handling */
+#recently-played {
+  display: block !important;
+  margin-top: 16px;
+}
+
+#recently-played .grid-card {
+  display: flex !important;
+  flex-direction: row;
+  align-items: center;
+  gap: 16px;
+  padding: 14px 16px;
+  background: transparent;
+  border-radius: 12px;
+  box-shadow: none;
+  margin-bottom: 8px;
+}
+
+#recently-played .grid-card:hover {
+  background: var(--hover);
+}
+
+#recently-played .grid-cover {
+  width: 60px;
+  height: 60px;
+  flex-shrink: 0;
+  border-radius: 8px;
+  object-fit: cover;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.4);
+}
+
+/* Text container that takes remaining space */
+#recently-played .text-container {
+  flex: 1;
+  min-width: 0; /* Crucial: allows truncation inside flex */
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+
+#recently-played .grid-title {
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--text);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  margin-bottom: 4px;
+}
+
+#recently-played .grid-artist {
+  font-size: 0.875rem;
+  color: var(--text-secondary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
     </style>
   </head>
   <body>
