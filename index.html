@@ -1067,6 +1067,35 @@
     grid-template-columns: 1fr;
   }
 }
+      /* Ensure Recently Played cards stay uniform width and truncate long titles */
+#recently-played .grid-card {
+  width: 100%; /* Take full available column width */
+  max-width: 100%;
+  overflow: hidden; /* Prevent text from spilling out */
+}
+
+#recently-played .grid-title {
+  white-space: nowrap !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+  font-size: 0.95rem;
+  font-weight: 700;
+  line-height: 1.3;
+  margin-bottom: 4px;
+}
+
+#recently-played .grid-artist {
+  white-space: nowrap !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+  font-size: 0.85rem;
+  color: var(--text-secondary);
+}
+
+/* Optional: Slightly tighter padding for compactness */
+#recently-played .grid-card {
+  padding: 14px;
+}
     </style>
   </head>
   <body>
