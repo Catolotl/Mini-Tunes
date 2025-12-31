@@ -450,7 +450,7 @@
         margin-top: 8px;
       }
       #right-sidebar {
-        width: 340px;
+        width: 280px;
         background: var(--surface);
         padding-top: 90px;
         border-left: 5px solid var(--border);
@@ -699,6 +699,41 @@
 
 .playlists-header:hover .library-icon {
   opacity: 1; /* Optional: brighten icon on hover */
+}
+
+.grid-container {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+  gap: 24px; /* increased from 12px for breathing room */
+  margin-bottom: 40px;
+}
+
+.grid-card {
+  background: var(--card);
+  border-radius: 8px;
+  padding: 16px;
+  cursor: pointer;
+  transition: background 0.3s ease;
+  display: flex;
+  flex-direction: column; /* vertical layout again */
+  gap: 12px;
+}
+
+.grid-cover {
+  width: 100%;
+  aspect-ratio: 1;
+  object-fit: cover;
+  border-radius: 4px;
+  box-shadow: 0 8px 24px rgba(0,0,0,.5);
+}
+
+.grid-title {
+  font-size: 1rem;
+  margin-bottom: 4px;
+}
+
+.grid-artist {
+  font-size: 0.875rem;
 }
       
     </style>
