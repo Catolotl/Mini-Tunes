@@ -1046,6 +1046,27 @@
 #recently-played .grid-artist {
   font-size: 0.85rem;
 }
+      /* Force Recently Played into exactly 4 columns × 2 rows (8 cards max) */
+#recently-played {
+  display: grid !important;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 20px;
+  margin-top: 16px;
+}
+
+/* On smaller screens (e.g. tablets), fall back to 2 columns so it doesn't look cramped */
+@media (max-width: 1024px) {
+  #recently-played {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+/* On mobile, stack them */
+@media (max-width: 640px) {
+  #recently-played {
+    grid-template-columns: 1fr;
+  }
+}
     </style>
   </head>
   <body>
