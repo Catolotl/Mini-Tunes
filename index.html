@@ -661,6 +661,23 @@
 #main-wrapper {
   border-radius: 0 !important;  /* Also remove the main wrapper corners if desired */
 }
+
+      .heart-btn {
+  margin-left: 8px;
+  font-size: 1.1em;
+  cursor: pointer;
+  opacity: 0.7;
+  transition: opacity 0.2s, transform 0.2s;
+}
+.heart-btn:hover {
+  opacity: 1;
+  transform: scale(1.2);
+}
+.heart-btn.liked {
+  color: #e91e63;
+  opacity: 1;
+}
+      
     </style>
   </head>
   <body>
@@ -883,7 +900,7 @@ window.playSong = async function(song, fromPlaylist = false) {
   }
   
   // Refresh top artists sidebar after each song
-  renderTopArtistsSidebar();
+  renderLikedArtistsSidebar();
 };
 
 // ====================== AUTO-GENERATED PLAYLISTS ======================
@@ -1033,117 +1050,103 @@ function loadAutoPlaylist(name, playlist) {
   results.appendChild(container);
 }
 
-// ====================== TOP ARTISTS SIDEBAR ======================
-function renderTopArtistsSidebar() {
+// ====================== LIKED ARTISTS (HEART SYSTEM) ======================
+let likedArtists = JSON.parse(localStorage.getItem("likedArtists") || "{}"); 
+// Format: { "Artist Name": { name, cover } }
+
+function toggleLikeArtist(artistName, coverUrl) {
+  if (likedArtists[artistName]) {
+    delete likedArtists[artistName];
+  } else {
+    likedArtists[artistName] = {
+      name: artistName,
+      cover: coverUrl || 'https://via.placeholder.com/42'
+    };
+  }
+  localStorage.setItem("likedArtists", JSON.stringify(likedArtists));
+  renderLikedArtistsSidebar(); // Update sidebar
+}
+
+function renderLikedArtistsSidebar() {
   const sidebar = document.getElementById('sidebar');
-  const recent = JSON.parse(localStorage.getItem("recentlyPlayed") || "[]");
-  
-  // Remove existing top artists section
-const existingHeader = Array.from(sidebar.children).find(el =>
-  el.className === 'playlists-header' && el.textContent === 'Top Artists'
-);
+
+  // Remove old Liked Artists section
+  const existingHeader = sidebar.querySelector('.playlists-header[data-type="liked-artists"]');
   if (existingHeader) {
     let next = existingHeader.nextElementSibling;
-    while (next && next.className === 'playlist-item' && next.querySelector('small')) {
-      const toRemove = next;
-      next = next.nextElementSibling;
-      toRemove.remove();
+    while (next && next.classList.contains('liked-artist-item')) {
+      next.remove();
+      next = existingHeader.nextElementSibling;
     }
     existingHeader.remove();
   }
-  
-  if (recent.length === 0) return;
 
-  // Calculate artist play counts
-  const artistCounts = {};
-  const artistData = {};
-  
-  recent.forEach(song => {
-    const artist = song.artist?.name || "Unknown";
-    artistCounts[artist] = (artistCounts[artist] || 0) + 1;
-    
-    if (!artistData[artist]) {
-      artistData[artist] = {
-        name: artist,
-        cover: song.album?.cover_medium || 'https://via.placeholder.com/42',
-        songs: []
-      };
-    }
-    artistData[artist].songs.push(song);
-  });
+  const likedList = Object.values(likedArtists);
+  if (likedList.length === 0) return;
 
-  // Get top 5 artists
-  const topArtists = Object.entries(artistCounts)
-    .sort((a, b) => b[1] - a[1])
-    .slice(0, 5)
-    .map(([artist]) => artistData[artist]);
-
-  if (topArtists.length === 0) return;
-
-  // Create header
+  // Add header
   const header = document.createElement('div');
   header.className = 'playlists-header';
-  header.textContent = 'Top Artists';
+  header.setAttribute('data-type', 'liked-artists');
+  header.textContent = '❤️ Liked Artists';
   sidebar.appendChild(header);
 
-  // Render artists
-  topArtists.forEach(artist => {
+  // Add artists
+  likedList.forEach(artist => {
     const div = document.createElement('div');
-    div.className = 'playlist-item';
+    div.className = 'playlist-item liked-artist-item';
     div.innerHTML = `
       <img class="playlist-cover" src="${artist.cover}" alt="artist">
       <strong style="flex:1;">${artist.name}</strong>
-      <small style="color:#666;">${artist.songs.length}</small>
+      <span class="heart-btn liked" onclick="event.stopPropagation(); toggleLikeArtist('${artist.name}', '${artist.cover}')">❤️</span>
     `;
-    
-    div.onclick = () => loadArtistPlaylist(artist);
+    div.onclick = () => loadArtistSongs(artist.name);
     sidebar.appendChild(div);
   });
 }
 
-function loadArtistPlaylist(artist) {
-  const searchPage = document.getElementById('search-page');
-  const homePage = document.getElementById('home-page');
-  const searchInput = document.getElementById('search');
-  const results = document.getElementById('results');
-  const popularSection = document.getElementById('popular-section');
-  const searchResultsTitle = document.getElementById('search-results-title');
-  
-  homePage.style.display = 'none';
-  searchPage.style.display = 'block';
+// Helper: Load songs by artist (for clicking liked artist)
+async function loadArtistSongs(artistName) {
+  showSearch();
   searchInput.style.display = 'none';
   popularSection.style.display = 'none';
   searchResultsTitle.style.display = 'none';
+  searchResultsTitle.textContent = `Songs by ${artistName}`;
+  searchResultsTitle.style.display = 'block';
 
-  const cover = artist.cover || 'https://via.placeholder.com/280?text=♪';
+  results.innerHTML = '<p style="text-align:center;color:#888;padding:40px;">Loading songs...</p>';
 
-  results.innerHTML = `
-    <div class="playlist-view-header">
-      <img class="playlist-big-cover" src="${cover}" alt="cover">
-      <h1 class="playlist-view-title">${artist.name}</h1>
-      <p class="playlist-view-song-count">${artist.songs.length} song${artist.songs.length !== 1 ? 's' : ''}</p>
-    </div>
-  `;
+  const songs = await itunesFetch(artistName, 30);
+  results.innerHTML = '';
+
+  if (!songs.length) {
+    results.innerHTML = '<p style="text-align:center;color:#888;">No songs found.</p>';
+    return;
+  }
 
   const container = document.createElement('div');
-  artist.songs.forEach((song, i) => {
+  songs.forEach(song => {
     const div = document.createElement('div');
     div.className = 'song-card';
     const coverSrc = song.album?.cover_medium || 'https://via.placeholder.com/64';
+    const isLiked = !!likedArtists[song.artist?.name];
 
     div.innerHTML = `
-      <div style="display:flex;align-items:center;gap:16px;">
+      <div style="display:flex;align-items:center;gap:16px;flex:1;">
         <img class="cover" src="${coverSrc}" alt="cover">
-        <div>
+        <div style="flex:1;">
           <strong>${song.title}</strong><br>
-          <small style="color:#aaa;">${artist.name}</small>
+          <small style="color:#aaa;">
+            ${song.artist?.name || 'Unknown'}
+            <span class="heart-btn ${isLiked ? 'liked' : ''}" 
+                  onclick="event.stopPropagation(); toggleLikeArtist('${song.artist?.name || 'Unknown'}', '${coverSrc}')">
+              ${isLiked ? '❤️' : '🤍'}
+            </span>
+          </small>
         </div>
       </div>
     `;
-    div.onclick = () => {
-      window.currentSong = song;
-      window.playSong(song);
-    };
+    div.onclick = () => playSong(song);
     container.appendChild(div);
   });
   results.appendChild(container);
@@ -1159,14 +1162,14 @@ window.loadHomeContent = function() {
 
 // Initialize on page load
 window.addEventListener('load', () => {
-  renderTopArtistsSidebar();
+  renderLikedArtistsSidebar();
   
   // Refresh top artists when returning to home
   const homeNav = document.getElementById('home-nav');
   const originalHomeClick = homeNav.onclick;
   homeNav.onclick = function() {
     originalHomeClick.call(this);
-    renderTopArtistsSidebar();
+    renderLikedArtistsSidebar();
   };
 });
     </script>
