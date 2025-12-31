@@ -112,7 +112,7 @@
         align-items:center;
         border-bottom:5px solid var(--border);
         z-index:20;
-        border-radius: 15px;
+        border-radius: 0px;
       }
       header h2 {
         margin:0;
@@ -662,7 +662,7 @@
     </div>
     <div id="search-nav" class="nav-item">
       <svg viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l4.5 4.5a1 1 0 0 1-1.42 1.42l-4.5-4.5v-.79l-.27-.27A6.5 6.5 0 1 1 9.5 3zm0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5z"></path></svg>
-      <span>Search</span>
+      <span>What do you want to play?</span>
     </div>
   </div>
   <div class="header-right">
@@ -682,7 +682,7 @@
       </div>
 
       <div id="sidebar">
-        <div class="playlists-header">Your Library</div>
+        <div class="playlists-header">||\Your Library</div>
       </div>
 
       <div id="content">
@@ -901,12 +901,12 @@ function generateAutoPlaylists() {
   const recentFavorites = recent.slice(-15);
 
   return {
-    "🎵 Recent Favorites": {
+    "Your Recent Favorites": {
       songs: recentFavorites,
       auto: true,
       cover: recentFavorites[recentFavorites.length - 1]?.album?.cover_medium
     },
-    "⭐ Top Artists Mix": {
+    "Daily Radio": {
       songs: topArtistsMix,
       auto: true,
       cover: topArtistsMix[topArtistsMix.length - 1]?.album?.cover_medium
@@ -1029,7 +1029,7 @@ function renderTopArtistsSidebar() {
   
   // Remove existing top artists section
   const existingHeader = Array.from(sidebar.children).find(el => 
-    el.className === 'playlists-header' && el.textContent === 'Top Artists'
+    el.className === 'playlists-header' && el.textContent === 'ㅤ'
   );
   if (existingHeader) {
     let next = existingHeader.nextElementSibling;
