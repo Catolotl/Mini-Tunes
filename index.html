@@ -815,6 +815,39 @@
   padding: 8px;                     /* Optional: small inner spacing so edges aren't cut off */
   box-sizing: border-box;
 }
+      /* Allow grid cards to grow based on image aspect ratio */
+.grid-card {
+  display: grid;
+  grid-template-rows: 1fr auto; /* image takes needed height, text fixed below */
+  align-items: end; /* text at bottom */
+}
+
+.grid-cover {
+  width: 100%;
+  height: auto; /* let image determine its own height */
+  max-height: none; /* remove any constraints */
+  aspect-ratio: unset; /* don't force square */
+  object-fit: contain;
+  background: #000; /* black letterbox for wide images */
+  border-radius: 4px 4px 0 0;
+  grid-row: 1;
+}
+
+.grid-card > div { /* the title/artist wrapper */
+  grid-row: 2;
+  padding: 12px 16px 16px;
+  background: var(--card); /* ensure text area has background */
+  border-radius: 0 0 8px 8px;
+}
+      .grid-artist {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+      .grid-container {
+  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+  gap: 24px;
+}
     </style>
   </head>
   <body>
