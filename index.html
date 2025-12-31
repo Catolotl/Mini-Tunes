@@ -1028,9 +1028,9 @@ function renderTopArtistsSidebar() {
   const recent = JSON.parse(localStorage.getItem("recentlyPlayed") || "[]");
   
   // Remove existing top artists section
-  const existingHeader = Array.from(sidebar.children).find(el => 
-    el.className === 'playlists-header' && el.textContent === 'Artists'
-  );
+const existingHeader = Array.from(sidebar.children).find(el =>
+  el.className === 'playlists-header' && el.textContent === 'Top Artists'
+);
   if (existingHeader) {
     let next = existingHeader.nextElementSibling;
     while (next && next.className === 'playlist-item' && next.querySelector('small')) {
