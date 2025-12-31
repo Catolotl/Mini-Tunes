@@ -774,6 +774,40 @@
   font-size: 0.875rem;
   color: var(--text-secondary);
 }
+      /* Recently Played: Compact 4-column grid with square full-size covers */
+#recently-played {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 16px;
+  margin-top: 12px;
+}
+
+#recently-played .grid-card {
+  /* Reuse the modern full-image grid-card style */
+  background: var(--card);
+  border-radius: 8px;
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+#recently-played .grid-cover {
+  width: 100%;
+  aspect-ratio: 1;
+  object-fit: cover;
+  border-radius: 4px;
+  box-shadow: 0 8px 24px rgba(0,0,0,.5);
+}
+
+#recently-played .grid-title {
+  font-size: 0.95rem;
+  font-weight: 700;
+}
+
+#recently-played .grid-artist {
+  font-size: 0.85rem;
+}
     </style>
   </head>
   <body>
