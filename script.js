@@ -193,7 +193,7 @@ function renderLikedArtistsSidebar() {
   const header = document.createElement('div');
   header.className = 'playlists-header';
   header.setAttribute('data-type', 'liked-artists');
-  header.textContent = '❤️ Liked Artists';
+  header.textContent = '♥️ Liked Artists';
   sidebar.appendChild(header);
 
   // Add artists
@@ -203,7 +203,7 @@ function renderLikedArtistsSidebar() {
     div.innerHTML = `
       <img class="playlist-cover" src="${artist.cover}" alt="artist">
       <strong style="flex:1;">${artist.name}</strong>
-      <span class="heart-btn liked" onclick="event.stopPropagation(); toggleLikeArtist('${artist.name}', '${artist.cover}')">❤️</span>
+      <span class="heart-btn liked" onclick="event.stopPropagation(); toggleLikeArtist('${artist.name}', '${artist.cover}')">♥️</span>
     `;
     div.onclick = () => loadArtistSongs(artist.name);
     sidebar.appendChild(div);
@@ -245,7 +245,7 @@ async function loadArtistSongs(artistName) {
             ${song.artist?.name || 'Unknown'}
             <span class="heart-btn ${isLiked ? 'liked' : ''}"
                   onclick="event.stopPropagation(); toggleLikeArtist('${song.artist?.name || 'Unknown'}', '${coverSrc}')">
-              ${isLiked ? '❤️' : '🤍'}
+              ${isLiked ? '♥️' : '♡'}
             </span>
           </small>
         </div>
@@ -543,7 +543,7 @@ function renderSongs(songs, container) {
             ${artistName}
             <span class="heart-btn ${isLiked ? 'liked' : ''}"
                   onclick="event.stopPropagation(); toggleLikeArtist('${artistName}', '${cover}')">
-              ${isLiked ? '❤️' : '🤍'}
+              ${isLiked ? '♥️' : '♡'}
             </span>
           </small>
         </div>
@@ -870,7 +870,7 @@ function loadPlaylist(name) {
               ${artist}
               <span class="heart-btn ${isLiked ? 'liked' : ''}"
                     onclick="event.stopPropagation(); toggleLikeArtist('${artist}', '${coverSrc}')">
-                ${isLiked ? '❤️' : '🤍'}
+                ${isLiked ? '♥️' : '♡'}
               </span>
             </small>
           </div>
@@ -930,7 +930,7 @@ async function loadAlbum(album) {
               ${song.artist.name}
               <span class="heart-btn ${isLiked ? 'liked' : ''}"
                     onclick="event.stopPropagation(); toggleLikeArtist('${song.artist.name}', '${coverSrc}')">
-                ${isLiked ? '❤️' : '🤍'}
+                ${isLiked ? '♥️' : '♡'}
               </span>
             </small>
           </div>
