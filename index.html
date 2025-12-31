@@ -450,7 +450,7 @@
         margin-top: 8px;
       }
       #right-sidebar {
-        width: 280px;
+        width: 340px;
         background: var(--surface);
         padding-top: 90px;
         border-left: 5px solid var(--border);
@@ -847,6 +847,47 @@
       .grid-container {
   grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
   gap: 24px;
+}
+      /* 1. Reset to clean full-cover square cards (no cropping, no extreme growth) */
+.grid-cover {
+  width: 100%;
+  aspect-ratio: 1 !important;
+  object-fit: cover !important;   /* Fill square nicely, slight crop if needed (rare) */
+  background: transparent;
+  padding: 0;
+  border-radius: 4px;
+  box-shadow: 0 8px 24px rgba(0,0,0,.5);
+}
+
+/* Remove the adaptive grid that caused exploding heights */
+.grid-card {
+  display: flex !important;
+  flex-direction: column;
+  align-items: stretch;
+}
+
+/* 2. Truncate long artist lists to one line with "..." */
+.grid-artist {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  -webkit-line-clamp: unset !important; /* override any multi-line */
+}
+
+/* 3. Make Recently Played a compact 4-column grid (consistent with others) */
+#recently-played {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+  gap: 24px;
+  margin-top: 16px;
+}
+
+/* Optional: Slightly smaller text in Recently Played for compactness */
+#recently-played .grid-title {
+  font-size: 0.95rem;
+}
+#recently-played .grid-artist {
+  font-size: 0.85rem;
 }
     </style>
   </head>
