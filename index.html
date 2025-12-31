@@ -808,6 +808,13 @@
 #recently-played .grid-artist {
   font-size: 0.85rem;
 }
+      /* Show full album artwork without aggressive cropping */
+.grid-cover {
+  object-fit: contain !important;   /* Show entire image */
+  background: #000;                 /* Black letterbox background */
+  padding: 8px;                     /* Optional: small inner spacing so edges aren't cut off */
+  box-sizing: border-box;
+}
     </style>
   </head>
   <body>
