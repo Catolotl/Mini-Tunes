@@ -2721,18 +2721,19 @@ window.hidePlayer = function() {
     lyricsSection.style.display = 'none';
   }
 };
-      <script>
-// Sidebar collapse toggle
-document.getElementById('sidebar-toggle').addEventListener('click', function() {
-  const sidebar = document.getElementById('sidebar');
-  sidebar.classList.toggle('collapsed');
-});
-</script>
-    </script>
-    
-  </body>
-</html>
+          </script>
+<script>
+      // Sidebar collapse toggle
+      document.addEventListener('DOMContentLoaded', () => {
+        const toggleBtn = document.getElementById('sidebar-toggle');
+        const sidebar = document.getElementById('sidebar');
 
-    
+        if (toggleBtn && sidebar) {
+          toggleBtn.addEventListener('click', () => {
+            sidebar.classList.toggle('collapsed');
+          });
+        }
+      });
+    </script>
   </body>
 </html>
