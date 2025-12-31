@@ -215,7 +215,6 @@
         padding:16px 16px 8px;
         font-size:0.9em;
         color:#aaa;
-        text-transform:uppercase;
         letter-spacing:0.5px;
         font-weight:600;
       }
@@ -677,6 +676,31 @@
   color: #e91e63;
   opacity: 1;
 }
+     .search-text {
+       color: #D3D3D3;
+       opacity: 1;
+     }
+      .playlists-header {
+  padding: 16px 16px 8px;
+  font-size: 0.9em;
+  color: #aaa;
+  letter-spacing: 0.5px;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 10px; /* space between icon and text */
+}
+
+.library-icon {
+  height: 28px;        /* Adjust this to match text height perfectly */
+  width: auto;
+  object-fit: contain;
+  filter: brightness(0) invert(1) opacity(0.7); /* Makes it light gray like the text */
+}
+
+.playlists-header:hover .library-icon {
+  opacity: 1; /* Optional: brighten icon on hover */
+}
       
     </style>
   </head>
@@ -690,7 +714,7 @@
     </div>
     <div id="search-nav" class="nav-item">
       <svg viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l4.5 4.5a1 1 0 0 1-1.42 1.42l-4.5-4.5v-.79l-.27-.27A6.5 6.5 0 1 1 9.5 3zm0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5z"></path></svg>
-      <span>What do you want to play?</span>
+      <span class="search-text">What do you want to play?</span>
     </div>
   </div>
   <div class="header-right">
@@ -710,7 +734,12 @@
       </div>
 
       <div id="sidebar">
-        <div class="playlists-header">||\Your Library</div>
+        <div class="playlists-header">
+  <img src="https://lh3.googleusercontent.com/sitesv/AAzXCke-ckfIOfSXwFLtI1TLboUhzgEj63ILu_nvgpiP31axHVWfinMrW-mbhxIDBt_BttLNI_ifJaiJq6IyRzijHYndSOyY82_0GNmVWa2XVrxUP-gb9GNfAROYyZs1qQQ76tMtxOIJDKt84Ob7lqInMfZEd7xR2MiBevniGl6gonrzOPC8ss0rFnIr=w1280" 
+       alt="Library icon" 
+       class="library-icon">
+  Your Library
+</div>
       </div>
 
       <div id="content">
