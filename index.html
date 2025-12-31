@@ -650,6 +650,53 @@
         -webkit-box-orient: vertical;
         line-height: 1.3;
       }
+      /* Square playlist cards (for Made for You and Your Playlists) */
+.playlist-grid-container {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+  gap: 16px;
+  margin-bottom: 32px;
+}
+
+.playlist-card {
+  background: var(--card);
+  border-radius: 8px;
+  padding: 16px;
+  cursor: pointer;
+  transition: background 0.3s ease;
+  display: flex;
+  flex-direction: column;
+}
+
+.playlist-card:hover {
+  background: var(--hover);
+}
+
+.playlist-cover {
+  width: 100%;
+  aspect-ratio: 1;
+  object-fit: cover;
+  border-radius: 4px;
+  box-shadow: 0 8px 24px rgba(0,0,0,.5);
+  margin-bottom: 16px;
+}
+
+.playlist-title {
+  font-weight: 700;
+  font-size: 1rem;
+  margin-bottom: 8px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  display: -webkit-box;
+  -webkit-line-clamp: 1;
+  -webkit-box-orient: vertical;
+  line-height: 1.4;
+}
+
+.playlist-subtitle {
+  font-size: 0.875rem;
+  color: var(--text-secondary);
+}
     </style>
   </head>
   <body>
@@ -875,66 +922,15 @@ window.playSong = async function(song, fromPlaylist = false) {
   renderTopArtistsSidebar();
 };
 
-// ====================== AUTO-GENERATED PLAYLISTS ======================
-function generateAutoPlaylists() {
-  const recent = JSON.parse(localStorage.getItem("recentlyPlayed") || "[]");
-  if (recent.length === 0) return { auto: {}, recentSongs: [] };
-
-  // Top Artists Mix (top artists' songs)
-  const artistCounts = {};
-  recent.forEach(song => {
-    const artist = song.artist?.name || "Unknown";
-    artistCounts[artist] = (artistCounts[artist] || 0) + 1;
-  });
-  const sortedArtists = Object.entries(artistCounts)
-    .sort((a, b) => b[1] - a[1])
-    .slice(0, 5)
-    .map(([artist]) => artist);
-
-  const topArtistsMix = recent
-    .filter(song => sortedArtists.includes(song.artist?.name))
-    .slice(-25); // A bit longer for variety
-
-  // Recent Favorites
-  const recentFavorites = recent.slice(-20);
-
-  // Return both auto playlists and the 8 most recent songs for Recently Played
-  return {
-    auto: {
-      "🌙 Midnight Jams": {
-        songs: recent.filter(s => Math.random() > 0.4).slice(0, 18), // Random chill selection
-        cover: "https://i.ytimg.com/vi/y0NZt7Wn6ZY/sddefault.jpg" // Dark chill vibe
-      },
-      "📻 Weekly Radio": {
-        songs: recent.slice(-30).reverse(), // Fresh energetic mix
-        cover: "https://www.rollingstone.com/wp-content/uploads/2024/07/BestAlbumCover_NEW.jpg?w=1600&h=900&crop=1"
-      },
-      "🎵 Recent Favorites": {
-        songs: recentFavorites,
-        cover: recentFavorites[recentFavorites.length - 1]?.album?.cover_medium || "https://via.placeholder.com/300?text=♪"
-      },
-      "⭐ Top Artists Mix": {
-        songs: topArtistsMix,
-        cover: topArtistsMix[topArtistsMix.length - 1]?.album?.cover_medium || "https://via.placeholder.com/300?text=⭐"
-      },
-      "🔥 On Repeat": {
-        songs: recent.slice(-15), // Heavily played feel
-        cover: "https://images.macrumors.com/t/baMAX1f1LLRWiiO8H-omfR8o70E=/1600x0/article-new/2021/03/spotify-personalized-mixes.jpg"
-      }
-    },
-    recentSongs: recent.slice(-8).reverse() // Last 8 played, newest first
-  };
-}
-
 function renderAutoPlaylists() {
   const { auto, recentSongs } = generateAutoPlaylists();
   const homePage = document.getElementById("home-page");
   if (!homePage) return;
 
-  // Remove existing sections if they exist
+  // Remove existing custom sections
   homePage.querySelectorAll('[data-section="made-for-you"], [data-section="recently-played-new"]').forEach(el => el.remove());
 
-  // === Recently Played Section (horizontal song cards) ===
+  // === Recently Played (horizontal song cards - keeps your existing flex style) ===
   const recentSection = document.createElement('div');
   recentSection.className = 'section';
   recentSection.setAttribute('data-section', 'recently-played-new');
@@ -950,16 +946,13 @@ function renderAutoPlaylists() {
 
   recentSongs.forEach(song => {
     const card = document.createElement('div');
-    card.className = 'grid-card';
-    card.style.display = 'flex';
-    card.style.alignItems = 'center';
-    card.style.gap = '16px';
+    card.className = 'grid-card'; // Uses the existing horizontal flex style at the bottom of CSS
     card.style.padding = '12px';
 
-    const cover = song.album?.cover_medium || 'https://via.placeholder.com/64';
+    const cover = song.album?.cover_medium || 'https://via.placeholder.com/80';
     card.innerHTML = `
       <img class="grid-cover" src="${cover}" style="width:80px;height:80px;border-radius:8px;flex-shrink:0;">
-      <div class="grid-title" style="font-size:1.1rem;margin:0;">${song.title}</div>
+      <div class="grid-title" style="font-size:1.1rem;margin:0;line-height:1.4;">${song.title}</div>
     `;
     card.onclick = () => window.playSong(song);
     recentGrid.appendChild(card);
@@ -967,7 +960,7 @@ function renderAutoPlaylists() {
 
   recentSection.appendChild(recentGrid);
 
-  // === Generated Playlists Section (square cards) ===
+  // === Made for You (now proper square cards) ===
   const autoSection = document.createElement('div');
   autoSection.className = 'section';
   autoSection.setAttribute('data-section', 'made-for-you');
@@ -977,32 +970,29 @@ function renderAutoPlaylists() {
   autoSection.appendChild(autoTitle);
 
   const autoGrid = document.createElement('div');
-  autoGrid.className = 'grid-container'; // Reuses your square grid
+  autoGrid.className = 'playlist-grid-container';
 
   Object.entries(auto).forEach(([name, playlist]) => {
-    const div = document.createElement('div');
-    div.className = 'grid-card';
-    const cover = playlist.cover || 'https://via.placeholder.com/300?text=♪';
+    const card = document.createElement('div');
+    card.className = 'playlist-card';
 
-    div.innerHTML = `
-      <img class="grid-cover" src="${cover}" alt="cover">
-      <div class="grid-title">${name}</div>
-      <div class="grid-artist">${playlist.songs.length} songs</div>
+    const cover = playlist.cover || 'https://via.placeholder.com/300?text=♪';
+    card.innerHTML = `
+      <img class="playlist-cover" src="${cover}" alt="cover">
+      <div class="playlist-title">${name}</div>
+      <div class="playlist-subtitle">${playlist.songs.length} songs</div>
     `;
-    div.onclick = () => loadAutoPlaylist(name, playlist);
-    autoGrid.appendChild(div);
+
+    card.onclick = () => loadAutoPlaylist(name, playlist);
+    autoGrid.appendChild(card);
   });
 
   autoSection.appendChild(autoGrid);
 
-  // Insert in correct order: after original Recently Played, before Your Playlists
-  const originalRecentSection = homePage.querySelector('.section h3').parentElement; // First section
-  const yourPlaylistsSection = homePage.querySelectorAll('.section')[1]; // Second section
+  // Insert in correct order
+  const yourPlaylistsSection = homePage.querySelectorAll('.section')[1]; // Your Playlists section
 
-  // Replace old Recently Played with new horizontal one
   homePage.insertBefore(recentSection, yourPlaylistsSection);
-
-  // Insert Made for You right after new Recently Played
   homePage.insertBefore(autoSection, yourPlaylistsSection);
 }
 // ====================== TOP ARTISTS SIDEBAR ======================
