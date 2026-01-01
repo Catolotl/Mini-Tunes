@@ -487,7 +487,7 @@ async function loadPopular() {
   popular.innerHTML = "";
   showSkeletons(popular, 10);
   try {
-    const songs = await itunesFetch('top songs 2025', 20);
+    const songs = await itunesFetch('top songs 2026', 20);
     renderSongs(songs, popular);
   } catch {
     popular.innerHTML = "<p style='color:#f66;'>Failed to load popular songs.</p>";
