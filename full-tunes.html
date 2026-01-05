@@ -1993,10 +1993,87 @@ document.getElementById("playlistName").addEventListener("keypress", (e) => {
     if (e.key === "Enter") createPlaylist();
 });
 
+    // === MIGRATION FROM OLD ITUNES VERSION ===
+function migrateOldITunesPlaylists() {
+    // Check if old data exists and we haven't migrated yet
+    if (localStorage.getItem("miniPlaylists") && !localStorage.getItem("itunesMigrationDone")) {
+if (!confirm("We detected old playlists from a previous version that used iTunes previews.\n\nWould you like to try converting them to YouTube songs?\n\n(This may take 20–60 seconds depending on playlist size)")) {
+    localStorage.setItem("itunesMigrationDone", "declined");
+    return;
+}
+
+alert("Starting migration... Please wait, this may take a moment.");
+
+        try {
+            const oldPlaylists = JSON.parse(localStorage.getItem("miniPlaylists") || "{}");
+            let convertedCount = 0;
+
+            // We'll build new playlists in the current format
+            const newPlaylists = { ...playlists }; // start with current ones
+
+            const migratePromises = Object.keys(oldPlaylists).map(async (playlistName) => {
+                const oldPl = oldPlaylists[playlistName];
+                if (!oldPl.songs || oldPl.songs.length === 0) return;
+
+                newPlaylists[playlistName] = newPlaylists[playlistName] || [];
+
+                for (const oldSong of oldPl.songs) {
+                    const query = `${oldSong.title} ${oldSong.artist?.name || ''}`.trim();
+                    try {
+                        const res = await fetch(
+                            `https://www.googleapis.com/youtube/v3/search?part=snippet&type=video&videoCategoryId=10&maxResults=1&q=${encodeURIComponent(query)}&key=${YT_KEY}`
+                        );
+                        const data = await res.json();
+
+                        if (data.items && data.items.length > 0) {
+                            const item = data.items[0];
+                            const newSong = {
+                                id: item.id.videoId,
+                                title: escapeHtml(item.snippet.title),
+                                artist: escapeHtml(item.snippet.channelTitle),
+                                art: item.snippet.thumbnails.medium.url
+                            };
+                            newPlaylists[playlistName].push(newSong);
+                            convertedCount++;
+                        }
+                    } catch (e) {
+                        console.warn(`Failed to convert: ${query}`, e);
+                    }
+                }
+            });
+
+            Promise.all(migratePromises).then(() => {
+                // Save converted playlists
+                playlists = newPlaylists;
+                saveData("playlists", playlists);
+
+                // Clean up old data optionally
+                localStorage.removeItem("miniPlaylists");
+                localStorage.removeItem("recentlyPlayed");
+                localStorage.removeItem("recentlyPlayedAlbums");
+
+                localStorage.setItem("itunesMigrationDone", "true");
+
+                alert(`Migration complete!\n${convertedCount} songs were converted into your playlists.\n\nYou may want to review them for accuracy.`);
+                
+                renderPlaylists();
+                if (currentPlaylist) renderPlaylistContent();
+            });
+
+        } catch (e) {
+            console.error("Migration failed:", e);
+            alert("Migration failed. Check console for details.");
+            localStorage.setItem("itunesMigrationDone", "failed");
+        }
+    }
+}
+
 /* INIT */
 renderQueue();
 renderRecent();
 renderPlaylists();
+
+    migrateOldITunesPlaylists();
 // Background jazz player
 const bgPlayer = document.getElementById('bgPlayer');
 let isBgPlaying = true;
