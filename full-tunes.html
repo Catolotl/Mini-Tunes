@@ -1424,6 +1424,44 @@ body::before {
         grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
     }
 }
+    /* Recently Played: Fixed 4x2 left-aligned grid */
+#recent {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr); /* Forces exactly 4 columns */
+    gap: 24px;
+    justify-content: start;     /* Left-aligns the grid items */
+    width: fit-content;         /* Prevents stretching across full width */
+    max-width: 100%;            /* But don't overflow container */
+    margin: 0;                  /* Remove any auto centering */
+    padding: 0;
+}
+
+/* On smaller screens: fall back to 2 columns */
+@media (max-width: 1100px) {
+    #recent {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
+
+/* Mobile: 1 or 2 columns */
+@media (max-width: 600px) {
+    #recent {
+        grid-template-columns: repeat(2, 1fr);
+        justify-content: center; /* Optional: center on very small screens */
+    }
+}
+
+@media (max-width: 480px) {
+    #recent {
+        grid-template-columns: 1fr;
+        justify-content: center;
+    }
+}
+
+/* Optional: limit card width for consistency */
+#recent .card {
+    width: 180px; /* Fixed width so they align perfectly */
+}
 </style>
 
 </head>
@@ -1959,7 +1997,7 @@ function renderRecent() {
         return;
     }
 
-    // Only take the latest 8 songs
+    // Only show the latest 8 songs
     const latestEight = recent.slice(0, 8);
 
     latestEight.forEach(s => {
