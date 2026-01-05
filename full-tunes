@@ -1,0 +1,2042 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>jvst Music</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+
+<style>
+:root{
+    --bg:#121212;
+    --panel:#1e1e1e;
+    --soft:#282828;
+    --hover:#333333;
+    --accent:#1db954;
+    --accent-dim:#1ed760;
+    --text:#ffffff;
+    --muted:#b3b3b3;
+    --glow:rgba(29,185,84,.3);
+}
+
+*{
+    box-sizing:border-box;
+    margin:0;
+    padding:0;
+}
+
+body{
+    font-family:'Circular Std','Segoe UI',system-ui,sans-serif;
+    background:var(--bg);
+    color:var(--text);
+    overflow:hidden;
+}
+
+/* ───────── ANIMATED BACKGROUND ───────── */
+.bg-gradient{
+    position:fixed;
+    inset:0;
+background: linear-gradient(#0F001A, #000000);
+
+    z-index:0;
+}
+
+/* ───────── TOP BAR ───────── */
+.topbar{
+    position:sticky;
+    top:0;
+    z-index:100;
+    display:flex;
+    gap:16px;
+    padding:16px 24px;
+    background:rgba(18,18,18,.95);
+    backdrop-filter:blur(20px);
+    border-bottom:1px solid rgba(255,255,255,.05);
+    align-items:center;
+}
+
+.logo{
+    font-size:28px;
+    font-weight:900;
+    background:linear-gradient(135deg, var(--accent), #1ed760);
+    -webkit-background-clip:text;
+    -webkit-text-fill-color:transparent;
+    background-clip:text;
+    letter-spacing:-1px;
+}
+
+.search-wrap{
+    flex:1;
+    max-width:500px;
+    position:relative;
+}
+
+.search-wrap input{
+    width:100%;
+    padding:14px 20px;
+    border-radius:10px;
+    border:none;
+    background: rgba(255, 255, 255, 0.25) !important;
+    color:#fff;
+    font-size:15px;
+    transition:all .2s;
+}
+
+.search-wrap input:focus{
+    outline:none;
+    box-shadow:0 0 0 4px var(--glow);
+}
+
+/* SEARCH DROPDOWN */
+.dropdown{
+    position:absolute;
+    top:120%;
+    left:0;
+    right:0;
+    background:var(--panel);
+    border-radius:16px;
+    overflow:hidden;
+    display:none;
+    box-shadow:0 20px 60px rgba(0,0,0,.5);
+    border:1px solid rgba(255,255,255,.1);
+    max-height:400px;
+    overflow-y:auto;
+    z-index:1000;
+}
+
+.result{
+    display:flex;
+    align-items:center;
+    gap:14px;
+    padding:14px;
+    transition:background .2s;
+}
+
+.result:hover{background:var(--hover)}
+
+.result img{
+    width:52px;
+    height:52px;
+    border-radius:8px;
+    object-fit:cover;
+}
+
+.result-info{
+    flex:1;
+    min-width:0;
+}
+
+.result-info h4{
+    font-size:15px;
+    font-weight:600;
+    white-space:nowrap;
+    overflow:hidden;
+    text-overflow:ellipsis;
+}
+
+.result-info p{
+    font-size:13px;
+    color:var(--muted);
+}
+
+.result-actions{
+    display:flex;
+    gap:8px;
+}
+
+.result button{
+    background:var(--accent);
+    border:none;
+    color:#000;
+    padding:8px 16px;
+    border-radius:30px;
+    font-weight:600;
+    cursor:pointer;
+    transition:all .2s;
+    font-size:14px;
+}
+
+.result button:hover{
+    background:var(--accent-dim);
+    transform:scale(1.05);
+}
+
+.result .btn-add{
+    background:var(--soft);
+    color:var(--accent);
+}
+
+.result .btn-playlist{
+    background:var(--soft);
+    color:#fff;
+    padding:8px 12px;
+}
+
+/* ───────── LAYOUT ───────── */
+.app{
+    display:flex;
+    height:calc(100vh - 90px);
+    position:relative;
+    z-index:1;
+}
+
+/* LEFT SIDEBAR */
+.sidebar{
+    width:260px;
+    background:rgba(18,18,18,.6);
+    backdrop-filter:blur(10px);
+    padding:24px;
+    overflow:auto;
+    border-right:1px solid rgba(255,255,255,.05);
+}
+
+.sidebar h3{
+    font-size:12px;
+    color:var(--muted);
+    text-transform:uppercase;
+    letter-spacing:1px;
+    margin-bottom:16px;
+}
+
+.playlist{
+    padding:12px 16px;
+    border-radius:12px;
+    cursor:pointer;
+    transition:all .2s;
+    margin-bottom:6px;
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    gap:10px;
+    border:2px solid transparent;
+}
+
+.playlist:hover{
+    background:var(--hover);
+    transform:translateX(4px);
+}
+
+.playlist.active{
+    background:var(--accent);
+    color:#000;
+    font-weight:600;
+    border-color:var(--accent);
+}
+
+.playlist-delete{
+    opacity:0;
+    background:rgba(0,0,0,.3);
+    border:none;
+    color:#fff;
+    padding:4px 8px;
+    border-radius:6px;
+    cursor:pointer;
+    font-size:12px;
+    transition:all .2s;
+}
+
+.playlist:hover .playlist-delete{
+    opacity:1;
+}
+
+.playlist-delete:hover{
+    background:rgba(255,0,0,.6);
+}
+
+.create-btn{
+    margin-top:20px;
+    padding:14px;
+    background:linear-gradient(135deg, var(--accent), var(--accent-dim));
+    border-radius:10px; !important
+    text-align:center;
+    cursor:pointer;
+    font-weight:600;
+    color:#000;
+    transition:transform .2s;
+}
+
+
+/* MAIN */
+.main{
+    flex:1;
+    padding:32px;
+    overflow:auto;
+    transition:margin-right .3s;
+}
+
+/* SECTIONS */
+.section{
+    margin-bottom:48px;
+}
+
+.section h2{
+    margin-bottom:20px;
+    font-size:28px;
+    font-weight:700;
+}
+
+/* CARDS */
+.row{
+    display:grid;
+    grid-template-columns:repeat(auto-fill, minmax(180px, 1fr));
+    gap:24px;
+}
+
+.card{
+    background:var(--panel);
+    padding:20px;
+    border-radius:16px;
+    cursor:pointer;
+    transition:all .3s;
+    position:relative;
+}
+
+.card:hover{
+    background:var(--soft);
+    transform:translateY(-8px);
+    box-shadow:0 12px 24px rgba(0,0,0,.5);
+}
+
+.card img{
+    width:100%;
+    aspect-ratio:1;
+    border-radius:12px;
+    margin-bottom:16px;
+    object-fit:cover;
+    box-shadow:0 8px 24px rgba(0,0,0,.5);
+}
+
+.card h4{
+    font-size:16px;
+    font-weight:700;
+    margin-bottom:4px;
+    white-space:nowrap;
+    overflow:hidden;
+    text-overflow:ellipsis;
+}
+
+.card p{
+    font-size:14px;
+    color:var(--muted);
+}
+
+.card-menu{
+    position:absolute;
+    top:12px;
+    right:12px;
+    background:rgba(0,0,0,.7);
+    backdrop-filter:blur(10px);
+    border-radius:50%;
+    width:40px;
+    height:40px;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    opacity:0;
+    transition:opacity .2s;
+}
+
+.card:hover .card-menu{
+    opacity:1;
+}
+
+.card-menu button{
+    background:none;
+    border:none;
+    color:#fff;
+    cursor:pointer;
+    font-size:20px;
+}
+
+/* QUEUE */
+.queue-item{
+    padding:16px;
+    background:var(--panel);
+    border-radius:14px;
+    margin-bottom:10px;
+    cursor:pointer;
+    transition:all .2s;
+    display:flex;
+    align-items:center;
+    gap:14px;
+    border:2px solid transparent;
+}
+
+.queue-item:hover{
+    background:var(--hover);
+    transform:translateX(4px);
+}
+
+.queue-item.playing{
+    border-color:var(--accent);
+    background:var(--soft);
+    box-shadow:0 0 20px var(--glow);
+}
+
+.queue-item img{
+    width:56px;
+    height:56px;
+    border-radius:8px;
+}
+
+.queue-item-info{
+    flex:1;
+}
+
+.queue-item-info h4{
+    font-size:16px;
+    font-weight:600;
+}
+
+.queue-item-info p{
+    font-size:14px;
+    color:var(--muted);
+}
+
+.remove-btn{
+    background:var(--soft);
+    border:none;
+    color:var(--muted);
+    padding:8px 12px;
+    border-radius:8px;
+    cursor:pointer;
+    transition:all .2s;
+}
+
+.remove-btn:hover{
+    background:var(--hover);
+    color:#fff;
+}
+
+/* NOW PLAYING SIDEBAR */
+.now-playing{
+    width:420px;
+    background:rgba(18,18,18,.8);
+    backdrop-filter:blur(10px);
+    padding:32px;
+    border-left:1px solid rgba(255,255,255,.05);
+    overflow:auto;
+    display:none;
+}
+
+.now-playing.active{
+    display:block;
+}
+
+.video-container{
+    width:100%;
+    aspect-ratio:16/9;
+    border-radius:16px;
+    overflow:hidden;
+    margin-bottom:28px;
+    background:#000;
+    box-shadow:0 8px 32px rgba(0,0,0,.5);
+}
+
+.video-container iframe{
+    width:100%;
+    height:100%;
+    border:none;
+}
+
+.now-playing h3{
+    font-size:24px;
+    font-weight:700;
+    margin-bottom:8px;
+}
+
+.now-playing .artist{
+    color:var(--muted);
+    font-size:18px;
+    margin-bottom:32px;
+}
+
+.lyrics-section{
+    margin-top:32px;
+}
+
+.lyrics-section h4{
+    font-size:18px;
+    margin-bottom:16px;
+    color:var(--accent);
+}
+
+.lyrics{
+    font-size:15px;
+    color:var(--muted);
+    line-height:1.8;
+    white-space:pre-wrap;
+    max-height:400px;
+    overflow-y:auto;
+    padding:20px;
+    background:var(--panel);
+    border-radius:16px;
+}
+
+.lyrics.loading{
+    text-align:center;
+    font-style:italic;
+}
+
+/* MODAL */
+.modal{
+    display:none;
+    position:fixed;
+    inset:0;
+    background:rgba(0,0,0,.8);
+    backdrop-filter:blur(10px);
+    z-index:1000;
+    align-items:center;
+    justify-content:center;
+}
+
+.modal.active{display:flex}
+
+.modal-content{
+    background:var(--panel);
+    padding:40px;
+    border-radius:20px;
+    max-width:400px;
+    width:90%;
+    border:1px solid rgba(255,255,255,.1);
+}
+
+.modal-content h3{
+    margin-bottom:24px;
+    font-size:28px;
+    font-weight:700;
+}
+
+.modal-content input{
+    width:100%;
+    padding:16px;
+    border-radius:30px;
+    border:none;
+    background:var(--soft);
+    color:#fff;
+    font-size:16px;
+    margin-bottom:24px;
+}
+
+.modal-content input:focus{
+    outline:none;
+    box-shadow:0 0 0 4px var(--glow);
+}
+
+.modal-buttons{
+    display:flex;
+    gap:16px;
+}
+
+.modal-buttons button{
+    flex:1;
+    padding:16px;
+    border:none;
+    border-radius:30px;
+    font-size:16px;
+    font-weight:700;
+    cursor:pointer;
+    transition:all .2s;
+}
+
+.modal-buttons .primary{
+    background:var(--accent);
+    color:#000;
+}
+
+.modal-buttons .secondary{
+    background:var(--soft);
+    color:var(--text);
+}
+
+.modal-buttons button:hover{
+    transform:scale(1.05);
+}
+
+/* PLAYLIST SELECTOR */
+.playlist-list{
+    max-height:300px;
+    overflow-y:auto;
+    margin-bottom:24px;
+}
+
+.playlist-option{
+    padding:16px;
+    background:var(--soft);
+    border-radius:16px;
+    margin-bottom:12px;
+    cursor:pointer;
+    transition:all .2s;
+    display:flex;
+    align-items:center;
+    gap:12px;
+    font-size:16px;
+}
+
+.playlist-option:hover{
+    background:var(--hover);
+    transform:translateX(4px);
+}
+
+/* SCROLLBAR */
+::-webkit-scrollbar{width:8px;height:8px}
+::-webkit-scrollbar-track{background:transparent}
+::-webkit-scrollbar-thumb{background:var(--soft);border-radius:10px}
+::-webkit-scrollbar-thumb:hover{background:var(--hover)}
+
+
+.topbar {
+    justify-content: space-between;  /* Pushes logo to left, search to center/right space */
+    padding: 16px 24px;               /* Keeps your original padding */
+}
+
+.search-wrap {
+    position: absolute;
+    left: 50%;
+    transform: translateX(-50%);
+    max-width: 500px;                 /* Keeps your original max width */
+    width: 100%;
+    z-index: 10;                      /* Ensures it stays on top if needed */
+}
+
+/* Make sidebar super thin - icon only mode */
+.sidebar {
+    width: 80px !important;     /* Very narrow */
+    padding: 24px 12px;
+    align-items: center;        /* Center everything vertically */
+    display: flex;
+    flex-direction: column;
+}
+
+.sidebar h3 {
+    font-size: 11px;
+    margin: 24px 0 12px 0;
+    writing-mode: vertical-rl;   /* Optional: rotate text vertically */
+    text-orientation: mixed;
+    letter-spacing: 2px;
+}
+
+/* Home button - icon only + label below */
+#homeBtn,
+.playlist {
+    width: 56px;
+    height: auto;
+    padding: 12px;
+    border-radius: 12px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    font-size: 24px;             /* Big emoji */
+    position: relative;
+}
+
+#homeBtn span,
+.playlist span {
+    font-size: 14px;             /* Small playlist name below */
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    width: 100%;
+    text-align: center;
+    font-weight: 500;
+}
+
+/* Hide delete button in thin mode - it would clutter */
+.playlist-delete {
+    display: none;
+}
+
+/* Create playlist button - smaller and centered */
+.create-btn {
+    width: 56px;
+    height: 56px;
+    border-radius: 50%;          /* Circle button */
+    padding: 0;
+    font-size: 28px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-top: 20px;
+}
+
+
+
+/* Permanent thin sidebar - no expand */
+.sidebar {
+    width: 80px !important;
+    padding: 24px 12px;
+    align-items: center;
+    display: flex;
+    flex-direction: column;
+    transition: none !important; /* Disable any hover transition */
+}
+
+.sidebar h3 {
+    font-size: 11px;
+    margin: 32px 0 16px 0;
+    writing-mode: vertical-rl;
+    text-orientation: mixed;
+    letter-spacing: 2px;
+    color: var(--muted);
+}
+
+/* Home button - full circle */
+#homeBtn {
+    width: 56px;
+    height: 56px;
+    padding: 0;
+    border-radius: 50%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 4px;
+    font-size: 26px;
+    background: var(--soft);
+    transition: all .2s;
+}
+
+#homeBtn:hover {
+    background: var(--hover);
+    transform: scale(1.05);
+}
+
+#homeBtn span {
+    font-size: 11px;
+    font-weight: 500;
+    color: var(--muted);
+}
+
+/* Playlists - icon + name below */
+.playlist {
+    width: 56px;
+    padding: 12px 8px;
+    border-radius: 16px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    font-size: 28px;
+    margin-bottom: 12px;
+    transition: all .2s;
+    text-align: center;
+}
+
+.playlist:hover {
+    background: var(--hover);
+}
+
+.playlist.active {
+    background: var(--accent);
+    color: #000;
+}
+
+.playlist span {
+    font-size: 11px;
+    line-height: 1.3;
+    max-height: 40px;           /* Limits to ~3 lines */
+    overflow: hidden;
+    word-break: break-word;     /* Allows long words to break */
+    color: var(--text);
+    width: 100%;
+}
+
+.playlist.active span {
+    color: #000;
+    font-weight: 600;
+}
+
+/* Hide delete button in thin mode */
+.playlist-delete {
+    display: none !important;
+}
+
+/* Create playlist button - full circle */
+.create-btn {
+    width: 56px;
+    height: 56px;
+    border-radius: 50%;
+    padding: 0;
+    font-size: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-top: auto;           /* Pushes it to bottom */
+    transition: all .2s;
+}
+
+.create-btn:hover {
+    transform: scale(1.08);
+}
+
+/* Optional: make active playlist slightly larger circle */
+.playlist.active {
+    transform: scale(1.05);
+}
+
+
+/* Fix create button - no bottom stick, no hover changes */
+.create-btn {
+    width: 56px !important;
+    height: 56px !important;
+    border-radius: 50% !important;
+    padding: 0 !important;
+    font-size: 32px !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    margin-top: 16px !important;  /* Fixed space above, not auto */
+    margin-bottom: 24px !important; /* Fixed space below */
+    transition: transform 0.2s !important; /* Only scale on hover */
+}
+
+.create-btn:hover {
+    transform: scale(1.08) !important; /* Just subtle scale, no shape/size change */
+}
+
+/* Ensure playlists container doesn't push create button */
+#playlists {
+    flex: 1;
+    overflow-y: auto;
+    max-height: calc(100vh - 200px); /* Prevents overflow */
+}
+
+/* Remove any conflicting hover rules from sidebar */
+
+/* === PERMANENT THIN SIDEBAR - NO HOVER EXPANSION AT ALL === */
+
+/* Force sidebar to stay thin forever */
+.sidebar {
+    width: 80px !important;
+    padding: 24px 12px !important;
+    align-items: center !important;
+    display: flex !important;
+    flex-direction: column !important;
+    transition: none !important;            /* Disable any width transition */
+    overflow: hidden;
+}
+
+/* Remove ALL hover rules that cause expansion */
+.sidebar:hover {
+    width: 80px !important;
+    padding: 24px 12px !important;
+    align-items: center !important;
+    transition: none !important;
+}
+
+.sidebar:hover .playlist,
+.sidebar:hover #homeBtn,
+.sidebar:hover .create-btn {
+    flex-direction: column !important;
+    width: 56px !important;
+    height: auto !important;
+    padding: 12px 8px !important;
+    border-radius: 16px !important;
+    justify-content: center !important;
+}
+
+/* Home button - always circle, no change on hover */
+#homeBtn {
+    width: 56px !important;
+    height: 56px !important;
+    padding: 0 !important;
+    border-radius: 50% !important;
+    background: var(--soft) !important;
+    gap: 4px !important;
+    font-size: 26px !important;
+}
+
+#homeBtn:hover {
+    background: var(--hover) !important;
+    transform: scale(1.05);
+}
+
+/* Playlist items - always vertical icon + text below */
+.playlist {
+    width: 56px !important;
+    padding: 12px 8px !important;
+    border-radius: 16px !important;
+    gap: 6px !important;
+    font-size: 28px !important;
+    margin-bottom: 12px !important;
+}
+
+/* Active playlist highlight */
+.playlist.active {
+    background: var(--accent) !important;
+    color: #000 !important;
+    transform: scale(1.05);
+}
+
+/* Playlist name text */
+.playlist span {
+    font-size: 11px !important;
+    line-height: 1.3;
+    word-break: break-word;
+    max-height: 40px;
+    overflow: hidden;
+}
+
+/* Create button - fixed position, circle, no bottom stick, no hover change except scale */
+.create-btn {
+    width: 56px !important;
+    height: 56px !important;
+    border-radius: 50% !important;
+    padding: 0 !important;
+    font-size: 32px !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    margin-top: 24px !important;   /* Space above */
+    margin-bottom: 24px !important; /* Space below - keeps it centered vertically when few playlists */
+    flex-shrink: 0 !important;     /* Prevents shrinking */
+    transition: transform 0.2s !important;
+}
+
+.create-btn:hover {
+    transform: scale(1.08) !important;
+    background: var(--accent-dim) !important;  /* Optional: slight color change */
+}
+
+/* Make playlist list scrollable so + button stays in place */
+#playlists {
+    flex: 1;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    width: 100%;
+}
+
+/* Hide "Your Library" text since we're icon-only */
+.sidebar h3 {
+    display: none;
+}
+
+/* === FINAL: + BUTTON RIGHT BELOW HOME BUTTON === */
+.sidebar {
+    width: 80px !important;
+    min-width: 80px !important;
+    padding: 24px 12px !important;
+    align-items: center !important;
+    display: flex !important;
+    flex-direction: column !important;
+    transition: none !important;
+    gap: 16px !important; /* Consistent spacing between top items */
+}
+
+.sidebar:hover {
+    width: 80px !important;
+    transition: none !important;
+}
+
+/* Hide "Your Library" text */
+.sidebar h3 {
+    display: none !important;
+}
+
+/* Home button - circle */
+#homeBtn {
+    width: 56px !important;
+    height: 56px !important;
+    padding: 0 !important;
+    border-radius: 50% !important;
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: center !important;
+    justify-content: center !important;
+    gap: 4px !important;
+    font-size: 26px !important;
+    background: var(--soft) !important;
+    flex-shrink: 0 !important;
+}
+
+#homeBtn:hover {
+    background: var(--hover) !important;
+    transform: scale(1.05) !important;
+}
+
+#homeBtn span {
+    font-size: 11px !important;
+    color: var(--muted) !important;
+}
+
+/* + Create button - directly below Home, same style */
+.create-btn {
+    width: 56px !important;
+    height: 56px !important;
+    border-radius: 50% !important;
+    padding: 0 !important;
+    font-size: 32px !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    background: linear-gradient(135deg, var(--accent), var(--accent-dim)) !important;
+    color: #000 !important;
+    flex-shrink: 0 !important;
+    transition: transform 0.2s !important;
+    order: 1 !important; /* Ensures it comes right after Home */
+}
+
+.create-btn:hover {
+    transform: scale(1.08) !important;
+}
+
+/* Playlists container - takes remaining space, scrolls if needed */
+#playlists {
+    flex: 1 1 auto !important;
+    overflow-y: auto !important;
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: center !important;
+    width: 100% !important;
+    order: 2 !important; /* Appears after Home and + button */
+    margin-top: 8px !important;
+}
+
+/* Playlist items */
+.playlist {
+    width: 56px !important;
+    padding: 12px 8px !important;
+    border-radius: 16px !important;
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: center !important;
+    justify-content: center !important;
+    gap: 6px !important;
+    font-size: 28px !important;
+    margin-bottom: 12px !important;
+    transition: all 0.2s !important;
+}
+
+.playlist:hover {
+    background: var(--hover) !important;
+}
+
+.playlist.active {
+    background: var(--accent) !important;
+    color: #000 !important;
+    transform: scale(1.05) !important;
+}
+
+.playlist span {
+    font-size: 11px !important;
+    line-height: 1.3 !important;
+    word-break: break-word !important;
+    max-height: 40px !important;
+    overflow: hidden !important;
+    text-align: center !important;
+}
+
+/* === FINAL FIX: PURPLE-TO-BLACK BACKGROUND GRADIENT + PERFECT CIRCLE BUTTONS === */
+
+/* Animated background - purple to black, top to bottom radial gradients */
+
+/* Sidebar locked thin forever */
+.sidebar,
+.sidebar:hover {
+    width: 80px !important;
+    min-width: 80px !important;
+    max-width: 80px !important;
+    padding: 24px 12px !important;
+    gap: 16px !important;
+    transition: none !important;
+}
+
+/* Home button - permanent perfect circle, green background kept */
+#homeBtn,
+#homeBtn:hover {
+    width: 56px !important;
+    height: 56px !important;
+    min-width: 56px !important;
+    min-height: 56px !important;
+    padding: 0 !important;
+    border-radius: 50% !important;
+    background: var(--soft) !important;
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: center !important;
+    justify-content: center !important;
+    gap: 4px !important;
+    font-size: 26px !important;
+    flex-shrink: 0 !important;
+    transition: background 0.2s, transform 0.2s !important;
+}
+
+#homeBtn:hover {
+    background: var(--hover) !important;
+    transform: scale(1.05) !important;
+}
+
+/* + Create button - permanent perfect circle, KEEP GREEN GRADIENT */
+.create-btn,
+.create-btn:hover {
+    width: 56px !important;
+    height: 56px !important;
+    min-width: 56px !important;
+    min-height: 56px !important;
+    padding: 0 !important;
+    border-radius: 50% !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    font-size: 32px !important;
+    color: #000 !important;
+    background: #fff !important;
+    flex-shrink: 0 !important;
+    order: 1 !important;
+    transition: transform 0.2s !important;
+}
+
+.create-btn:hover {
+    transform: scale(1.08) !important;
+    background: linear-gradient(to bottom, var(--accent-dim), var(--accent)) !important; /* Slight reverse on hover for depth */
+}
+
+/* Force no distortion even if old hover rules try to interfere */
+.sidebar:hover #homeBtn,
+.sidebar:hover .create-btn {
+    width: 56px !important;
+    height: 56px !important;
+    border-radius: 50% !important;
+    flex-direction: column !important;
+    padding: 0 !important;
+}
+
+/* Keep playlists as rounded rectangles */
+.playlist,
+.playlist:hover {
+    border-radius: 16px !important;
+}
+
+/* === FINAL ONE-CHUNK: NO HOVER EFFECTS + TRANSPARENT BACKGROUNDS === */
+.topbar {
+    background: transparent !important;
+    backdrop-filter: none !important;
+    border-bottom: none !important;
+}
+
+.sidebar,
+.sidebar:hover {
+    width: 80px !important;
+    min-width: 80px !important;
+    max-width: 80px !important;
+    background: transparent !important;
+    backdrop-filter: none !important;
+    border-right: none !important;
+    padding: 24px 12px !important;
+    gap: 16px !important;
+    transition: none !important;
+}
+
+/* NO HOVER EFFECTS - NOTHING HAPPENS ON HOVER */
+#homeBtn,
+#homeBtn:hover,
+#homeBtn:active,
+.playlist,
+.playlist:hover,
+.playlist:active,
+.create-btn,
+.create-btn:hover,
+.create-btn:active {
+    transition: none !important;
+    transform: none !important;
+    background: initial !important;
+    border-radius: inherit !important;
+    width: inherit !important;
+    height: inherit !important;
+    padding: inherit !important;
+    flex-direction: inherit !important;
+    opacity: 1 !important;
+}
+
+/* Lock Home button as perfect circle */
+#homeBtn {
+    width: 56px !important;
+    height: 56px !important;
+    padding: 0 !important;
+    border-radius: 50% !important;
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: center !important;
+    justify-content: center !important;
+    gap: 4px !important;
+    font-size: 26px !important;
+    background: var(--soft) !important;
+    flex-shrink: 0 !important;
+}
+
+#homeBtn span {
+    font-size: 11px !important;
+    color: var(--muted) !important;
+}
+
+/* Lock + button as perfect circle with green gradient */
+.create-btn {
+    width: 56px !important;
+    height: 56px !important;
+    padding: 0 !important;
+    border-radius: 50% !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    font-size: 32px !important;
+    color: #000 !important;
+    background: linear-gradient(to bottom, var(--accent), var(--accent-dim)) !important;
+    flex-shrink: 0 !important;
+    order: 1 !important;
+}
+
+/* Lock playlists */
+.playlist {
+    width: 56px !important;
+    padding: 12px 8px !important;
+    border-radius: 16px !important;
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: center !important;
+    justify-content: center !important;
+    gap: 6px !important;
+    font-size: 28px !important;
+    margin-bottom: 12px !important;
+}
+
+.playlist.active {
+    background: var(--accent) !important;
+    color: #000 !important;
+}
+
+.playlist span {
+    font-size: 11px !important;
+    line-height: 1.3 !important;
+    word-break: break-word !important;
+    max-height: 40px !important;
+    overflow: hidden !important;
+    text-align: center !important;
+}
+
+/* Playlists container */
+#playlists {
+    flex: 1 1 auto !important;
+    overflow-y: auto !important;
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: center !important;
+    width: 100% !important;
+    order: 2 !important;
+    margin-top: 8px !important;
+}
+
+/* Hide library header */
+.sidebar h3 {
+    display: none !important;
+}
+
+/* Hide delete buttons */
+.playlist-delete {
+    display: none !important;
+}
+
+/* === FINAL: TRANSPARENT BUTTONS WITH WHITE TEXT + SUBTLE HOVER === */
+
+/* Logo - pure white text (no gradient) */
+.logo {
+    background: none !important;
+    -webkit-background-clip: initial !important;
+    -webkit-text-fill-color: initial !important;
+    background-clip: initial !important;
+    color: #ffffff !important;
+    font-size: 28px !important;
+    font-weight: 900 !important;
+    letter-spacing: -1px !important;
+}
+
+/* Home button - transparent background, white text/icon */
+#homeBtn,
+#homeBtn:hover {
+    background: rgba(255, 255, 255, 0.08) !important;  /* Very subtle white tint */
+    color: #ffffff !important;
+    transition: background 0.2s !important;
+}
+
+#homeBtn span {
+    color: #ffffff !important;
+}
+
+/* Hover: slightly more visible white background */
+#homeBtn:hover {
+    background: rgba(255, 255, 255, 0.18) !important;
+}
+
+/* + Create button - transparent background, white + icon */
+.create-btn,
+.create-btn:hover {
+    background: rgba(255, 255, 255, 0.08) !important;
+    color: #ffffff !important;
+    transition: background 0.2s !important;
+}
+
+/* Hover: slightly more visible */
+.create-btn:hover {
+    background: rgba(255, 255, 255, 0.18) !important;
+}
+
+/* Active playlist items - keep green accent (optional: you can change if you want white too) */
+.playlist.active {
+    background: var(--accent) !important;
+    color: #000 !important;
+}
+
+/* Normal playlist items - subtle white tint */
+.playlist {
+    background: rgba(255, 255, 255, 0.06) !important;
+    color: #ffffff !important;
+}
+
+.playlist:hover {
+    background: rgba(255, 255, 255, 0.15) !important;
+}
+
+.playlist span {
+    color: #ffffff !important;
+}
+
+
+/* === FINAL: FULLY TRANSPARENT BUTTONS + NO MOVEMENT + NO OUTLINES === */
+
+/* Remove any possible green outline/border from active states */
+#homeBtn,
+#homeBtn:hover,
+#homeBtn.active,
+.playlist.active {
+    border: none !important;
+    outline: none !important;
+    box-shadow: none !important;
+}
+
+/* Home button - 100% transparent by default */
+#homeBtn {
+    background: transparent !important;
+    color: #ffffff !important;
+    transition: background 0.25s ease !important;
+}
+
+#homeBtn span {
+    color: #ffffff !important;
+}
+
+/* Hover: ~25% white opacity */
+#homeBtn:hover {
+    background: rgba(255, 255, 255, 0.25) !important;
+}
+
+/* + Create button - 100% transparent by default, white + */
+.create-btn {
+    background: transparent !important;
+    color: #ffffff !important;
+    transition: background 0.25s ease !important;
+}
+
+/* Hover: ~25% white opacity, NO movement/scale at all */
+.create-btn:hover {
+    background: rgba(255, 255, 255, 0.25) !important;
+    transform: none !important;   /* Stops any upward shift or scaling */
+}
+
+/* Playlists - keep subtle transparency (optional: make them fully transparent too if you want) */
+.playlist {
+    background: transparent !important;
+    color: #ffffff !important;
+    transition: background 0.25s ease !important;
+}
+
+.playlist:hover {
+    background: rgba(255, 255, 255, 0.15) !important;
+}
+
+.playlist.active {
+    background: rgba(29, 185, 84, 0.4) !important;  /* Keep a subtle green for active playlist */
+    color: #ffffff !important;
+}
+
+.playlist span {
+    color: #ffffff !important;
+}
+
+.playlist.active span {
+    color: #ffffff !important;
+    font-weight: 600 !important;
+}
+/* Make "Home" text bigger */
+#homeBtn span {
+    font-size: 30px !important;  /* Was 11px - now a bit larger and more readable */
+    font-weight: 600 !important; /* Optional: makes it slightly bolder for better contrast */
+}
+/* Lighter, more visible placeholder text on transparent/dark background */
+.search-wrap input::placeholder {
+    color: rgba(255, 255, 255, 0.75) !important;  /* 75% opaque white - clear but soft */
+    opacity: 1 !important;  /* Ensures consistency across browsers */
+}
+
+.search-wrap input:focus::placeholder {
+    color: rgba(255, 255, 255, 0.5) !important;  /* Slightly fade when typing (optional, looks polished) */
+}
+/* Logo with small red dot accent */
+.logo {
+    display: flex !important;
+    align-items: center !important;
+    gap: 8px !important;  /* Space between dot and text */
+    font-size: 28px !important;
+    font-weight: 900 !important;
+    color: #ffffff !important;  /* Pure white text */
+    letter-spacing: -1px !important;
+}
+
+.red-accent {
+    color: #ff0000 !important;  /* Bright red dot */
+    font-size: 20px !important; /* Slightly smaller than text */
+    animation: none !important;
+}
+/* Subtle noise texture overlay for depth */
+body::before {
+    content: '' !important;
+    position: fixed !important;
+    inset: 0 !important;
+    background: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="100" height="100" viewBox="0 0 100 100"><filter id="noise"><feTurbulence type="fractalNoise" baseFrequency="0.9" numOctaves="4" stitchTiles="stitch"/><feColorMatrix type="matrix" values="1 0 0 0 0 0 1 0 0 0 0 0 1 0 0 0 0 0 0.05 0"/></filter><rect width="100" height="100" filter="url(#noise)" opacity="0.1"/></svg>') !important;
+    pointer-events: none !important;
+    z-index: 0 !important;
+}
+</style>
+
+</head>
+
+<body>
+
+<div class="bg-gradient"></div>
+
+<div class="topbar">
+    <div class="logo">
+    <span class="red-accent">●</span> TUNΞS
+</div>
+    <div class="search-wrap">
+        <input id="search" placeholder="⌕ Listen to anything…">
+        <div id="dropdown" class="dropdown"></div>
+    </div>
+</div>
+
+<div class="app">
+
+<aside class="sidebar">
+    <div class="playlist" onclick="goHome()" id="homeBtn">
+        <span>⌂</span>
+    </div>
+    <div id="playlists"></div>
+    <div class="create-btn" onclick="openModal()">＋</div>
+</aside>
+
+<main class="main" id="main">
+
+<div id="homePage">
+<div class="section">
+    <h2>Jump Back in!</h2>
+    <div class="row" id="recent"></div>
+</div>
+
+<div class="section">
+    <h2>Next Up</h2>
+    <div id="queue"></div>
+</div>
+</div>
+
+<div id="playlistPage" style="display:none">
+<div class="section">
+    <h2 id="playlistTitle"></h2>
+    <div id="playlistContent"></div>
+</div>
+</div>
+
+</main>
+
+<!-- RIGHT SIDEBAR -->
+<aside id="nowPlaying" class="now-playing">
+    <div class="video-container">
+        <iframe id="player" allow="autoplay; encrypted-media"></iframe>
+    </div>
+<!-- Hidden background jazz player -->
+<iframe id="bgPlayer" 
+    src="https://www.youtube.com/embed/5qap5aO4i9A?autoplay=1&loop=1&playlist=5qap5aO4i9A&mute=0&controls=0&modestbranding=1&playsinline=1" 
+    allow="autoplay; encrypted-media" 
+    style="display:none;">
+</iframe>
+    <h3 id="npTitle"></h3>
+    <div id="npArtist" class="artist"></div>
+    
+    <div class="lyrics-section">
+        <h4>Lyrics</h4>
+        <div id="lyrics" class="lyrics loading">Play a song to view lyrics...</div>
+    </div>
+</aside>
+
+</div>
+
+<!-- CREATE PLAYLIST MODAL -->
+<div id="modal" class="modal">
+    <div class="modal-content">
+        <h3>Create Playlist</h3>
+        <input id="playlistName" placeholder="My Awesome Playlist">
+        <div class="modal-buttons">
+            <button class="secondary" onclick="closeModal()">Cancel</button>
+            <button class="primary" onclick="createPlaylist()">Create</button>
+        </div>
+    </div>
+</div>
+
+<!-- ADD TO PLAYLIST MODAL -->
+<div id="playlistModal" class="modal">
+    <div class="modal-content">
+        <h3>Add to Playlist</h3>
+        <div id="playlistList" class="playlist-list"></div>
+        <div class="modal-buttons">
+            <button class="secondary" onclick="closePlaylistModal()">Cancel</button>
+        </div>
+    </div>
+</div>
+
+<script>
+const YT_KEY = "AIzaSyDNd7dwB1rZEpJzpyRrVZQwSKHvnt3Q7vQ";
+
+// Storage with validation
+function saveData(key, data) {
+    try {
+        localStorage.setItem(key, JSON.stringify(data));
+    } catch (e) {
+        console.error("Storage error:", e);
+    }
+}
+
+function loadData(key, defaultVal) {
+    try {
+        const data = localStorage.getItem(key);
+        return data ? JSON.parse(data) : defaultVal;
+    } catch (e) {
+        console.error("Load error:", e);
+        return defaultVal;
+    }
+}
+
+// State
+let queue = loadData("queue", []);
+let index = loadData("index", -1);
+let recent = loadData("recent", []);
+let playlists = loadData("playlists", {});
+let currentPlaylist = null;
+let songToAdd = null;
+let currentPage = 'home';
+
+// Elements
+const searchInput = document.getElementById("search");
+const dropdown = document.getElementById("dropdown");
+const queueDiv = document.getElementById("queue");
+const recentDiv = document.getElementById("recent");
+const playlistsDiv = document.getElementById("playlists");
+const player = document.getElementById("player");
+const modal = document.getElementById("modal");
+const playlistModal = document.getElementById("playlistModal");
+const nowPlaying = document.getElementById("nowPlaying");
+const mainDiv = document.getElementById("main");
+const homePage = document.getElementById("homePage");
+const playlistPage = document.getElementById("playlistPage");
+const playlistTitle = document.getElementById("playlistTitle");
+const playlistContent = document.getElementById("playlistContent");
+const homeBtn = document.getElementById("homeBtn");
+
+/* SEARCH */
+let searchTimeout;
+searchInput.oninput = async () => {
+    clearTimeout(searchTimeout);
+    const q = searchInput.value.trim();
+    
+    if (!q) {
+        dropdown.style.display = "none";
+        return;
+    }
+    
+    searchTimeout = setTimeout(async () => {
+        try {
+            const data = await fetch(`https://www.googleapis.com/youtube/v3/search?part=snippet&type=video&videoCategoryId=10&maxResults=6&q=${encodeURIComponent(q)}&key=${YT_KEY}`).then(r => r.json());
+            
+            dropdown.innerHTML = "";
+            
+            if (data.items && data.items.length > 0) {
+                data.items.forEach(v => {
+                    const thumb = v.snippet.thumbnails.medium.url;
+                    const title = escapeHtml(v.snippet.title);
+                    const artist = escapeHtml(v.snippet.channelTitle);
+                    
+                    const song = {
+                        id: v.id.videoId,
+                        title: title,
+                        artist: artist,
+                        art: thumb
+                    };
+                    
+                    const div = document.createElement("div");
+                    div.className = "result";
+                    div.innerHTML = `
+                        <img src="${thumb}">
+                        <div class="result-info">
+                            <h4>${title}</h4>
+                            <p>${artist}</p>
+                        </div>
+                        <div class="result-actions">
+                            <button onclick='playNow(${JSON.stringify(song)})'>▶</button>
+                            <button class="btn-add" onclick='addQueue(${JSON.stringify(song)})'>＋ Queue</button>
+                            <button class="btn-playlist" onclick='openAddToPlaylist(${JSON.stringify(song)})'>📁</button>
+                        </div>
+                    `;
+                    dropdown.appendChild(div);
+                });
+                dropdown.style.display = "block";
+            } else {
+                dropdown.innerHTML = '<div style="padding:20px;text-align:center;color:var(--muted)">No results found</div>';
+                dropdown.style.display = "block";
+            }
+        } catch (error) {
+            console.error("Search error:", error);
+            dropdown.innerHTML = '<div style="padding:20px;text-align:center;color:var(--muted)">Search error. Please try again.</div>';
+            dropdown.style.display = "block";
+        }
+    }, 300);
+};
+
+// Close dropdown when clicking outside
+document.addEventListener('click', (e) => {
+    if (!searchInput.contains(e.target) && !dropdown.contains(e.target)) {
+        dropdown.style.display = "none";
+    }
+});
+
+/* PLAYBACK */
+function playNow(song) {
+    player.src = `https://www.youtube.com/embed/${song.id}?autoplay=1&enablejsapi=1`;
+    nowPlaying.classList.add('active');
+    mainDiv.classList.add('with-sidebar');
+    
+    document.getElementById("npTitle").textContent = song.title;
+    document.getElementById("npArtist").textContent = song.artist;
+    
+    addRecent(song);
+    fetchLyrics(song.title, song.artist);
+    
+    // Update index based on current context
+    if (currentPlaylist) {
+        const playlistSongs = playlists[currentPlaylist];
+        index = playlistSongs.findIndex(s => s.id === song.id);
+    } else {
+        index = queue.findIndex(s => s.id === song.id);
+    }
+    
+    saveData("index", index);
+    
+    if (currentPage === 'home') {
+        renderQueue();
+    } else {
+        renderPlaylistContent();
+    }
+    
+    dropdown.style.display = "none";
+    
+    // Setup autoplay listener
+    setupAutoplay();
+}
+
+function addQueue(song) {
+    queue.push(song);
+    saveData("queue", queue);
+    if (currentPage === 'home') {
+        renderQueue();
+    }
+    dropdown.style.display = "none";
+}
+
+function playQueue(i) {
+    index = i;
+    const songs = currentPlaylist ? playlists[currentPlaylist] : queue;
+    playNow(songs[i]);
+}
+
+function removeFromQueue(i) {
+    queue.splice(i, 1);
+    if (index >= i) index--;
+    saveData("queue", queue);
+    saveData("index", index);
+    renderQueue();
+}
+
+/* AUTOPLAY */
+function setupAutoplay() {
+    // YouTube IFrame API auto-loads, we just need to listen for video end
+    // We'll use a simpler approach with polling
+    const checkInterval = setInterval(() => {
+        try {
+            // Check if player iframe exists
+            if (!player.src) {
+                clearInterval(checkInterval);
+                return;
+            }
+            
+            // We can't directly access YouTube player state without the API
+            // So we'll set a timeout based on typical song length
+            // Better solution: use YouTube IFrame API properly
+        } catch (e) {
+            clearInterval(checkInterval);
+        }
+    }, 1000);
+}
+
+// YouTube IFrame API
+let ytPlayer;
+function onYouTubeIframeAPIReady() {
+    ytPlayer = new YT.Player('player', {
+        events: {
+            'onStateChange': onPlayerStateChange
+        }
+    });
+}
+
+function onPlayerStateChange(event) {
+    // 0 = ended
+    if (event.data === 0) {
+        playNext();
+    }
+}
+
+function playNext() {
+    const songs = currentPlaylist ? playlists[currentPlaylist] : queue;
+    
+    if (index < songs.length - 1) {
+        index++;
+        playNow(songs[index]);
+    }
+}
+
+// Load YouTube IFrame API
+if (!window.YT) {
+    const tag = document.createElement('script');
+    tag.src = "https://www.youtube.com/iframe_api";
+    const firstScriptTag = document.getElementsByTagName('script')[0];
+    firstScriptTag.parentNode.insertBefore(tag, firstScriptTag);
+}
+
+/* LYRICS */
+async function fetchLyrics(title, artist) {
+    const lyricsDiv = document.getElementById("lyrics");
+    lyricsDiv.className = "lyrics loading";
+    lyricsDiv.textContent = "Loading lyrics...";
+    
+    try {
+        // Using lyrics.ovh API (free, no key required)
+        const cleanArtist = artist.split('-')[0].split('(')[0].trim();
+        const cleanTitle = title.split('(')[0].split('[')[0].split('|')[0].trim();
+        
+        const response = await fetch(`https://api.lyrics.ovh/v1/${encodeURIComponent(cleanArtist)}/${encodeURIComponent(cleanTitle)}`);
+        const data = await response.json();
+        
+        if (data.lyrics) {
+            lyricsDiv.className = "lyrics";
+            lyricsDiv.textContent = data.lyrics;
+        } else {
+            lyricsDiv.className = "lyrics loading";
+            lyricsDiv.textContent = "Lyrics not available for this song";
+        }
+    } catch (error) {
+        lyricsDiv.className = "lyrics loading";
+        lyricsDiv.textContent = "Couldn't load lyrics";
+    }
+}
+
+/* RECENT */
+function addRecent(song) {
+    recent = recent.filter(s => s.id !== song.id);
+    recent.unshift(song);
+    recent = recent.slice(0, 12);
+    saveData("recent", recent);
+    renderRecent();
+}
+
+/* PLAYLISTS */
+function goHome() {
+    currentPage = 'home';
+    currentPlaylist = null;
+    homePage.style.display = 'block';
+    playlistPage.style.display = 'none';
+    homeBtn.classList.add('active');
+    renderPlaylists();
+    renderQueue();
+}
+
+function openAddToPlaylist(song) {
+    songToAdd = song;
+    const listDiv = document.getElementById("playlistList");
+    listDiv.innerHTML = "";
+    
+    if (Object.keys(playlists).length === 0) {
+        listDiv.innerHTML = '<div style="padding:20px;text-align:center;color:var(--muted)">No playlists yet. Create one first!</div>';
+    } else {
+        Object.keys(playlists).forEach(name => {
+            const div = document.createElement("div");
+            div.className = "playlist-option";
+            div.innerHTML = `📁 ${escapeHtml(name)}`;
+            div.onclick = () => addToPlaylist(name);
+            listDiv.appendChild(div);
+        });
+    }
+    
+    playlistModal.classList.add("active");
+}
+
+function addToPlaylist(name) {
+    if (!songToAdd) return;
+    
+    // Check if song already in playlist
+    if (!playlists[name].some(s => s.id === songToAdd.id)) {
+        playlists[name].push(songToAdd);
+        saveData("playlists", playlists);
+    }
+    
+    closePlaylistModal();
+    
+    // If this playlist is currently selected, refresh view
+    if (currentPlaylist === name) {
+        renderPlaylistContent();
+    }
+}
+
+function closePlaylistModal() {
+    playlistModal.classList.remove("active");
+    songToAdd = null;
+}
+
+function viewPlaylist(name) {
+    currentPage = 'playlist';
+    currentPlaylist = name;
+    homePage.style.display = 'none';
+    playlistPage.style.display = 'block';
+    
+    playlistTitle.textContent = name;
+    renderPlaylistContent();
+    renderPlaylists();
+}
+
+function deletePlaylist(name, event) {
+    event.stopPropagation();
+    if (confirm(`Delete playlist "${name}"?`)) {
+        delete playlists[name];
+        saveData("playlists", playlists);
+        
+        if (currentPlaylist === name) {
+            goHome();
+        }
+        
+        renderPlaylists();
+    }
+}
+
+function removeFromPlaylist(name, i) {
+    playlists[name].splice(i, 1);
+    saveData("playlists", playlists);
+    renderPlaylistContent();
+}
+
+/* MODAL */
+function openModal() {
+    modal.classList.add("active");
+    document.getElementById("playlistName").focus();
+}
+
+function closeModal() {
+    modal.classList.remove("active");
+    document.getElementById("playlistName").value = "";
+}
+
+function createPlaylist() {
+    const name = document.getElementById("playlistName").value.trim();
+    if (!name) return;
+    
+    if (playlists[name]) {
+        alert("A playlist with this name already exists!");
+        return;
+    }
+    
+    playlists[name] = [];
+    saveData("playlists", playlists);
+    renderPlaylists();
+    closeModal();
+}
+
+/* RENDER */
+function renderQueue() {
+    queueDiv.innerHTML = "";
+    
+    if (queue.length === 0) {
+        queueDiv.innerHTML = '<div style="padding:40px;text-align:center;color:var(--muted)">No songs here. Search and add some!</div>';
+        return;
+    }
+    
+    queue.forEach((s, i) => {
+        const d = document.createElement("div");
+        d.className = "queue-item" + (i === index && !currentPlaylist ? " playing" : "");
+        d.innerHTML = `
+            <img src="${s.art}">
+            <div class="queue-item-info">
+                <h4>${s.title}</h4>
+                <p>${s.artist}</p>
+            </div>
+            <button class="remove-btn" onclick="event.stopPropagation(); removeFromQueue(${i})">✕</button>
+        `;
+        d.onclick = () => {
+            currentPlaylist = null;
+            playQueue(i);
+        };
+        queueDiv.appendChild(d);
+    });
+}
+
+function renderPlaylistContent() {
+    playlistContent.innerHTML = "";
+    
+    if (!currentPlaylist || !playlists[currentPlaylist]) {
+        goHome();
+        return;
+    }
+    
+    const songs = playlists[currentPlaylist];
+    
+    if (songs.length === 0) {
+        playlistContent.innerHTML = '<div style="padding:40px;text-align:center;color:var(--muted)">No songs in this playlist yet. Add some!</div>';
+        return;
+    }
+    
+    songs.forEach((s, i) => {
+        const d = document.createElement("div");
+        d.className = "queue-item" + (i === index && currentPlaylist ? " playing" : "");
+        d.innerHTML = `
+            <img src="${s.art}">
+            <div class="queue-item-info">
+                <h4>${s.title}</h4>
+                <p>${s.artist}</p>
+            </div>
+            <button class="remove-btn" onclick="event.stopPropagation(); removeFromPlaylist('${escapeHtml(currentPlaylist)}', ${i})">✕</button>
+        `;
+        d.onclick = () => playQueue(i);
+        playlistContent.appendChild(d);
+    });
+}
+
+function renderRecent() {
+    recentDiv.innerHTML = "";
+    
+    if (recent.length === 0) {
+        recentDiv.innerHTML = '<div style="padding:40px;text-align:center;color:var(--muted);grid-column:1/-1">No recent songs yet</div>';
+        return;
+    }
+    
+    recent.forEach(s => {
+        const c = document.createElement("div");
+        c.className = "card";
+        c.innerHTML = `
+            <div class="card-menu">
+                <button onclick="event.stopPropagation(); openAddToPlaylist(${JSON.stringify(s).replace(/"/g, '&quot;')})">📁</button>
+            </div>
+            <img src="${s.art}">
+            <h4>${s.title}</h4>
+            <p>${s.artist}</p>
+        `;
+        c.onclick = () => playNow(s);
+        recentDiv.appendChild(c);
+    });
+}
+
+function renderPlaylists() {
+    playlistsDiv.innerHTML = "";
+    Object.keys(playlists).forEach(name => {
+        const d = document.createElement("div");
+        d.className = "playlist" + (currentPlaylist === name && currentPage === 'playlist' ? " active" : "");
+        d.innerHTML = `
+            <span>📁 ${escapeHtml(name)}</span>
+            <button class="playlist-delete" onclick="deletePlaylist('${escapeHtml(name)}', event)">✕</button>
+        `;
+        d.onclick = () => viewPlaylist(name);
+        playlistsDiv.appendChild(d);
+    });
+    
+    // Update home button state
+    if (currentPage === 'home') {
+        homeBtn.classList.add('active');
+    } else {
+        homeBtn.classList.remove('active');
+    }
+}
+
+// Escape HTML
+function escapeHtml(text) {
+    const div = document.createElement('div');
+    div.textContent = text;
+    return div.innerHTML;
+}
+
+// Handle Enter key in playlist name input
+document.getElementById("playlistName").addEventListener("keypress", (e) => {
+    if (e.key === "Enter") createPlaylist();
+});
+
+/* INIT */
+renderQueue();
+renderRecent();
+renderPlaylists();
+// Background jazz player
+const bgPlayer = document.getElementById('bgPlayer');
+let isBgPlaying = true;
+
+// Start background music on load (low volume)
+window.addEventListener('load', () => {
+    if (bgPlayer) {
+        bgPlayer.contentWindow.postMessage('{"event":"command","func":"setVolume","args":[20]}', '*'); // 20% volume
+    }
+});
+
+// Override playNow to stop background when user plays a song
+const originalPlayNow = playNow;
+playNow = function(song) {
+    // Stop background jazz
+    if (isBgPlaying && bgPlayer) {
+        bgPlayer.contentWindow.postMessage('{"event":"command","func":"pauseVideo","args":[]}', '*');
+        isBgPlaying = false;
+    }
+    
+    // Play user's song normally
+    originalPlayNow(song);
+};
+
+// Optional: Resume background if queue ends and nothing playing
+function playNext() {
+    const songs = currentPlaylist ? playlists[currentPlaylist] : queue;
+    
+    if (index < songs.length - 1) {
+        index++;
+        playNow(songs[index]);
+    } else {
+        // Queue ended — resume chill background
+        if (bgPlayer && !isBgPlaying) {
+            bgPlayer.contentWindow.postMessage('{"event":"command","func":"playVideo","args":[]}', '*');
+            isBgPlaying = true;
+        }
+    }
+}
+</script>
+
+</body>
+</html>
