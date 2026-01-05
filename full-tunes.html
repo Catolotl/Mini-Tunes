@@ -1997,12 +1997,140 @@ document.getElementById("playlistName").addEventListener("keypress", (e) => {
 function migrateOldITunesPlaylists() {
     // Check if old data exists and we haven't migrated yet
     if (localStorage.getItem("miniPlaylists") && !localStorage.getItem("itunesMigrationDone")) {
-if (!confirm("We detected old playlists from a previous version that used iTunes previews.\n\nWould you like to try converting them to YouTube songs?\n\n(This may take 20–60 seconds depending on playlist size)")) {
-    localStorage.setItem("itunesMigrationDone", "declined");
-    return;
-}
+// Custom migration modal
+const migrationModal = document.createElement('div');
+migrationModal.className = 'modal active'; // Reuse your existing modal styles
+migrationModal.innerHTML = `
+    <div class="modal-content" style="max-width: 480px;">
+        <h3>Migrate Old Playlists?</h3>
+        <p style="margin: 20px 0; line-height: 1.6; color: var(--muted);">
+            We found playlists from an older version that used iTunes previews.<br><br>
+            Would you like to convert them to YouTube videos now?<br>
+            <strong>This may take 20–60 seconds depending on size.</strong>
+        </p>
+        <div class="modal-buttons">
+            <button class="secondary" id="migCancel">No, thanks</button>
+            <button class="primary" id="migStart">Yes, convert them</button>
+        </div>
+    </div>
+`;
 
-alert("Starting migration... Please wait, this may take a moment.");
+// Add a loading overlay (shown during conversion)
+const loadingOverlay = document.createElement('div');
+loadingOverlay.className = 'modal active';
+loadingOverlay.innerHTML = `
+    <div class="modal-content" style="text-align:center; padding:60px 40px;">
+        <p style="font-size:18px; margin-bottom:20px;">Converting your old playlists...</p>
+        <p style="color:var(--muted);">This may take a moment. Please wait.</p>
+    </div>
+`;
+loadingOverlay.style.display = 'none'; // Hidden initially
+
+// Append both to body
+document.body.appendChild(migrationModal);
+document.body.appendChild(loadingOverlay);
+
+// Button handlers
+document.getElementById('migCancel').onclick = () => {
+    migrationModal.remove();
+    loadingOverlay.remove();
+    localStorage.setItem("itunesMigrationDone", "declined");
+};
+
+document.getElementById('migStart').onclick = () => {
+    migrationModal.style.display = 'none';
+    loadingOverlay.style.display = 'flex';
+
+    // === NOW RUN THE ACTUAL MIGRATION ===
+    try {
+        const oldPlaylists = JSON.parse(localStorage.getItem("miniPlaylists") || "{}");
+        let convertedCount = 0;
+        const newPlaylists = { ...playlists };
+
+        const migratePromises = Object.keys(oldPlaylists).map(async (playlistName) => {
+            const oldPl = oldPlaylists[playlistName];
+            if (!oldPl.songs || oldPl.songs.length === 0) return;
+
+            newPlaylists[playlistName] = newPlaylists[playlistName] || [];
+
+            for (const oldSong of oldPl.songs) {
+                const query = `${oldSong.title} ${oldSong.artist?.name || ''}`.trim();
+                try {
+                    const res = await fetch(
+                        `https://www.googleapis.com/youtube/v3/search?part=snippet&type=video&videoCategoryId=10&maxResults=1&q=${encodeURIComponent(query)}&key=${YT_KEY}`
+                    );
+                    const data = await res.json();
+                    if (data.items && data.items.length > 0) {
+                        const item = data.items[0];
+                        const newSong = {
+                            id: item.id.videoId,
+                            title: escapeHtml(item.snippet.title),
+                            artist: escapeHtml(item.snippet.channelTitle),
+                            art: item.snippet.thumbnails.medium.url
+                        };
+                        newPlaylists[playlistName].push(newSong);
+                        convertedCount++;
+                    }
+                } catch (e) {
+                    console.warn(`Failed to convert: ${query}`, e);
+                }
+            }
+        });
+
+        Promise.all(migratePromises).then(() => {
+            playlists = newPlaylists;
+            saveData("playlists", playlists);
+
+            localStorage.removeItem("miniPlaylists");
+            localStorage.removeItem("recentlyPlayed");
+            localStorage.removeItem("recentlyPlayedAlbums");
+            localStorage.setItem("itunesMigrationDone", "true");
+
+            // Remove modals
+            migrationModal.remove();
+            loadingOverlay.remove();
+
+            // Success message (reuse your modal style)
+            const successModal = document.createElement('div');
+            successModal.className = 'modal active';
+            successModal.innerHTML = `
+                <div class="modal-content">
+                    <h3 style="color:var(--accent);">Migration Complete! 🎉</h3>
+                    <p style="margin:24px 0; line-height:1.6;">
+                        ${convertedCount} songs were successfully converted into your playlists.<br><br>
+                        You may want to review them for accuracy.
+                    </p>
+                    <div class="modal-buttons">
+                        <button class="primary" onclick="this.closest('.modal').remove()">Got it!</button>
+                    </div>
+                </div>
+            `;
+            document.body.appendChild(successModal);
+
+            renderPlaylists();
+            if (currentPlaylist) renderPlaylistContent();
+        });
+    } catch (e) {
+        console.error("Migration failed:", e);
+        loadingOverlay.remove();
+        migrationModal.remove();
+
+        const errorModal = document.createElement('div');
+        errorModal.className = 'modal active';
+        errorModal.innerHTML = `
+            <div class="modal-content">
+                <h3>Oops!</h3>
+                <p style="margin:24px 0;">Migration failed. Check the console for details.</p>
+                <div class="modal-buttons">
+                    <button class="primary" onclick="this.closest('.modal').remove()">Close</button>
+                </div>
+            </div>
+        `;
+        document.body.appendChild(errorModal);
+
+        localStorage.setItem("itunesMigrationDone", "failed");
+    }
+};
 
         try {
             const oldPlaylists = JSON.parse(localStorage.getItem("miniPlaylists") || "{}");
