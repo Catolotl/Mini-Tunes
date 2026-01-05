@@ -1409,6 +1409,21 @@ body::before {
     pointer-events: none !important;
     z-index: 0 !important;
 }
+    /* Force Recent section into 4x2 grid max */
+#recent {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+    gap: 24px;
+    max-width: 900px; /* Limits to ~4 cards per row on most screens */
+    margin: 0 auto;
+}
+
+/* On smaller screens, fall back gracefully */
+@media (max-width: 900px) {
+    #recent {
+        grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+    }
+}
 </style>
 
 </head>
@@ -1938,13 +1953,16 @@ function renderPlaylistContent() {
 
 function renderRecent() {
     recentDiv.innerHTML = "";
-    
+   
     if (recent.length === 0) {
         recentDiv.innerHTML = '<div style="padding:40px;text-align:center;color:var(--muted);grid-column:1/-1">No recent songs yet</div>';
         return;
     }
-    
-    recent.forEach(s => {
+
+    // Only take the latest 8 songs
+    const latestEight = recent.slice(0, 8);
+
+    latestEight.forEach(s => {
         const c = document.createElement("div");
         c.className = "card";
         c.innerHTML = `
@@ -1952,8 +1970,8 @@ function renderRecent() {
                 <button onclick="event.stopPropagation(); openAddToPlaylist(${JSON.stringify(s).replace(/"/g, '&quot;')})">📁</button>
             </div>
             <img src="${s.art}">
-            <h4>${s.title}</h4>
-            <p>${s.artist}</p>
+            <h4>${escapeHtml(s.title)}</h4>
+            <p>${escapeHtml(s.artist)}</p>
         `;
         c.onclick = () => playNow(s);
         recentDiv.appendChild(c);
