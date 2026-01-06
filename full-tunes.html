@@ -2258,6 +2258,9 @@ renderRecent();
 renderPlaylists();
 
     migrateOldITunesPlaylists();
+
+    // Show signup only after a short delay to ensure migration modal is done
+setTimeout(showSignupIfNeeded, 1000);
 // Background jazz player
 const bgPlayer = document.getElementById('bgPlayer');
 let isBgPlaying = true;
@@ -2297,6 +2300,107 @@ function playNext() {
         }
     }
 }
+
+    // === USER SIGN-UP SYSTEM (PURE JS) ===
+async function showSignupIfNeeded() {
+    // Check if user already signed up
+    if (localStorage.getItem("tunesUser")) {
+        return; // Already signed up → do nothing
+    }
+
+    // Helper to hash password securely
+    async function hashPassword(password) {
+        const encoder = new TextEncoder();
+        const data = encoder.encode(password);
+        const hash = await crypto.subtle.digest('SHA-256', data);
+        return Array.from(new Uint8Array(hash))
+            .map(b => b.toString(16).padStart(2, '0'))
+            .join('');
+    }
+
+    // Create modal dynamically
+    const modal = document.createElement('div');
+    modal.className = 'modal active';
+    modal.innerHTML = `
+        <div class="modal-content">
+            <h3>Welcome to TUNΞS</h3>
+            <p style="margin:20px 0; color:var(--muted); font-size:14px; line-height:1.6;">
+                Sign up once to keep your playlists safe across devices and browsers.
+            </p>
+            <input type="text" id="signupName" placeholder="Your name" autocomplete="name" style="margin-bottom:16px;">
+            <input type="password" id="signupPassword" placeholder="Create a password" autocomplete="new-password" style="margin-bottom:16px;">
+            <input type="date" id="signupDob" placeholder="Date of birth" style="margin-bottom:24px;">
+            <div class="modal-buttons">
+                <button class="secondary" id="signupLater">Maybe later</button>
+                <button class="primary" id="signupSubmit">Sign Up</button>
+            </div>
+        </div>
+    `;
+    document.body.appendChild(modal);
+
+    // Focus first input
+    const nameInput = document.getElementById('signupName');
+    nameInput?.focus();
+
+    // Handle signup
+    document.getElementById('signupSubmit').onclick = async () => {
+        const name = document.getElementById('signupName').value.trim();
+        const password = document.getElementById('signupPassword').value;
+        const dob = document.getElementById('signupDob').value;
+
+        if (!name || !password || !dob) {
+            alert("Please fill in all fields!");
+            return;
+        }
+
+        // Validate age (must be at least 13)
+        const birthDate = new Date(dob);
+        const age = new Date().getFullYear() - birthDate.getFullYear();
+        const monthDiff = new Date().getMonth() - birthDate.getMonth();
+        const actualAge = monthDiff < 0 || (monthDiff === 0 && new Date().getDate() < birthDate.getDate()) ? age - 1 : age;
+
+        if (actualAge < 13) {
+            alert("You must be at least 13 years old to sign up.");
+            return;
+        }
+
+        // Hash password and save user
+        const hashed = await hashPassword(password);
+        const userData = {
+            name,
+            dob,
+            passwordHash: hashed,
+            signedUpAt: new Date().toISOString()
+        };
+
+        localStorage.setItem("tunesUser", JSON.stringify(userData));
+        modal.remove();
+
+        // Optional: welcome toast
+        const toast = document.createElement('div');
+        toast.textContent = `Welcome, ${name}! 🎉`;
+        toast.style.position = 'fixed';
+        toast.style.bottom = '32px';
+        toast.style.left = '50%';
+        toast.style.transform = 'translateX(-50%)';
+        toast.style.background = 'var(--accent)';
+        toast.style.color = '#000';
+        toast.style.padding = '16px 32px';
+        toast.style.borderRadius = '50px';
+        toast.style.fontWeight = '700';
+        toast.style.zIndex = '9999';
+        toast.style.boxShadow = '0 8px 32px rgba(0,0,0,0.5)';
+        document.body.appendChild(toast);
+        setTimeout(() => toast.remove(), 3000);
+    };
+
+    // "Maybe later" just closes it (won't show again this session, but will next time page reloads)
+    document.getElementById('signupLater').onclick = () => {
+        modal.remove();
+    };
+}
+
+// === CALL THIS AFTER THE MIGRATION POPUP (OR ON LOAD) ===
 </script>
 
 </body>
