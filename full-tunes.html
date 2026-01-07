@@ -1703,7 +1703,6 @@ function playNow(song) {
     dropdown.style.display = "none";
     
     // Setup autoplay listener
-    setupAutoplay();
 }
 
 function addQueue(song) {
@@ -1729,60 +1728,12 @@ function removeFromQueue(i) {
     renderQueue();
 }
 
-/* AUTOPLAY */
-function setupAutoplay() {
-    // YouTube IFrame API auto-loads, we just need to listen for video end
-    // We'll use a simpler approach with polling
-    const checkInterval = setInterval(() => {
-        try {
-            // Check if player iframe exists
-            if (!player.src) {
-                clearInterval(checkInterval);
-                return;
-            }
-            
-            // We can't directly access YouTube player state without the API
-            // So we'll set a timeout based on typical song length
-            // Better solution: use YouTube IFrame API properly
-        } catch (e) {
-            clearInterval(checkInterval);
-        }
-    }, 1000);
-}
 
 // YouTube IFrame API
 let ytPlayer;
-function onYouTubeIframeAPIReady() {
-    ytPlayer = new YT.Player('player', {
-        events: {
-            'onStateChange': onPlayerStateChange
-        }
-    });
-}
 
-function onPlayerStateChange(event) {
-    // 0 = ended
-    if (event.data === 0) {
-        playNext();
-    }
-}
 
-function playNext() {
-    const songs = currentPlaylist ? playlists[currentPlaylist] : queue;
-    
-    if (index < songs.length - 1) {
-        index++;
-        playNow(songs[index]);
-    }
-}
 
-// Load YouTube IFrame API
-if (!window.YT) {
-    const tag = document.createElement('script');
-    tag.src = "https://www.youtube.com/iframe_api";
-    const firstScriptTag = document.getElementsByTagName('script')[0];
-    firstScriptTag.parentNode.insertBefore(tag, firstScriptTag);
-}
 
 /* LYRICS */
 async function fetchLyrics(title, artist) {
@@ -2285,21 +2236,6 @@ playNow = function(song) {
     originalPlayNow(song);
 };
 
-// Optional: Resume background if queue ends and nothing playing
-function playNext() {
-    const songs = currentPlaylist ? playlists[currentPlaylist] : queue;
-    
-    if (index < songs.length - 1) {
-        index++;
-        playNow(songs[index]);
-    } else {
-        // Queue ended — resume chill background
-        if (bgPlayer && !isBgPlaying) {
-            bgPlayer.contentWindow.postMessage('{"event":"command","func":"playVideo","args":[]}', '*');
-            isBgPlaying = true;
-        }
-    }
-}
 
     // === USER SIGN-UP SYSTEM (PURE JS) ===
 async function showSignupIfNeeded() {
@@ -2399,8 +2335,53 @@ async function showSignupIfNeeded() {
         modal.remove();
     };
 }
+    // This will be our player instance
+    let player;
 
-// === CALL THIS AFTER THE MIGRATION POPUP (OR ON LOAD) ===
+    // Called by YouTube when the API is ready
+    window.onYouTubeIframeAPIReady = function() {
+        player = new YT.Player('player', {
+            events: {
+                'onStateChange': onPlayerStateChange
+            }
+        });
+    };
+
+    // Find the current song list and play the next one
+    function playNextSong() {
+        const songs = currentPlaylist ? playlists[currentPlaylist] : queue;
+
+        if (!songs || songs.length === 0) return;
+
+        // Move to next song
+        if (index < songs.length - 1) {
+            index++;
+            const nextSong = songs[index];
+
+            // Update the iframe src to play the next video
+            document.getElementById('player').src = 
+                `https://www.youtube.com/embed/${nextSong.id}?autoplay=1&enablejsapi=1`;
+
+            // Update now-playing info
+            document.getElementById("npTitle").textContent = nextSong.title;
+            document.getElementById("npArtist").textContent = nextSong.artist;
+
+            // Update visuals
+            if (currentPage === 'home') renderQueue();
+            else renderPlaylistContent();
+
+            // Fetch new lyrics
+            fetchLyrics(nextSong.title, nextSong.artist);
+
+            // Save current index
+            saveData("index", index);
+        }
+        // Optional: if end of list, you could loop or stop
+    }
+}
+
+// Call this once after your app is initialized
+enablePlaylistAutoplay();
 </script>
 
 </body>
