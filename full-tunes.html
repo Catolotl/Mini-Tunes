@@ -2400,7 +2400,71 @@ async function showSignupIfNeeded() {
     };
 }
 
-// === CALL THIS AFTER THE MIGRATION POPUP (OR ON LOAD) ===
+let ytPlayer; // Global player reference
+
+// Force-load YouTube IFrame API (only once)
+if (!window.YT) {
+    const tag = document.createElement('script');
+    tag.src = "https://www.youtube.com/iframe_api";
+    const firstScript = document.getElementsByTagName('script')[0];
+    firstScript.parentNode.insertBefore(tag, firstScript);
+}
+
+// Override any previous definition — this is the one that will run
+window.onYouTubeIframeAPIReady = function() {
+    ytPlayer = new YT.Player('player', {
+        events: {
+            'onStateChange': function(event) {
+                if (event.data === YT.PlayerState.ENDED) {
+                    playNextSong();
+                }
+            }
+        }
+    });
+};
+
+function playNextSong() {
+    const songs = currentPlaylist ? playlists[currentPlaylist] : queue;
+
+    // If no more songs → resume background jazz
+    if (!songs || songs.length === 0 || index >= songs.length - 1) {
+        if (typeof bgPlayer !== 'undefined' && bgPlayer && !isBgPlaying) {
+            bgPlayer.contentWindow.postMessage('{"event":"command","func":"playVideo","args":[]}', '*');
+            isBgPlaying = true;
+        }
+        return;
+    }
+
+    // Play next song
+    index++;
+    const nextSong = songs[index];
+
+    // Update player
+    document.getElementById('player').src = 
+        `https://www.youtube.com/embed/${nextSong.id}?autoplay=1&enablejsapi=1`;
+
+    // Update now playing
+    document.getElementById("npTitle").textContent = nextSong.title;
+    document.getElementById("npArtist").textContent = nextSong.artist;
+
+    // Update recent + lyrics + UI
+    addRecent(nextSong);
+    fetchLyrics(nextSong.title, nextSong.artist);
+
+    if (currentPage === 'home') {
+        renderQueue();
+    } else {
+        renderPlaylistContent();
+    }
+
+    saveData("index", index);
+}
+
+// Initialize the fix
+// (Safe to call multiple times — it only loads the API once)
+if (window.YT && window.YT.Player) {
+    window.onYouTubeIframeAPIReady(); // If API already loaded, trigger immediately
+}
 </script>
 
 </body>
