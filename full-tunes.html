@@ -1462,6 +1462,29 @@ body::before {
 #recent .card {
     width: 180px; /* Fixed width so they align perfectly */
 }
+
+    /* Semi-transparent song containers - lets the background gradient peek through */
+.result,
+.queue-item,
+.card {
+    background: rgba(0, 0, 0, 0.4) !important; /* Adjust the last value (0.4) for more/less transparency */
+    backdrop-filter: blur(10px); /* Optional but beautiful - blurs the background behind */
+    border: 1px solid rgba(255, 255, 255, 0.05); /* Subtle border for definition */
+}
+
+/* Hover states - slightly less transparent on hover for better feedback */
+.result:hover,
+.queue-item:hover,
+.card:hover {
+    background: rgba(0, 0, 0, 0.55) !important;
+}
+
+/* Playing item - keep it standing out but still semi-transparent */
+.queue-item.playing {
+    background: rgba(29, 185, 84, 0.25) !important; /* Subtle green tint matching your accent */
+    border-color: var(--accent) !important;
+    box-shadow: 0 0 20px var(--glow);
+}
 </style>
 
 </head>
