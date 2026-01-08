@@ -1635,6 +1635,28 @@ body::before {
     overflow: visible !important;
     width: 100%;
 }
+
+    /* Fix sidebar playlist name clipping - show full 2 lines properly */
+.playlist .playlist-name {
+    font-size: 11px !important;           /* Slightly larger for readability */
+    line-height: 1.4 !important;          /* Proper spacing */
+    max-height: 2.8em !important;         /* Exactly 2 lines (2 × 1.4) */
+    overflow: hidden;
+    text-align: center;
+    word-break: break-word;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    padding: 0 4px;
+    width: 100%;
+}
+
+/* Ensure the container has enough height */
+.playlist span {
+    gap: 6px !important;
+    padding: 8px 4px !important;
+    height: auto !important;
+}
 </style>
 
 </head>
@@ -2641,15 +2663,15 @@ if (recent.length > 0 && recent[0].art) {
 </script>
 
 <script>
-// === PLAYLIST TITLE ACTIONS (RENAME + DELETE IN MAIN VIEW ONLY) ===
+// === PLAYLIST TITLE ACTIONS + CUSTOM MODALS FOR RENAME & DELETE ===
 
-// Create reusable rename modal
+// Reusable Rename Modal
 const renameModal = document.createElement('div');
 renameModal.className = 'modal';
 renameModal.innerHTML = `
     <div class="modal-content" style="max-width:400px; width:90%;">
         <h3>Rename Playlist</h3>
-        <input id="renameInput" placeholder="New playlist name" style="margin-bottom:24px;">
+        <input id="renameInput" placeholder="New playlist name">
         <div class="modal-buttons">
             <button class="secondary" id="renameCancel">Cancel</button>
             <button class="primary" id="renameSave">Save</button>
@@ -2658,12 +2680,28 @@ renameModal.innerHTML = `
 `;
 document.body.appendChild(renameModal);
 
-function openRenameModal(currentName) {
-    const input = document.getElementById('renameInput');
-    input.value = currentName;
-    input.focus();
-    input.select();
+// Reusable Delete Confirmation Modal
+const deleteModal = document.createElement('div');
+deleteModal.className = 'modal';
+deleteModal.innerHTML = `
+    <div class="modal-content" style="max-width:400px; width:90%;">
+        <h3>Delete Playlist?</h3>
+        <p style="margin:20px 0; color:var(--muted);">
+            This will permanently delete "<span id="deletePlaylistName"></span>" and all its songs.
+        </p>
+        <div class="modal-buttons">
+            <button class="secondary" id="deleteCancel">Cancel</button>
+            <button class="primary" style="background:#ff4444; color:#fff;" id="deleteConfirm">Delete</button>
+        </div>
+    </div>
+`;
+document.body.appendChild(deleteModal);
 
+// Rename modal logic
+function openRenameModal(currentName) {
+    document.getElementById('renameInput').value = currentName;
+    document.getElementById('renameInput').focus();
+    document.getElementById('renameInput').select();
     renameModal.classList.add('active');
 }
 
@@ -2691,11 +2729,29 @@ document.getElementById('renameSave').onclick = () => {
     renameModal.classList.remove('active');
 };
 
-// Close modal if clicking outside
+// Delete modal logic
+function openDeleteModal(playlistName) {
+    document.getElementById('deletePlaylistName').textContent = playlistName;
+    deleteModal.classList.add('active');
+}
+
+document.getElementById('deleteCancel').onclick = () => {
+    deleteModal.classList.remove('active');
+};
+
+document.getElementById('deleteConfirm').onclick = () => {
+    delete playlists[currentPlaylist];
+    saveData('playlists', playlists);
+    deleteModal.classList.remove('active');
+    goHome();
+};
+
+// Close modals when clicking outside
 renameModal.addEventListener('click', (e) => {
-    if (e.target === renameModal) {
-        renameModal.classList.remove('active');
-    }
+    if (e.target === renameModal) renameModal.classList.remove('active');
+});
+deleteModal.addEventListener('click', (e) => {
+    if (e.target === deleteModal) deleteModal.classList.remove('active');
 });
 
 function updatePlaylistTitleActions() {
@@ -2720,20 +2776,14 @@ function updatePlaylistTitleActions() {
     const deleteBtn = document.createElement('button');
     deleteBtn.innerHTML = '✕';
     deleteBtn.title = 'Delete playlist';
-    deleteBtn.onclick = () => {
-        if (confirm(`Delete playlist "${currentPlaylist}"?`)) {
-            delete playlists[currentPlaylist];
-            saveData('playlists', playlists);
-            goHome();
-        }
-    };
+    deleteBtn.onclick = () => openDeleteModal(currentPlaylist);
 
     actions.appendChild(renameBtn);
     actions.appendChild(deleteBtn);
     titleEl.parentNode.insertBefore(actions, titleEl.nextSibling);
 }
 
-// Hook into views
+// Hooks
 const originalViewPlaylist = viewPlaylist;
 viewPlaylist = function(name) {
     originalViewPlaylist(name);
@@ -2746,7 +2796,6 @@ renderPlaylistContent = function() {
     updatePlaylistTitleActions();
 };
 
-// Clean up old sidebar actions if any
 function cleanSidebarPlaylistActions() {
     document.querySelectorAll('.playlist-actions').forEach(el => el.remove());
 }
