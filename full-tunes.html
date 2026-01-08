@@ -1617,6 +1617,24 @@ body::before {
     color: #000;
     font-weight: 600;
 }
+
+    /* Fix playlist title chopping */
+#playlistTitle {
+    font-size: 28px !important;
+    font-weight: 700 !important;
+    margin-bottom: 8px !important;
+    overflow: visible !important;      /* Prevent any hidden overflow */
+    white-space: normal !important;     /* Allow wrapping for very long names */
+    word-break: break-word !important;  /* Break long words if needed */
+    max-width: 100%;                   /* Fit within container */
+    line-height: 1.2 !important;
+}
+
+/* Ensure the section container doesn't clip it */
+.section h2 {
+    overflow: visible !important;
+    width: 100%;
+}
 </style>
 
 </head>
@@ -2624,18 +2642,71 @@ if (recent.length > 0 && recent[0].art) {
 
 <script>
 // === PLAYLIST TITLE ACTIONS (RENAME + DELETE IN MAIN VIEW ONLY) ===
+
+// Create reusable rename modal
+const renameModal = document.createElement('div');
+renameModal.className = 'modal';
+renameModal.innerHTML = `
+    <div class="modal-content" style="max-width:400px; width:90%;">
+        <h3>Rename Playlist</h3>
+        <input id="renameInput" placeholder="New playlist name" style="margin-bottom:24px;">
+        <div class="modal-buttons">
+            <button class="secondary" id="renameCancel">Cancel</button>
+            <button class="primary" id="renameSave">Save</button>
+        </div>
+    </div>
+`;
+document.body.appendChild(renameModal);
+
+function openRenameModal(currentName) {
+    const input = document.getElementById('renameInput');
+    input.value = currentName;
+    input.focus();
+    input.select();
+
+    renameModal.classList.add('active');
+}
+
+document.getElementById('renameCancel').onclick = () => {
+    renameModal.classList.remove('active');
+};
+
+document.getElementById('renameSave').onclick = () => {
+    const newName = document.getElementById('renameInput').value.trim();
+    if (!newName || newName === currentPlaylist) {
+        renameModal.classList.remove('active');
+        return;
+    }
+    if (playlists[newName]) {
+        alert('A playlist with that name already exists!');
+        return;
+    }
+    playlists[newName] = playlists[currentPlaylist];
+    delete playlists[currentPlaylist];
+    currentPlaylist = newName;
+    saveData('playlists', playlists);
+    playlistTitle.textContent = currentPlaylist;
+    renderPlaylists();
+    updatePlaylistTitleActions();
+    renameModal.classList.remove('active');
+};
+
+// Close modal if clicking outside
+renameModal.addEventListener('click', (e) => {
+    if (e.target === renameModal) {
+        renameModal.classList.remove('active');
+    }
+});
+
 function updatePlaylistTitleActions() {
-    // Only run when viewing a playlist page
     if (currentPage !== 'playlist' || !currentPlaylist) return;
 
     const titleEl = document.getElementById('playlistTitle');
     if (!titleEl) return;
 
-    // Remove old actions if exist
     const oldActions = titleEl.parentNode.querySelector('.playlist-title-actions');
     if (oldActions) oldActions.remove();
 
-    // Create actions container
     const actions = document.createElement('div');
     actions.className = 'playlist-title-actions';
 
@@ -2643,22 +2714,7 @@ function updatePlaylistTitleActions() {
     const renameBtn = document.createElement('button');
     renameBtn.innerHTML = '✎';
     renameBtn.title = 'Rename playlist';
-    renameBtn.onclick = () => {
-        const newName = prompt('Enter new playlist name:', currentPlaylist);
-        if (!newName || newName.trim() === currentPlaylist) return;
-        const trimmed = newName.trim();
-        if (playlists[trimmed]) {
-            alert('A playlist with that name already exists!');
-            return;
-        }
-        playlists[trimmed] = playlists[currentPlaylist];
-        delete playlists[currentPlaylist];
-        currentPlaylist = trimmed;
-        saveData('playlists', playlists);
-        playlistTitle.textContent = currentPlaylist;
-        renderPlaylists(); // Update sidebar
-        updatePlaylistTitleActions(); // Refresh buttons
-    };
+    renameBtn.onclick = () => openRenameModal(currentPlaylist);
 
     // Delete button
     const deleteBtn = document.createElement('button');
@@ -2674,26 +2730,23 @@ function updatePlaylistTitleActions() {
 
     actions.appendChild(renameBtn);
     actions.appendChild(deleteBtn);
-
-    // Insert actions right after the title
     titleEl.parentNode.insertBefore(actions, titleEl.nextSibling);
 }
 
-// Call this every time we view a playlist
+// Hook into views
 const originalViewPlaylist = viewPlaylist;
 viewPlaylist = function(name) {
     originalViewPlaylist(name);
     updatePlaylistTitleActions();
 };
 
-// Also call on renderPlaylistContent if already in playlist view
 const originalRenderPlaylistContent = renderPlaylistContent;
 renderPlaylistContent = function() {
     originalRenderPlaylistContent();
     updatePlaylistTitleActions();
 };
 
-// Remove any old sidebar actions (in case you had them before)
+// Clean up old sidebar actions if any
 function cleanSidebarPlaylistActions() {
     document.querySelectorAll('.playlist-actions').forEach(el => el.remove());
 }
@@ -2702,7 +2755,7 @@ renderPlaylists = function() {
     originalRenderPlaylists();
     cleanSidebarPlaylistActions();
 };
-cleanSidebarPlaylistActions(); // Initial cleanup
+cleanSidebarPlaylistActions();
 </script>
     
 </body>
