@@ -1657,6 +1657,9 @@ body::before {
     padding: 8px 4px !important;
     height: auto !important;
 }
+    #playlistEmoji {
+    font-family: 'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol', sans-serif;
+}
 </style>
 
 </head>
@@ -1730,11 +1733,12 @@ body::before {
 
 </div>
 
-<!-- CREATE PLAYLIST MODAL -->
+<!-- UPDATED CREATE PLAYLIST MODAL -->
 <div id="modal" class="modal">
     <div class="modal-content">
         <h3>Create Playlist</h3>
-        <input id="playlistName" placeholder="My Awesome Playlist">
+        <input id="playlistName" placeholder="Playlist name" style="margin-bottom:16px;">
+        <input id="playlistEmoji" placeholder="Emoji (e.g. 🔥 🎸 ❤️)" maxlength="2" style="margin-bottom:24px; font-size:20px; text-align:center;">
         <div class="modal-buttons">
             <button class="secondary" onclick="closeModal()">Cancel</button>
             <button class="primary" onclick="createPlaylist()">Create</button>
@@ -1880,10 +1884,10 @@ function playNow(song) {
     fetchLyrics(song.title, song.artist);
     
     // Update index based on current context
-    if (currentPlaylist) {
-        const playlistSongs = playlists[currentPlaylist];
-        index = playlistSongs.findIndex(s => s.id === song.id);
-    } else {
+if (currentPlaylist) {
+    const playlistSongs = playlists[currentPlaylist].songs;
+    index = playlistSongs.findIndex(s => s.id === song.id);
+} else {
         index = queue.findIndex(s => s.id === song.id);
     }
     
@@ -1912,7 +1916,8 @@ function addQueue(song) {
 
 function playQueue(i) {
     index = i;
-    const songs = currentPlaylist ? playlists[currentPlaylist] : queue;
+    const songs = currentPlaylist ? playlists[currentPlaylist].songs : queue;
+
     playNow(songs[i]);
 }
 
@@ -2050,8 +2055,8 @@ function addToPlaylist(name) {
     if (!songToAdd) return;
     
     // Check if song already in playlist
-    if (!playlists[name].some(s => s.id === songToAdd.id)) {
-        playlists[name].push(songToAdd);
+    if (!playlists[name].songs.some(s => s.id === songToAdd.id)) {
+        playlists[name].songs.push(songToAdd);
         saveData("playlists", playlists);
     }
     
@@ -2094,7 +2099,7 @@ function deletePlaylist(name, event) {
 }
 
 function removeFromPlaylist(name, i) {
-    playlists[name].splice(i, 1);
+    playlists[name].songs.splice(i, 1);
     saveData("playlists", playlists);
     renderPlaylistContent();
 }
@@ -2112,17 +2117,27 @@ function closeModal() {
 
 function createPlaylist() {
     const name = document.getElementById("playlistName").value.trim();
+    const emoji = document.getElementById("playlistEmoji").value.trim() || '📁';
+    
     if (!name) return;
     
-    if (playlists[name]) {
-        alert("A playlist with this name already exists!");
-        return;
-    }
+if (playlists[name]) {
+    alert("A playlist with this name already exists!");
+    return;
+}
     
-    playlists[name] = [];
+    // Store as object with emoji and songs array
+playlists[name] = {
+    emoji: emoji,
+    songs: []
+};
+    
     saveData("playlists", playlists);
     renderPlaylists();
     closeModal();
+    
+    // Clear the emoji input too
+    document.getElementById("playlistEmoji").value = "";
 }
 
 /* RENDER */
@@ -2161,7 +2176,7 @@ function renderPlaylistContent() {
         return;
     }
     
-    const songs = playlists[currentPlaylist];
+   const songs = playlists[currentPlaylist].songs;
     
     if (songs.length === 0) {
         playlistContent.innerHTML = '<div style="padding:40px;text-align:center;color:var(--muted)">No songs in this playlist yet. Add some!</div>';
@@ -2484,7 +2499,7 @@ playNow = function(song) {
 
 // Optional: Resume background if queue ends and nothing playing
 function playNext() {
-    const songs = currentPlaylist ? playlists[currentPlaylist] : queue;
+    const songs = currentPlaylist ? playlists[currentPlaylist].songs : queue;
     
     if (index < songs.length - 1) {
         index++;
@@ -2800,11 +2815,47 @@ function cleanSidebarPlaylistActions() {
     document.querySelectorAll('.playlist-actions').forEach(el => el.remove());
 }
 const originalRenderPlaylists = renderPlaylists;
-renderPlaylists = function() {
-    originalRenderPlaylists();
-    cleanSidebarPlaylistActions();
-};
 cleanSidebarPlaylistActions();
+</script>
+
+<script>
+// === FINAL UNIFIED renderPlaylists (emoji + cleanup + home state) ===
+let baseRenderPlaylists = renderPlaylists; // Save the original once
+
+renderPlaylists = function() {
+    baseRenderPlaylists(); // Run the original clearing logic
+
+    playlistsDiv.innerHTML = ""; // Rebuild from scratch
+
+    Object.keys(playlists).forEach(name => {
+const pl = playlists[name];
+const emoji = (pl && pl.emoji) ? pl.emoji : '📁';
+
+        const d = document.createElement("div");
+        d.className = "playlist" + (currentPlaylist === name && currentPage === 'playlist' ? " active" : "");
+        d.innerHTML = `
+            <span>
+                <div class="emoji">${emoji}</div>
+                <div class="playlist-name">${escapeHtml(name)}</div>
+            </span>
+        `;
+        d.onclick = () => viewPlaylist(name);
+        playlistsDiv.appendChild(d);
+    });
+
+    // Update home button active state
+    if (currentPage === 'home') {
+        homeBtn.classList.add('active');
+    } else {
+        homeBtn.classList.remove('active');
+    }
+
+    // Clean any stray old actions from sidebar (safety net)
+    document.querySelectorAll('.playlist-actions').forEach(el => el.remove());
+};
+
+// Run once on load to apply to existing playlists
+renderPlaylists();
 </script>
     
 </body>
