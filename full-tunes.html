@@ -36,7 +36,7 @@ body{
 .bg-gradient{
     position:fixed;
     inset:0;
-background: linear-gradient(#FF0000, #000000);
+background: linear-gradient(#470000, #000000);
 
     z-index:0;
 }
@@ -2404,33 +2404,49 @@ async function showSignupIfNeeded() {
 </script>
 
 <script>
-// === DYNAMIC BACKGROUND COLOR FROM THUMBNAIL ===
+// === DYNAMIC BACKGROUND COLOR FROM THUMBNAIL (WITH CORS PROXY FIX) ===
 
-// Add smooth transition for background changes (run once)
+// Smooth transition
 document.querySelector('.bg-gradient').style.transition = 'background 1.5s ease';
+
+// Free public CORS proxy (reliable as of 2026)
+const CORS_PROXY = 'https://corsproxy.io/?';
 
 function updateBackgroundFromThumbnail(thumbnailUrl) {
     if (!thumbnailUrl) return;
+
+    // Proxy the URL to bypass CORS
+    const proxiedUrl = CORS_PROXY + encodeURIComponent(thumbnailUrl);
+
     const img = new Image();
-    img.crossOrigin = "anonymous";
-    img.src = thumbnailUrl;
+    img.crossOrigin = "anonymous"; // Still needed
+    img.src = proxiedUrl;
+
     img.onload = () => {
         const canvas = document.createElement('canvas');
         const ctx = canvas.getContext('2d');
         if (!ctx) return;
+
         ctx.imageSmoothingEnabled = true;
         ctx.drawImage(img, 0, 0, 1, 1);
+
         const data = ctx.getImageData(0, 0, 1, 1).data;
         const r = data[0];
         const g = data[1];
         const b = data[2];
+
+        // Darken a bit for subtle top glow
         const darkerFactor = 0.7;
         const topColor = `rgb(${Math.floor(r * darkerFactor)}, ${Math.floor(g * darkerFactor)}, ${Math.floor(b * darkerFactor)})`;
+
         document.querySelector('.bg-gradient').style.background =
             `linear-gradient(${topColor}, #000000)`;
     };
+
     img.onerror = () => {
-        console.warn("Couldn't load thumbnail for color extraction");
+        console.warn("Failed to load thumbnail (even via proxy)");
+        // Optional: fall back to your static red
+        // document.querySelector('.bg-gradient').style.background = 'linear-gradient(#FF0000, #000000)';
     };
 }
 
@@ -2443,7 +2459,7 @@ playNow = function(song) {
     }
 };
 
-// Initial background on page load
+// Initial load
 if (recent.length > 0 && recent[0].art) {
     updateBackgroundFromThumbnail(recent[0].art);
 }
