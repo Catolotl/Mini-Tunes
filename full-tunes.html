@@ -3573,7 +3573,7 @@ function runTeacherSelectionAndAgeLock() {
     const TEACHER_KEY = "tunesTeacher";
     const LOCK_KEY = "tunesLock";
     const MIN_AGE = 12;
-    const RESTRICTED_TEACHERS = ["Dolat", "Hawkridge"];
+    const RESTRICTED_TEACHERS = ["Gibbons", "Kristoff","Dolat", "Hawkridge", "Chappy.", "StPierre"];
     const OVERRIDE_KEYS = ["TUNES-ADMIN-2026", "TEMP-ACCESS-2026"];
 
     // Already selected & not locked → skip
@@ -3600,9 +3600,19 @@ function runTeacherSelectionAndAgeLock() {
             </p>
             <select id="teacherSelect" style="width:100%; padding:14px; border-radius:10px; background:var(--soft); color:white; border:1px solid var(--border); margin:24px 0;">
                 <option value="">Select your teacher</option>
+                <option>Gibbons</option>
+                <option>Kristoff</option>
                 <option>Dolat</option>
                 <option>Hawkridge</option>
-                <!-- Add more teachers here if needed -->
+                <option>Chappy.</option>
+                <option>StPierre</option>
+                <option>Roczniak</option>
+                <option>McClure</option>
+                <option>Loughlin</option>
+                <option>Nichols</option>
+                <option>Ruppert</option>
+                <option>walker</option>
+                <option>Other</option>
             </select>
             <div class="modal-buttons">
                 <button class="primary" id="teacherSubmit" disabled>Continue</button>
@@ -3658,7 +3668,7 @@ function showLockedScreen() {
             <p style="margin:24px 0; color:var(--muted); line-height:1.6;">
                 Music playback is currently limited.<br><br>
                 It will unlock automatically if age requirements are met,<br>
-                or a teacher/admin can provide an access key.
+                or a dev. can provide an access key.
             </p>
             <input id="unlockKey" placeholder="Enter access key" style="width:100%; padding:14px; margin:20px 0; border-radius:10px; background:var(--soft); border:1px solid var(--border); color:white;">
             <div class="modal-buttons">
