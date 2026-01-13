@@ -3773,6 +3773,47 @@ function showTosIfNeeded() {
     }, 1000);
 }
 
+function forceFullSignupFlow() {
+    console.warn("[Tunes] Forcing full signup/compliance flow");
+
+    // 1. Clear only onboarding-related storage
+    const keysToClear = [
+        "tunesAgeNotice",
+        "tunesTOSAccepted",
+        "tunesTeacher",
+        "tunesTeacherOverride",
+        "tunesLock"
+    ];
+
+    keysToClear.forEach(k => localStorage.removeItem(k));
+
+    // 2. Temporarily mark flow as forced (prevents early exits)
+    window.__FORCE_COMPLIANCE_FLOW__ = true;
+
+    // 3. Run steps in order with spacing to avoid modal overlap
+    setTimeout(() => {
+        if (typeof showAgeNoticeIfNeeded === "function") {
+            showAgeNoticeIfNeeded(true);
+        }
+    }, 300);
+
+    setTimeout(() => {
+        if (typeof showTOSModalIfNeeded === "function") {
+            showTOSModalIfNeeded(true);
+        }
+    }, 900);
+
+    setTimeout(() => {
+        if (typeof runTeacherAgeGate === "function") {
+            runTeacherAgeGate(true);
+        }
+    }, 1500);
+
+    // 4. Restore normal behavior
+    setTimeout(() => {
+        delete window.__FORCE_COMPLIANCE_FLOW__;
+    }, 3000);
+}
 
 
 </script>
