@@ -3523,6 +3523,258 @@ function showAgeNoticeIfNeeded() {
 // Run after everything else is ready
 setTimeout(showAgeNoticeIfNeeded, 1200);
 
+
+
+    // === TERMS OF USE ACKNOWLEDGMENT (SCROLL REQUIRED, WEEKLY) ===
+function showTosIfNeeded() {
+    const STORAGE_KEY = "tunesTOSAck";
+    const ONE_WEEK = 7 * 24 * 60 * 60 * 1000;
+
+    try {
+        const saved = JSON.parse(localStorage.getItem(STORAGE_KEY));
+        if (saved && Date.now() - saved.acknowledgedAt < ONE_WEEK) {
+            return;
+        }
+    } catch {}
+
+    const modal = document.createElement("div");
+    modal.className = "modal active";
+    modal.style.zIndex = "10000";
+
+    modal.innerHTML = `
+        <div class="modal-content" style="max-width:520px;">
+            <h3>Terms of Use</h3>
+
+            <div id="tosBox" style="
+                height:180px;
+                overflow-y:auto;
+                padding:16px;
+                border:1px solid rgba(255,255,255,0.1);
+                border-radius:12px;
+                font-size:13px;
+                line-height:1.6;
+                color:var(--muted);
+                margin-bottom:16px;
+            ">
+                <strong>Please read carefully:</strong><br><br>
+                This app is intended for personal listening during free time.
+                <br><br>
+                It should not be used during class instruction or assessments.
+                <br><br>
+                Accounts are intended for users age 12 and older.
+                <br><br>
+                Misuse may result in loss of access to protect the app for everyone.
+                <br><br>
+                You are responsible for using this app appropriately and respectfully.
+                <br><br>
+                By continuing, you agree to follow these guidelines.
+            </div>
+
+            <label style="display:flex; align-items:center; gap:10px; font-size:14px; margin-bottom:16px;">
+                <input type="checkbox" id="tosCheck" disabled>
+                I have read and agree to the Terms of Use
+            </label>
+
+            <div class="modal-buttons">
+                <button class="primary" id="tosAccept" disabled>
+                    I Agree
+                </button>
+            </div>
+        </div>
+    `;
+
+    document.body.appendChild(modal);
+
+    const tosBox = modal.querySelector("#tosBox");
+    const checkbox = modal.querySelector("#tosCheck");
+    const button = modal.querySelector("#tosAccept");
+
+    // Unlock checkbox only after scroll
+    tosBox.addEventListener("scroll", () => {
+        if (tosBox.scrollTop + tosBox.clientHeight >= tosBox.scrollHeight - 5) {
+            checkbox.disabled = false;
+        }
+    });
+
+    // Unlock button only after checkbox
+    checkbox.addEventListener("change", () => {
+        button.disabled = !checkbox.checked;
+    });
+
+    button.onclick = () => {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify({
+            acknowledgedAt: Date.now()
+        }));
+        modal.remove();
+    };
+}
+
+
+  function runTeacherAgeGate() {
+    const MIN_ALLOWED_AGE = 12;
+    const RESTRICTED_TEACHERS = ["Dolat", "Hawkridge"];
+    const OVERRIDE_KEYS = ["TUNES-ADMIN-2026", "TEMP-ACCESS"];
+
+    const LOCK_KEY = "tunesLock";
+    const TEACHER_KEY = "tunesTeacher";
+
+    function getAge() {
+        try {
+            const user = JSON.parse(localStorage.getItem("tunesUser"));
+            if (!user?.dob) return null;
+
+            const birth = new Date(user.dob);
+            const now = new Date();
+            let age = now.getFullYear() - birth.getFullYear();
+            const m = now.getMonth() - birth.getMonth();
+            if (m < 0 || (m === 0 && now.getDate() < birth.getDate())) age--;
+            return age;
+        } catch {
+            return null;
+        }
+    }
+
+    function isLocked() {
+        try {
+            const lock = JSON.parse(localStorage.getItem(LOCK_KEY));
+            if (!lock) return false;
+
+            const age = getAge();
+            if (age !== null && age >= MIN_ALLOWED_AGE) {
+                localStorage.removeItem(LOCK_KEY);
+                return false;
+            }
+            return true;
+        } catch {
+            return false;
+        }
+    }
+
+    function lock() {
+        localStorage.setItem(LOCK_KEY, JSON.stringify({
+            lockedAt: Date.now()
+        }));
+    }
+
+    function unlock() {
+        localStorage.removeItem(LOCK_KEY);
+    }
+
+    function showTeacherModal() {
+        const modal = document.createElement("div");
+        modal.className = "modal active";
+        modal.style.zIndex = "10000";
+
+        modal.innerHTML = `
+            <div class="modal-content" style="max-width:420px;">
+                <h3>Quick Question</h3>
+                <p style="margin:16px 0; color:var(--muted); font-size:14px; line-height:1.6;">
+                    To keep this app working properly at school,
+                    please select your teacher.
+                </p>
+
+                <select id="teacherSelect" style="width:100%; margin-bottom:24px;">
+                    <option value="">Select your teacher</option>
+                    <option>Dolat</option>
+                    <option>Hawkridge</option>
+                    <!-- add more here -->
+                </select>
+
+                <div class="modal-buttons">
+                    <button class="primary" id="teacherConfirm" disabled>
+                        Continue
+                    </button>
+                </div>
+            </div>
+        `;
+
+        document.body.appendChild(modal);
+
+        const select = modal.querySelector("#teacherSelect");
+        const button = modal.querySelector("#teacherConfirm");
+
+        select.onchange = () => {
+            button.disabled = !select.value;
+        };
+
+        button.onclick = () => {
+            const teacher = select.value;
+            localStorage.setItem(TEACHER_KEY, teacher);
+            modal.remove();
+
+            const age = getAge();
+            if (
+                RESTRICTED_TEACHERS.includes(teacher) &&
+                (age === null || age < MIN_ALLOWED_AGE)
+            ) {
+                lock();
+                showLockedModal();
+            }
+        };
+    }
+
+    function showLockedModal() {
+        if (!isLocked()) return;
+
+        // stop playback if present
+        if (window.player) player.src = "";
+        if (window.nowPlaying) nowPlaying.classList.remove("active");
+
+        const modal = document.createElement("div");
+        modal.className = "modal active";
+        modal.style.zIndex = "10000";
+
+        modal.innerHTML = `
+            <div class="modal-content" style="max-width:440px;">
+                <h3>Access Limited</h3>
+                <p style="margin:16px 0; color:var(--muted); font-size:14px; line-height:1.6;">
+                    Music playback isn’t available right now.
+                    <br><br>
+                    Access will turn on automatically when the account
+                    meets the age requirement, or if a teacher provides
+                    an access key.
+                </p>
+
+                <input
+                    id="unlockKey"
+                    placeholder="Enter access key"
+                    style="margin-bottom:16px;"
+                >
+
+                <div class="modal-buttons">
+                    <button class="primary" id="unlockBtn">
+                        Unlock
+                    </button>
+                </div>
+            </div>
+        `;
+
+        document.body.appendChild(modal);
+
+        modal.querySelector("#unlockBtn").onclick = () => {
+            const key = modal.querySelector("#unlockKey").value.trim();
+
+            if (OVERRIDE_KEYS.includes(key)) {
+                unlock();
+                modal.remove();
+            } else {
+                alert("That key didn’t work.");
+            }
+        };
+    }
+
+    // === ENTRY POINT ===
+    setTimeout(() => {
+        if (isLocked()) {
+            showLockedModal();
+        } else if (!localStorage.getItem(TEACHER_KEY)) {
+            showTeacherModal();
+        }
+    }, 1000);
+}
+
+
+
 </script>
     
 </body>
