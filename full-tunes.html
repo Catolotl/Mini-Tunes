@@ -3461,6 +3461,67 @@ const emoji = (pl && pl.emoji) ? pl.emoji : '📁';
 
 // Run once on load to apply to existing playlists
 renderPlaylists();
+
+
+
+
+    // === AGE & RESPONSIBILITY NOTICE (WEEKLY ACKNOWLEDGMENT) ===
+function showAgeNoticeIfNeeded() {
+    const STORAGE_KEY = "tunesAgeNotice";
+    const ONE_WEEK = 7 * 24 * 60 * 60 * 1000;
+
+    try {
+        const saved = JSON.parse(localStorage.getItem(STORAGE_KEY));
+        if (saved && saved.acknowledgedAt && (Date.now() - saved.acknowledgedAt < ONE_WEEK)) {
+            return; // Still valid
+        }
+    } catch (e) {
+        // ignore corrupted storage
+    }
+
+    // Create modal
+    const modal = document.createElement("div");
+    modal.className = "modal active";
+    modal.style.zIndex = "10000";
+
+    modal.innerHTML = `
+        <div class="modal-content" style="max-width:460px;">
+            <h3>Quick Check</h3>
+            <p style="margin:16px 0; line-height:1.6; color:var(--muted); font-size:14px;">
+                This music app is meant for <strong>older students (12+)</strong>.
+                <br><br>
+                Using music apps during class can cause problems for everyone,
+                even if it seems harmless.
+                <br><br>
+                Please only use this during free time and outside of lessons.
+            </p>
+            <div class="modal-buttons">
+                <button class="primary" id="ageAcknowledgeBtn" disabled>
+                    I am 12 or older and I understand
+                </button>
+            </div>
+        </div>
+    `;
+
+    document.body.appendChild(modal);
+
+    // Small delay so it feels intentional, not click-through
+    const btn = document.getElementById("ageAcknowledgeBtn");
+    setTimeout(() => {
+        btn.disabled = false;
+    }, 2500);
+
+    btn.onclick = () => {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify({
+            acknowledgedAt: Date.now()
+        }));
+        modal.remove();
+    };
+}
+
+// Run after everything else is ready
+setTimeout(showAgeNoticeIfNeeded, 1200);
+
 </script>
     
 </body>
