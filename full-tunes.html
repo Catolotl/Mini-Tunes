@@ -414,7 +414,6 @@ background: linear-gradient(#001414, #000000);
     width:420px;
     background:rgba(18,18,18,.8);
     backdrop-filter:blur(10px);
-    padding:32px;
     border-left:1px solid rgba(255,255,255,.05);
     overflow:auto;
     display:none;
@@ -2413,7 +2412,6 @@ button:focus-visible {
     bottom: 0;
     left: 0;
     right: 0;
-    padding: 32px 24px 24px;
     background: linear-gradient(to top, rgba(0,0,0,0.9) 40%, transparent);
     z-index: 10;
     color: white;
@@ -2501,6 +2499,24 @@ button:focus-visible {
     height: 100%;
     border: none;
     object-fit: cover;
+}
+
+    /* FINAL NOW-PLAYING RULE – place this at the BOTTOM of <style> */
+.now-playing {
+    width: 420px;
+    background: #000;
+    padding: 0 !important;                   /* Force-remove all padding */
+    margin: 0;
+    border-left: 1px solid rgba(255,255,255,.08);
+    overflow: hidden;
+    display: none;
+    flex-shrink: 0;
+    position: relative;
+}
+
+.now-playing.active {
+    display: flex;
+    flex-direction: column;
 }
 </style>
 
