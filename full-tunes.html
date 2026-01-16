@@ -262,6 +262,7 @@ background: linear-gradient(#001414, #000000);
     padding:32px;
     overflow:auto;
     transition:margin-right .3s;
+    position: relative;
 }
 
 /* SECTIONS */
@@ -2366,6 +2367,88 @@ button:focus-visible {
     font-size: 18px;
     opacity: 0.9;
 }
+
+    /* NOW PLAYING SIDEBAR – flush edges, full bleed video */
+.now-playing {
+    width: 420px;
+    background: #000;                          /* solid black base – no bleed-through */
+    padding: 0;                                /* ← remove ALL padding */
+    margin: 0;                                 /* no extra space */
+    border-left: 1px solid rgba(255,255,255,.08);
+    overflow: hidden;                          /* clip anything that overflows */
+    display: none;
+    position: relative;                        /* for absolute positioning of children */
+}
+
+.now-playing.active {
+    display: flex;
+    flex-direction: column;
+}
+
+/* VIDEO CONTAINER – full bleed, no margins, fills entire sidebar */
+.video-container {
+    position: relative;
+    width: 100%;
+    height: 100%;                              /* takes ALL available height */
+    min-height: 0;                             /* override any min-height restrictions */
+    margin: 0;                                 /* no space around */
+    background: #000;
+    flex: 1;                                   /* grow to fill remaining space */
+    overflow: hidden;
+}
+
+/* Make iframe completely fill the container + crop if needed */
+.video-container iframe {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    border: none;
+    object-fit: cover;                         /* ← this is the key: fill + crop */
+}
+
+/* Overlay title + artist at bottom */
+.now-playing .now-playing-info {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    padding: 32px 24px 24px;
+    background: linear-gradient(to top, rgba(0,0,0,0.9) 40%, transparent);
+    z-index: 10;
+    color: white;
+    text-align: center;
+}
+
+#npTitle {
+    font-size: 28px;
+    font-weight: 800;
+    margin: 0 0 6px;
+    line-height: 1.1;
+    text-shadow: 0 2px 12px rgba(0,0,0,0.9);
+}
+
+#npArtist {
+    font-size: 17px;
+    opacity: 0.9;
+    text-shadow: 0 2px 12px rgba(0,0,0,0.9);
+}
+
+/* Lyrics section – pushed down, scrollable */
+.lyrics-section {
+    padding: 24px;
+    flex: 1;
+    overflow-y: auto;
+    background: rgba(0,0,0,0.7);               /* semi-transparent so video peeks through subtly */
+}
+
+/* Make sure lyrics are readable */
+.lyrics {
+    color: #f0f0f0;
+    font-size: 15px;
+    line-height: 1.8;
+    text-shadow: 0 1px 6px rgba(0,0,0,0.8);
+}
 </style>
 
 </head>
@@ -2417,24 +2500,25 @@ button:focus-visible {
 
 </main>
 
-<!-- RIGHT SIDEBAR -->
 <aside id="nowPlaying" class="now-playing">
     <div class="video-container">
         <iframe id="player" allow="autoplay; encrypted-media"></iframe>
     </div>
-<!-- Hidden background jazz player -->
-<iframe id="bgPlayer" 
-    src="https://www.youtube.com/embed/5qap5aO4i9A?autoplay=1&loop=1&playlist=5qap5aO4i9A&mute=0&controls=0&modestbranding=1&playsinline=1" 
-    allow="autoplay; encrypted-media" 
-    style="display:none;">
-</iframe>
-    <h3 id="npTitle"></h3>
-    <div id="npArtist" class="artist"></div>
-    
+
+    <!-- Overlay info at bottom -->
+    <div class="now-playing-info">
+        <h3 id="npTitle"></h3>
+        <div id="npArtist" class="artist"></div>
+    </div>
+
+    <!-- Lyrics below video -->
     <div class="lyrics-section">
         <h4>Lyrics</h4>
         <div id="lyrics" class="lyrics loading">Play a song to view lyrics...</div>
     </div>
+
+    <!-- Keep your hidden bgPlayer -->
+    <iframe id="bgPlayer" ... style="display:none;"></iframe>
 </aside>
 
 </div>
@@ -2591,11 +2675,16 @@ function playNow(song) {
     
     // Update index based on current context
 if (currentPlaylist) {
-    const playlistSongs = playlists[currentPlaylist].songs;
-    index = playlistSongs.findIndex(s => s.id === song.id);
-} else {
+        index = playlists[currentPlaylist].songs.findIndex(s => s.id === song.id);
+    } else {
         index = queue.findIndex(s => s.id === song.id);
     }
+
+    saveData("index", index);
+
+    // Make sure sidebar opens
+    nowPlaying.classList.add('active');
+    mainDiv.classList.add('with-sidebar');
     
     saveData("index", index);
     
@@ -2604,11 +2693,6 @@ if (currentPlaylist) {
     } else {
         renderPlaylistContent();
     }
-    
-    dropdown.style.display = "none";
-    
-    // Setup autoplay listener
-    setupAutoplay();
 }
 
 function addQueue(song) {
@@ -2636,58 +2720,63 @@ function removeFromQueue(i) {
 }
 
 /* AUTOPLAY */
-function setupAutoplay() {
-    // YouTube IFrame API auto-loads, we just need to listen for video end
-    // We'll use a simpler approach with polling
-    const checkInterval = setInterval(() => {
-        try {
-            // Check if player iframe exists
-            if (!player.src) {
-                clearInterval(checkInterval);
-                return;
-            }
-            
-            // We can't directly access YouTube player state without the API
-            // So we'll set a timeout based on typical song length
-            // Better solution: use YouTube IFrame API properly
-        } catch (e) {
-            clearInterval(checkInterval);
-        }
-    }, 1000);
-}
+
 
 // YouTube IFrame API
-let ytPlayer;
+let ytPlayer = null;
+// Called by YouTube API when iframe is ready
 function onYouTubeIframeAPIReady() {
     ytPlayer = new YT.Player('player', {
         events: {
+            'onReady': onPlayerReady,
             'onStateChange': onPlayerStateChange
         }
     });
 }
+    function onPlayerReady(event) {
+    // Optional: you can set volume, playback rate, etc. here
+    event.target.setVolume(80);
+}
 
+// ─── This is the key function ───
 function onPlayerStateChange(event) {
-    // 0 = ended
-    if (event.data === 0) {
+    // YT.PlayerState.ENDED = 0
+    if (event.data === YT.PlayerState.ENDED) {
         playNext();
     }
 }
 
 function playNext() {
-    const songs = currentPlaylist ? playlists[currentPlaylist] : queue;
-    
-    if (index < songs.length - 1) {
-        index++;
-        playNow(songs[index]);
-    }
-}
+    let songs;
+    let nextIndex;
 
-// Load YouTube IFrame API
-if (!window.YT) {
-    const tag = document.createElement('script');
-    tag.src = "https://www.youtube.com/iframe_api";
-    const firstScriptTag = document.getElementsByTagName('script')[0];
-    firstScriptTag.parentNode.insertBefore(tag, firstScriptTag);
+    if (currentPlaylist && playlists[currentPlaylist]) {
+        songs = playlists[currentPlaylist].songs;
+        nextIndex = index + 1;
+        if (nextIndex < songs.length) {
+            index = nextIndex;
+            playNow(songs[index]);
+            saveData("index", index);
+            renderPlaylistContent();   // highlight new playing song
+            return;
+        }
+    } else if (queue.length > 0) {
+        songs = queue;
+        nextIndex = index + 1;
+        if (nextIndex < songs.length) {
+            index = nextIndex;
+            playNow(songs[index]);
+            saveData("index", index);
+            renderQueue();             // highlight new playing song
+            return;
+        }
+    }
+
+    // End of queue/playlist → resume background jazz
+    if (bgPlayer && !isBgPlaying) {
+        bgPlayer.contentWindow.postMessage('{"event":"command","func":"playVideo","args":[]}', '*');
+        isBgPlaying = true;
+    }
 }
 
 /* LYRICS */
@@ -3203,21 +3292,6 @@ playNow = function(song) {
     originalPlayNow(song);
 };
 
-// Optional: Resume background if queue ends and nothing playing
-function playNext() {
-    const songs = currentPlaylist ? playlists[currentPlaylist].songs : queue;
-    
-    if (index < songs.length - 1) {
-        index++;
-        playNow(songs[index]);
-    } else {
-        // Queue ended — resume chill background
-        if (bgPlayer && !isBgPlaying) {
-            bgPlayer.contentWindow.postMessage('{"event":"command","func":"playVideo","args":[]}', '*');
-            isBgPlaying = true;
-        }
-    }
-}
 
     // === USER SIGN-UP SYSTEM (PURE JS) ===
 async function showSignupIfNeeded() {
@@ -3802,91 +3876,7 @@ window.addEventListener('load', () => {
     }, 1200);
 });
 
-
-
-
-
-
-
-
-
-
-    // ─────────────── IMPROVED AUTOPLAY ───────────────
-
-// Global YouTube player reference
-let ytPlayer = null;
-
-// Called by YouTube API when iframe is ready
-function onYouTubeIframeAPIReady() {
-    ytPlayer = new YT.Player('player', {
-        events: {
-            'onReady': onPlayerReady,
-            'onStateChange': onPlayerStateChange
-        }
-    });
-}
-
-function onPlayerReady(event) {
-    // Optional: you can set volume, playback rate, etc. here
-    event.target.setVolume(80);
-}
-
-// ─── This is the key function ───
-function onPlayerStateChange(event) {
-    // YT.PlayerState.ENDED = 0
-    if (event.data === YT.PlayerState.ENDED) {
-        playNext();
-    }
-}
-
-// Improved playNext – works for both queue and playlists
-function playNext() {
-    let songs;
-    let nextIndex;
-
-    if (currentPlaylist && playlists[currentPlaylist]) {
-        songs = playlists[currentPlaylist].songs;
-        nextIndex = index + 1;
-        if (nextIndex < songs.length) {
-            index = nextIndex;
-            playNow(songs[index]);
-            saveData("index", index);
-            renderPlaylistContent();   // highlight new playing song
-        }
-    } else if (queue.length > 0) {
-        songs = queue;
-        nextIndex = index + 1;
-        if (nextIndex < songs.length) {
-            index = nextIndex;
-            playNow(songs[index]);
-            saveData("index", index);
-            renderQueue();             // highlight new playing song
-        }
-    }
-    // else: end of list reached – could restart, play radio, etc.
-    // currently does nothing (you can add bg jazz resume here if wanted)
-}
-
-// Make sure playNow updates the correct index & context
-function playNow(song) {
-    // ... your existing code ...
-
-    // Update index correctly
-    if (currentPlaylist) {
-        index = playlists[currentPlaylist].songs.findIndex(s => s.id === song.id);
-    } else {
-        index = queue.findIndex(s => s.id === song.id);
-    }
-
-    saveData("index", index);
-
-    // Make sure sidebar opens
-    nowPlaying.classList.add('active');
-    mainDiv.classList.add('with-sidebar');
-
-    // ... rest of your playNow code ...
-}
 </script>
-    
+   <script src="https://www.youtube.com/iframe_api"></script> 
 </body>
 </html>
