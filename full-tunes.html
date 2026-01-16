@@ -2735,7 +2735,7 @@ document.addEventListener('click', (e) => {
 
 /* PLAYBACK */
 function playNow(song) {
-    player.src = `https://www.youtube.com/embed/${song.id}?autoplay=1&enablejsapi=1`;
+    player.src = `https://www.youtube.com-nocookie/embed/${song.id}?autoplay=1&enablejsapi=1`;
     nowPlaying.classList.add('active');
     mainDiv.classList.add('with-sidebar');
     
@@ -2841,7 +2841,7 @@ function playNext() {
 // Load YouTube IFrame API
 if (!window.YT) {
     const tag = document.createElement('script');
-    tag.src = "https://www.youtube.com/iframe_api";
+    tag.src = "https://www.youtube.com-nocookie/iframe_api";
     const firstScriptTag = document.getElementsByTagName('script')[0];
     firstScriptTag.parentNode.insertBefore(tag, firstScriptTag);
 }
