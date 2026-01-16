@@ -262,7 +262,6 @@ background: linear-gradient(#001414, #000000);
     padding:32px;
     overflow:auto;
     transition:margin-right .3s;
-    position: relative;
 }
 
 /* SECTIONS */
@@ -414,6 +413,7 @@ background: linear-gradient(#001414, #000000);
     width:420px;
     background:rgba(18,18,18,.8);
     backdrop-filter:blur(10px);
+    padding:32px;
     border-left:1px solid rgba(255,255,255,.05);
     overflow:auto;
     display:none;
@@ -2265,561 +2265,10 @@ button:focus-visible {
     border-color:var(--border);
     transform:translateY(-1px);
 }
-
-
-
-
-
-
-
-
-
-
-
-
-    /* ─────────────── MAIN LAYOUT ADJUSTMENTS ─────────────── */
-
-/* When now-playing sidebar is open, main content shrinks from the right */
-.main.with-sidebar {
-    transition: margin-right 0.4s ease;
-}
-
-/* When sidebar is hidden → take full remaining width */
-.main {
-    margin-right: 0;
-    transition: margin-right 0.4s ease;
-}
-
-/* ─────────────── VIDEO BACKGROUND IN NOW-PLAYING ─────────────── */
-
-.video-container {
-    position: relative;
-    width: 100%;
-    height: 100%;                    /* ← changed from aspect-ratio */
-    min-height: 420px;               /* minimum useful height */
-    margin-bottom: 0;                /* remove old margin */
-    overflow: hidden;
-    background: #000;
-}
-
-/* Make iframe fill the container completely */
-.video-container iframe {
-    position: absolute;
-    inset: 0;
-    width: 100%;
-    height: 100%;
-    border: none;
-    object-fit: cover;               /* helps with different aspect ratios */
-}
-
-/* Dark vignette / film overlay + fade to black at bottom */
-.video-container::after {
-    content: "";
-    position: absolute;
-    inset: 0;
-    pointer-events: none;
-    background: 
-        radial-gradient(circle at 50% 30%, transparent 40%, rgba(0,0,0,0.4) 70%, rgba(0,0,0,0.85) 100%),
-        linear-gradient(to bottom, transparent 40%, rgba(0,0,0,0.7) 70%, #000 95%);
-    opacity: 0.92;
-    mix-blend-mode: multiply;        /* stronger darkening effect */
-}
-
-/* Optional: stronger center vignette if you prefer */
-.video-container::before {
-    content: "";
-    position: absolute;
-    inset: -20%;
-    pointer-events: none;
-    background: radial-gradient(circle at 50% 50%, transparent 30%, rgba(0,0,0,0.6) 70%);
-    opacity: 0.5;
-    z-index: 1;
-}
-
-/* Make sure text appears above the overlay */
-.now-playing > * {
-    position: relative;
-    z-index: 2;
-}
-
-/* Make all text white & more readable over video */
-.now-playing h3,
-.now-playing .artist,
-.lyrics-section h4,
-.lyrics {
-    color: #ffffff !important;
-    text-shadow: 0 2px 10px rgba(0,0,0,0.9),
-                 0 0 20px rgba(0,0,0,0.7);
-    mix-blend-mode: difference;     /* optional – increases contrast */
-}
-
-/* Optional: slightly larger & bolder title when video is background */
-.now-playing h3 {
-    font-size: 32px;
-    margin-bottom: 8px;
-    font-weight: 800;
-    letter-spacing: -0.5px;
-}
-
-.now-playing .artist {
-    font-size: 18px;
-    opacity: 0.9;
-}
-
-    /* NOW PLAYING SIDEBAR – flush edges, full bleed video */
-.now-playing {
-    width: 420px;
-    background: #000;                          /* solid black base – no bleed-through */
-    padding: 0;                                /* ← remove ALL padding */
-    margin: 0;                                 /* no extra space */
-    border-left: 1px solid rgba(255,255,255,.08);
-    overflow: hidden;                          /* clip anything that overflows */
-    display: none;
-    position: relative;                        /* for absolute positioning of children */
-}
-
-.now-playing.active {
-    display: flex;
-    flex-direction: column;
-}
-
-/* VIDEO CONTAINER – full bleed, no margins, fills entire sidebar */
-.video-container {
-    position: relative;
-    width: 100%;
-    height: 100%;                              /* takes ALL available height */
-    min-height: 0;                             /* override any min-height restrictions */
-    margin: 0;                                 /* no space around */
-    background: #000;
-    flex: 1;                                   /* grow to fill remaining space */
-    overflow: hidden;
-}
-
-/* Make iframe completely fill the container + crop if needed */
-.video-container iframe {
-    position: absolute;
-    inset: 0;
-    width: 100%;
-    height: 100%;
-    border: none;
-    object-fit: cover;                         /* ← this is the key: fill + crop */
-}
-
-/* Overlay title + artist at bottom */
-.now-playing .now-playing-info {
-    position: absolute;
-    bottom: 0;
-    left: 0;
-    right: 0;
-    background: linear-gradient(to top, rgba(0,0,0,0.9) 40%, transparent);
-    z-index: 10;
-    color: white;
-    text-align: center;
-}
-
-#npTitle {
-    font-size: 28px;
-    font-weight: 800;
-    margin: 0 0 6px;
-    line-height: 1.1;
-    text-shadow: 0 2px 12px rgba(0,0,0,0.9);
-}
-
-#npArtist {
-    font-size: 17px;
-    opacity: 0.9;
-    text-shadow: 0 2px 12px rgba(0,0,0,0.9);
-}
-
-/* Lyrics section – pushed down, scrollable */
-.lyrics-section {
-    padding: 24px;
-    flex: 1;
-    overflow-y: auto;
-    background: rgba(0,0,0,0.7);               /* semi-transparent so video peeks through subtly */
-}
-
-/* Make sure lyrics are readable */
-.lyrics {
-    color: #f0f0f0;
-    font-size: 15px;
-    line-height: 1.8;
-    text-shadow: 0 1px 6px rgba(0,0,0,0.8);
-}
-    .now-playing {
-    width: 420px;
-    background: #000;                       /* solid dark base, no transparency bleed */
-    padding: 0;                             /* ← remove ALL internal padding */
-    margin: 0;
-    border-left: 1px solid rgba(255,255,255,0.08);  /* keep subtle separator if you like */
-    overflow: hidden;                       /* prevent any child overflow */
-    display: none;
-    flex-shrink: 0;                         /* prevent shrinking in flex */
-}
-
-.now-playing.active {
-    display: flex;
-    flex-direction: column;
-}
-
-/* Make sure .app stretches everything edge-to-edge */
-.app {
-    display: flex;
-    height: calc(100vh - 90px);
-    position: relative;
-    z-index: 1;
-    width: 100%;                            /* ← ensure full width */
-    margin: 0;
-    padding: 0;
-}
-
-/* Force no gap by making main + sidebar flush */
-.main.with-sidebar {
-    margin-right: 420px;
-    transition: margin-right 0.4s ease;
-}
-
-/* Video should now touch every edge */
-.video-container {
-    position: relative;
-    width: 100%;
-    height: 100%;
-    margin: 0;
-    padding: 0;
-    background: #000;
-    flex: 1 1 auto;                         /* grow to fill */
-    overflow: hidden;
-}
-
-.video-container iframe {
-    position: absolute;
-    inset: 0;
-    width: 100%;
-    height: 100%;
-    border: none;
-    object-fit: cover;
-}
-
-    /* FINAL NOW-PLAYING RULE – place this at the BOTTOM of <style> */
-.now-playing {
-    width: 420px;
-    background: #000;
-    padding: 0 !important;                   /* Force-remove all padding */
-    margin: 0;
-    border-left: 1px solid rgba(255,255,255,.08);
-    overflow: hidden;
-    display: none;
-    flex-shrink: 0;
-    position: relative;
-}
-
-.now-playing.active {
-    display: flex;
-    flex-direction: column;
-}
-
-    /* ─────────────── SIMPLE CREDITS FOOTER ─────────────── */
-.app-footer {
-    position: fixed;
-    bottom: 0;
-    left: 0;
-    right: 0;
-    height: 48px;
-    background: rgba(0,0,0,0.8);
-    backdrop-filter: blur(12px);
-    border-top: 1px solid rgba(255,255,255,0.05);
-    z-index: 90;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 13px;
-    color: var(--muted);
-    letter-spacing: -0.01em;
-}
-
-.footer-content {
-    text-align: center;
-}
-
-.copyright {
-    font-weight: 500;
-}
-
-/* Shrink when sidebar is open */
-.now-playing.active ~ .app-footer {
-    right: 420px;
-}
-
-/* Mobile */
-@media (max-width: 768px) {
-    .app-footer {
-        height: 44px;
-        font-size: 12px;
-    }
-}
-
-
-    /* ─────────────── RIGHT SIDEBAR FIXES ─────────────── */
-
-/* 1. Remove left padding completely + flush to edges */
-.now-playing {
-    padding: 0 !important;           /* ← most important */
-    margin: 0;
-    width: 420px;
-    background: #000;
-    border-left: 1px solid rgba(255,255,255,0.07);
-    overflow: hidden;
-    display: none;
-    flex-direction: column;
-}
-
-/* 2. Make sure video starts right at the top with no gap */
-.video-container {
-    margin: 0 !important;
-    padding: 0 !important;
-    border-radius: 0 !important;     /* remove rounded corners at top */
-    width: 100%;
-    aspect-ratio: 16/9;              /* or keep height: auto; if you prefer */
-    background: #000;
-    overflow: hidden;
-    flex: 0 0 auto;                  /* don't let it grow too much */
-}
-
-/* 3. Move title + artist higher + better alignment */
-.now-playing-info {
-    position: absolute;
-    bottom: 0;                       /* keep at bottom of video */
-    left: 0;
-    right: 0;
-    padding: 24px 20px 20px 20px;    /* ← more left padding = better readability */
-    background: linear-gradient(to top, rgba(0,0,0,0.92) 30%, transparent);
-    text-align: left;                /* ← changed from center */
-    z-index: 10;
-}
-
-/* Song title – bigger, higher contrast, left-aligned */
-#npTitle {
-    font-size: 26px;                 /* was 28px – slightly smaller but clearer */
-    font-weight: 800;
-    margin: 0 0 4px 0;
-    line-height: 1.15;
-    color: #ffffff;
-    text-align: left;
-    text-shadow: 0 2px 12px rgba(0,0,0,0.95);
-    letter-spacing: -0.4px;
-}
-
-/* Artist – smaller, muted, left-aligned */
-#npArtist {
-    font-size: 15px;                 /* was 17px */
-    font-weight: 500;
-    color: rgba(255,255,255,0.85);
-    text-align: left;
-    margin: 0;
-    text-shadow: 0 1px 8px rgba(0,0,0,0.9);
-}
-
-/* 4. Lyrics section – starts right after video, no extra top gap */
-.lyrics-section {
-    margin: 0;
-    padding: 28px 20px 40px 20px;    /* ← good left/right breathing room */
-    background: rgba(0,0,0,0.75);
-    flex: 1 1 auto;
-    overflow-y: auto;
-}
-
-/* Optional: make lyrics title more prominent */
-.lyrics-section h4 {
-    font-size: 18px;
-    font-weight: 700;
-    color: var(--accent);
-    margin: 0 0 16px 0;
-    letter-spacing: -0.2px;
-}
-
-/* Bonus: make scrollbar less intrusive in sidebar */
-.now-playing ::-webkit-scrollbar {
-    width: 6px;
-}
-.now-playing ::-webkit-scrollbar-thumb {
-    background: rgba(255,255,255,0.18);
-}
-.now-playing ::-webkit-scrollbar-thumb:hover {
-    background: rgba(255,255,255,0.32);
-}
-
-    /* ┌──────────────────────────────────────────────────────────────┐
-   │  RIGHT SIDEBAR – FORCE FLUSH LEFT / ZERO LEFT GAP            │
-   └──────────────────────────────────────────────────────────────┘ */
-
-.now-playing,
-.now-playing * {
-    margin-left: 0 !important;
-    padding-left: 0 !important;
-    margin-inline-start: 0 !important;
-}
-
-.now-playing {
-    padding: 0 !important;
-    margin: 0 !important;
-    border-left: 1px solid rgba(255,255,255,0.06) !important;
-    overflow-x: hidden !important;
-}
-
-/* Video must start at pixel 0 from left edge */
-.video-container {
-    margin: 0 !important;
-    padding: 0 !important;
-    border-radius: 0 !important;
-    overflow: hidden !important;
-    width: 100% !important;
-    box-sizing: border-box !important;
-}
-
-/* Iframe must fill 100% with no inset */
-.video-container iframe {
-    margin: 0 !important;
-    padding: 0 !important;
-    left: 0 !important;
-    right: 0 !important;
-    width: 100% !important;
-    height: 100% !important;
-    border: none !important;
-}
-
-/* Overlay text block – force left flush + generous left padding only for text */
-.now-playing-info {
-    left: 0 !important;
-    right: 0 !important;
-    margin: 0 !important;
-    padding: 0 !important;
-    background: linear-gradient(to top, rgba(0,0,0,0.95) 45%, transparent 100%) !important;
-}
-
-.now-playing-info > * {
-    margin-left: 0 !important;
-    padding-left: 24px !important;   /* ← this is YOUR left indent for text readability */
-    padding-right: 24px !important;
-    padding-top: 16px !important;
-    padding-bottom: 20px !important;
-    text-align: left !important;
-    box-sizing: border-box !important;
-}
-
-/* Lyrics – same aggressive left flush */
-.lyrics-section {
-    margin: 0 !important;
-    padding: 28px 24px 40px 24px !important;   /* ← only here we want breathing room */
-}
-
-/* Debug helper: show left edge (remove after testing) */
-.now-playing {
-    outline: 2px solid #ff00aa !important;      /* hot pink border = easy to see left edge */
-    outline-offset: -2px !important;
-}
-
-    /* ┌──────────────────────────────────────────────────────────────┐
-   │  RIGHT SIDEBAR – FINAL FLUSH LEFT + HIGHER TITLE FIX         │
-   └──────────────────────────────────────────────────────────────┘ */
-
-/* 1. Force sidebar itself to have ZERO left padding/margin */
-.now-playing {
-    padding: 0 !important;
-    margin: 0 !important;
-    border-left: 1px solid rgba(255,255,255,0.05) !important;
-    overflow-x: hidden !important;
-    box-sizing: border-box !important;
-}
-
-/* 2. Video container – absolutely no left space */
-.video-container {
-    margin: 0 !important;
-    padding: 0 !important;
-    border-radius: 0 !important;
-    width: 100% !important;
-    aspect-ratio: 16 / 9;
-    overflow: hidden !important;
-}
-
-/* 3. Iframe must hug every edge */
-.video-container iframe {
-    margin: 0 !important;
-    padding: 0 !important;
-    inset: 0 !important;
-    width: 100% !important;
-    height: 100% !important;
-    border: none !important;
-}
-
-/* 4. Move title + artist HIGHER – position near top instead of bottom */
-.now-playing-info {
-    position: absolute !important;
-    top: 0 !important;                 /* ← key change: top instead of bottom */
-    left: 0 !important;
-    right: 0 !important;
-    margin: 0 !important;
-    padding: 0 !important;
-    background: linear-gradient(to bottom, rgba(0,0,0,0.85) 0%, transparent 70%) !important;
-    z-index: 12 !important;
-}
-
-/* 5. Title + artist container – left flush + breathing room only on text */
-.now-playing-info > * {
-    padding: 20px 24px 16px 24px !important;  /* top/left/right/bottom */
-    margin: 0 !important;
-    text-align: left !important;
-}
-
-/* 6. Song name – bigger, bolder, higher contrast */
-#npTitle {
-    font-size: 27px !important;
-    font-weight: 800 !important;
-    line-height: 1.12 !important;
-    margin: 0 0 6px 0 !important;
-    color: #ffffff !important;
-    text-shadow: 0 3px 14px rgba(0,0,0,0.95) !important;
-    letter-spacing: -0.5px !important;
-}
-
-/* 7. Artist – clear but secondary */
-#npArtist {
-    font-size: 15.5px !important;
-    font-weight: 500 !important;
-    color: rgba(255,255,255,0.88) !important;
-    margin: 0 !important;
-    text-shadow: 0 2px 10px rgba(0,0,0,0.9) !important;
-}
-
-/* 8. Lyrics section starts right after video – no extra top gap */
-.lyrics-section {
-    margin-top: 0 !important;
-    padding: 28px 24px 40px 24px !important;
-    background: rgba(8,8,8,0.92) !important;
-}
-
-/* Debug: bright green line on true left edge (remove after you confirm it's gone) */
-.now-playing::before {
-    content: "";
-    position: absolute;
-    left: 0;
-    top: 0;
-    bottom: 0;
-    width: 3px;
-    background: #00ff41;
-    z-index: 9999;
-    pointer-events: none;
-}
 </style>
 
 </head>
 
-
-<footer class="app-footer">
-    <div class="footer-content">
-        <span class="copyright">© 2026 TUNΞS – JVST CO. All rights reserved.</span>
-    </div>
-</footer>
-    
 <body>
 
 <div class="bg-gradient"></div>
@@ -2867,25 +2316,24 @@ button:focus-visible {
 
 </main>
 
+<!-- RIGHT SIDEBAR -->
 <aside id="nowPlaying" class="now-playing">
     <div class="video-container">
         <iframe id="player" allow="autoplay; encrypted-media"></iframe>
     </div>
-
-    <!-- Overlay info at bottom -->
-    <div class="now-playing-info">
-        <h3 id="npTitle"></h3>
-        <div id="npArtist" class="artist"></div>
-    </div>
-
-    <!-- Lyrics below video -->
+<!-- Hidden background jazz player -->
+<iframe id="bgPlayer" 
+    src="https://www.youtube.com/embed/5qap5aO4i9A?autoplay=1&loop=1&playlist=5qap5aO4i9A&mute=0&controls=0&modestbranding=1&playsinline=1" 
+    allow="autoplay; encrypted-media" 
+    style="display:none;">
+</iframe>
+    <h3 id="npTitle"></h3>
+    <div id="npArtist" class="artist"></div>
+    
     <div class="lyrics-section">
         <h4>Lyrics</h4>
         <div id="lyrics" class="lyrics loading">Play a song to view lyrics...</div>
     </div>
-
-    <!-- Keep your hidden bgPlayer -->
-    <iframe id="bgPlayer" ... style="display:none;"></iframe>
 </aside>
 
 </div>
@@ -3042,16 +2490,11 @@ function playNow(song) {
     
     // Update index based on current context
 if (currentPlaylist) {
-        index = playlists[currentPlaylist].songs.findIndex(s => s.id === song.id);
-    } else {
+    const playlistSongs = playlists[currentPlaylist].songs;
+    index = playlistSongs.findIndex(s => s.id === song.id);
+} else {
         index = queue.findIndex(s => s.id === song.id);
     }
-
-    saveData("index", index);
-
-    // Make sure sidebar opens
-    nowPlaying.classList.add('active');
-    mainDiv.classList.add('with-sidebar');
     
     saveData("index", index);
     
@@ -3060,6 +2503,11 @@ if (currentPlaylist) {
     } else {
         renderPlaylistContent();
     }
+    
+    dropdown.style.display = "none";
+    
+    // Setup autoplay listener
+    setupAutoplay();
 }
 
 function addQueue(song) {
@@ -3087,63 +2535,58 @@ function removeFromQueue(i) {
 }
 
 /* AUTOPLAY */
-
+function setupAutoplay() {
+    // YouTube IFrame API auto-loads, we just need to listen for video end
+    // We'll use a simpler approach with polling
+    const checkInterval = setInterval(() => {
+        try {
+            // Check if player iframe exists
+            if (!player.src) {
+                clearInterval(checkInterval);
+                return;
+            }
+            
+            // We can't directly access YouTube player state without the API
+            // So we'll set a timeout based on typical song length
+            // Better solution: use YouTube IFrame API properly
+        } catch (e) {
+            clearInterval(checkInterval);
+        }
+    }, 1000);
+}
 
 // YouTube IFrame API
-let ytPlayer = null;
-// Called by YouTube API when iframe is ready
+let ytPlayer;
 function onYouTubeIframeAPIReady() {
     ytPlayer = new YT.Player('player', {
         events: {
-            'onReady': onPlayerReady,
             'onStateChange': onPlayerStateChange
         }
     });
 }
-    function onPlayerReady(event) {
-    // Optional: you can set volume, playback rate, etc. here
-    event.target.setVolume(80);
-}
 
-// ─── This is the key function ───
 function onPlayerStateChange(event) {
-    // YT.PlayerState.ENDED = 0
-    if (event.data === YT.PlayerState.ENDED) {
+    // 0 = ended
+    if (event.data === 0) {
         playNext();
     }
 }
 
 function playNext() {
-    let songs;
-    let nextIndex;
-
-    if (currentPlaylist && playlists[currentPlaylist]) {
-        songs = playlists[currentPlaylist].songs;
-        nextIndex = index + 1;
-        if (nextIndex < songs.length) {
-            index = nextIndex;
-            playNow(songs[index]);
-            saveData("index", index);
-            renderPlaylistContent();   // highlight new playing song
-            return;
-        }
-    } else if (queue.length > 0) {
-        songs = queue;
-        nextIndex = index + 1;
-        if (nextIndex < songs.length) {
-            index = nextIndex;
-            playNow(songs[index]);
-            saveData("index", index);
-            renderQueue();             // highlight new playing song
-            return;
-        }
+    const songs = currentPlaylist ? playlists[currentPlaylist] : queue;
+    
+    if (index < songs.length - 1) {
+        index++;
+        playNow(songs[index]);
     }
+}
 
-    // End of queue/playlist → resume background jazz
-    if (bgPlayer && !isBgPlaying) {
-        bgPlayer.contentWindow.postMessage('{"event":"command","func":"playVideo","args":[]}', '*');
-        isBgPlaying = true;
-    }
+// Load YouTube IFrame API
+if (!window.YT) {
+    const tag = document.createElement('script');
+    tag.src = "https://www.youtube.com/iframe_api";
+    const firstScriptTag = document.getElementsByTagName('script')[0];
+    firstScriptTag.parentNode.insertBefore(tag, firstScriptTag);
 }
 
 /* LYRICS */
@@ -3659,6 +3102,21 @@ playNow = function(song) {
     originalPlayNow(song);
 };
 
+// Optional: Resume background if queue ends and nothing playing
+function playNext() {
+    const songs = currentPlaylist ? playlists[currentPlaylist].songs : queue;
+    
+    if (index < songs.length - 1) {
+        index++;
+        playNow(songs[index]);
+    } else {
+        // Queue ended — resume chill background
+        if (bgPlayer && !isBgPlaying) {
+            bgPlayer.contentWindow.postMessage('{"event":"command","func":"playVideo","args":[]}', '*');
+            isBgPlaying = true;
+        }
+    }
+}
 
     // === USER SIGN-UP SYSTEM (PURE JS) ===
 async function showSignupIfNeeded() {
@@ -4244,6 +3702,6 @@ window.addEventListener('load', () => {
 });
 
 </script>
-   <script src="https://www.youtube.com/iframe_api"></script> 
+    
 </body>
 </html>
