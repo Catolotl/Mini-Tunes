@@ -2432,6 +2432,96 @@ button:focus-visible {
     font-size: 15px;
     line-height: 1.8;
 }
+
+
+    /* ─────────────── RIGHT SIDEBAR – VIDEO FULL BLEED + BOTTOM OVERLAY ─────────────── */
+
+.now-playing {
+    padding: 0 !important;
+    margin: 0;
+    background: #000;
+    overflow: hidden;
+}
+
+.now-playing.active {
+    display: flex !important;
+    flex-direction: column;
+}
+
+/* Video takes 100% of sidebar */
+.video-container {
+    position: relative;
+    flex: 1 1 100%;               /* grows to fill all available height */
+    width: 100%;
+    height: 100%;
+    margin: 0;
+    padding: 0;
+    overflow: hidden;
+    background: #000;
+}
+
+.video-container iframe {
+    position: absolute;
+    inset: 0;
+    width: 100% !important;
+    height: 100% !important;
+    border: none;
+    object-fit: cover;            /* fills container, crops edges if needed */
+}
+
+/* Subtle darkening overlay over whole video */
+.video-container::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.38);   /* 0.3 = light dim, 0.5 = stronger */
+    z-index: 1;
+    pointer-events: none;
+}
+
+/* Overlay wrapper for title + artist at bottom */
+.now-playing-overlay {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    z-index: 3;                    /* above video + dim overlay */
+    padding: 70px 32px 28px 32px;  /* large top padding = space for gradient */
+    background: linear-gradient(to top, rgba(0,0,0,0.95) 45%, transparent 100%);
+    pointer-events: none;          /* clicks go through to video if needed */
+}
+
+/* Song title – white, full visibility, no cutoff */
+#npTitle {
+    font-size: 26px;
+    font-weight: 800;
+    line-height: 1.15;
+    margin: 0 0 8px 0;
+    color: #ffffff;
+    text-shadow: 0 3px 16px rgba(0,0,0,0.95);
+    letter-spacing: -0.3px;
+    white-space: normal;           /* allow wrapping */
+    overflow: visible !important;
+    text-overflow: unset !important;
+    max-width: 100%;
+}
+
+/* Artist – slightly smaller, still clear */
+#npArtist.artist {
+    font-size: 16px;
+    font-weight: 500;
+    color: rgba(255,255,255,0.92);
+    margin: 0;
+    text-shadow: 0 2px 12px rgba(0,0,0,0.9);
+    white-space: normal;
+    overflow: visible !important;
+}
+
+/* Hide lyrics completely (JS still runs, no problem) */
+.lyrics-section,
+.lyrics-section * {
+    display: none !important;
+}
 </style>
 
 </head>
@@ -2483,22 +2573,24 @@ button:focus-visible {
 
 </main>
 
-<!-- RIGHT SIDEBAR -->
 <aside id="nowPlaying" class="now-playing">
     <div class="video-container">
         <iframe id="player" allow="autoplay; encrypted-media"></iframe>
         
-        <!-- Title + artist now INSIDE video container → can overlay -->
-        <h3 id="npTitle"></h3>
-        <div id="npArtist" class="artist"></div>
+        <!-- Title + artist moved here → will overlay bottom of video -->
+        <div class="now-playing-overlay">
+            <h3 id="npTitle"></h3>
+            <div id="npArtist" class="artist"></div>
+        </div>
     </div>
 
+    <!-- Lyrics section stays in HTML/JS but will be hidden via CSS -->
     <div class="lyrics-section">
         <h4>Lyrics</h4>
         <div id="lyrics" class="lyrics loading">Play a song to view lyrics...</div>
     </div>
 
-    <!-- keep your bgPlayer iframe here if needed -->
+    <!-- your bgPlayer iframe if still there -->
 </aside>
 
 </div>
