@@ -2647,6 +2647,168 @@ button:focus-visible {
 .now-playing ::-webkit-scrollbar-thumb:hover {
     background: rgba(255,255,255,0.32);
 }
+
+    /* ┌──────────────────────────────────────────────────────────────┐
+   │  RIGHT SIDEBAR – FORCE FLUSH LEFT / ZERO LEFT GAP            │
+   └──────────────────────────────────────────────────────────────┘ */
+
+.now-playing,
+.now-playing * {
+    margin-left: 0 !important;
+    padding-left: 0 !important;
+    margin-inline-start: 0 !important;
+}
+
+.now-playing {
+    padding: 0 !important;
+    margin: 0 !important;
+    border-left: 1px solid rgba(255,255,255,0.06) !important;
+    overflow-x: hidden !important;
+}
+
+/* Video must start at pixel 0 from left edge */
+.video-container {
+    margin: 0 !important;
+    padding: 0 !important;
+    border-radius: 0 !important;
+    overflow: hidden !important;
+    width: 100% !important;
+    box-sizing: border-box !important;
+}
+
+/* Iframe must fill 100% with no inset */
+.video-container iframe {
+    margin: 0 !important;
+    padding: 0 !important;
+    left: 0 !important;
+    right: 0 !important;
+    width: 100% !important;
+    height: 100% !important;
+    border: none !important;
+}
+
+/* Overlay text block – force left flush + generous left padding only for text */
+.now-playing-info {
+    left: 0 !important;
+    right: 0 !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    background: linear-gradient(to top, rgba(0,0,0,0.95) 45%, transparent 100%) !important;
+}
+
+.now-playing-info > * {
+    margin-left: 0 !important;
+    padding-left: 24px !important;   /* ← this is YOUR left indent for text readability */
+    padding-right: 24px !important;
+    padding-top: 16px !important;
+    padding-bottom: 20px !important;
+    text-align: left !important;
+    box-sizing: border-box !important;
+}
+
+/* Lyrics – same aggressive left flush */
+.lyrics-section {
+    margin: 0 !important;
+    padding: 28px 24px 40px 24px !important;   /* ← only here we want breathing room */
+}
+
+/* Debug helper: show left edge (remove after testing) */
+.now-playing {
+    outline: 2px solid #ff00aa !important;      /* hot pink border = easy to see left edge */
+    outline-offset: -2px !important;
+}
+
+    /* ┌──────────────────────────────────────────────────────────────┐
+   │  RIGHT SIDEBAR – FINAL FLUSH LEFT + HIGHER TITLE FIX         │
+   └──────────────────────────────────────────────────────────────┘ */
+
+/* 1. Force sidebar itself to have ZERO left padding/margin */
+.now-playing {
+    padding: 0 !important;
+    margin: 0 !important;
+    border-left: 1px solid rgba(255,255,255,0.05) !important;
+    overflow-x: hidden !important;
+    box-sizing: border-box !important;
+}
+
+/* 2. Video container – absolutely no left space */
+.video-container {
+    margin: 0 !important;
+    padding: 0 !important;
+    border-radius: 0 !important;
+    width: 100% !important;
+    aspect-ratio: 16 / 9;
+    overflow: hidden !important;
+}
+
+/* 3. Iframe must hug every edge */
+.video-container iframe {
+    margin: 0 !important;
+    padding: 0 !important;
+    inset: 0 !important;
+    width: 100% !important;
+    height: 100% !important;
+    border: none !important;
+}
+
+/* 4. Move title + artist HIGHER – position near top instead of bottom */
+.now-playing-info {
+    position: absolute !important;
+    top: 0 !important;                 /* ← key change: top instead of bottom */
+    left: 0 !important;
+    right: 0 !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    background: linear-gradient(to bottom, rgba(0,0,0,0.85) 0%, transparent 70%) !important;
+    z-index: 12 !important;
+}
+
+/* 5. Title + artist container – left flush + breathing room only on text */
+.now-playing-info > * {
+    padding: 20px 24px 16px 24px !important;  /* top/left/right/bottom */
+    margin: 0 !important;
+    text-align: left !important;
+}
+
+/* 6. Song name – bigger, bolder, higher contrast */
+#npTitle {
+    font-size: 27px !important;
+    font-weight: 800 !important;
+    line-height: 1.12 !important;
+    margin: 0 0 6px 0 !important;
+    color: #ffffff !important;
+    text-shadow: 0 3px 14px rgba(0,0,0,0.95) !important;
+    letter-spacing: -0.5px !important;
+}
+
+/* 7. Artist – clear but secondary */
+#npArtist {
+    font-size: 15.5px !important;
+    font-weight: 500 !important;
+    color: rgba(255,255,255,0.88) !important;
+    margin: 0 !important;
+    text-shadow: 0 2px 10px rgba(0,0,0,0.9) !important;
+}
+
+/* 8. Lyrics section starts right after video – no extra top gap */
+.lyrics-section {
+    margin-top: 0 !important;
+    padding: 28px 24px 40px 24px !important;
+    background: rgba(8,8,8,0.92) !important;
+}
+
+/* Debug: bright green line on true left edge (remove after you confirm it's gone) */
+.now-playing::before {
+    content: "";
+    position: absolute;
+    left: 0;
+    top: 0;
+    bottom: 0;
+    width: 3px;
+    background: #00ff41;
+    z-index: 9999;
+    pointer-events: none;
+}
 </style>
 
 </head>
