@@ -2517,10 +2517,57 @@ button:focus-visible {
     display: flex;
     flex-direction: column;
 }
+
+    /* ─────────────── SIMPLE CREDITS FOOTER ─────────────── */
+.app-footer {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: 48px;
+    background: rgba(0,0,0,0.8);
+    backdrop-filter: blur(12px);
+    border-top: 1px solid rgba(255,255,255,0.05);
+    z-index: 90;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 13px;
+    color: var(--muted);
+    letter-spacing: -0.01em;
+}
+
+.footer-content {
+    text-align: center;
+}
+
+.copyright {
+    font-weight: 500;
+}
+
+/* Shrink when sidebar is open */
+.now-playing.active ~ .app-footer {
+    right: 420px;
+}
+
+/* Mobile */
+@media (max-width: 768px) {
+    .app-footer {
+        height: 44px;
+        font-size: 12px;
+    }
+}
 </style>
 
 </head>
 
+
+<footer class="app-footer">
+    <div class="footer-content">
+        <span class="copyright">© 2026 TUNΞS – Roberto. All rights reserved.</span>
+    </div>
+</footer>
+    
 <body>
 
 <div class="bg-gradient"></div>
