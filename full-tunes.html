@@ -2449,6 +2449,59 @@ button:focus-visible {
     line-height: 1.8;
     text-shadow: 0 1px 6px rgba(0,0,0,0.8);
 }
+    .now-playing {
+    width: 420px;
+    background: #000;                       /* solid dark base, no transparency bleed */
+    padding: 0;                             /* ← remove ALL internal padding */
+    margin: 0;
+    border-left: 1px solid rgba(255,255,255,0.08);  /* keep subtle separator if you like */
+    overflow: hidden;                       /* prevent any child overflow */
+    display: none;
+    flex-shrink: 0;                         /* prevent shrinking in flex */
+}
+
+.now-playing.active {
+    display: flex;
+    flex-direction: column;
+}
+
+/* Make sure .app stretches everything edge-to-edge */
+.app {
+    display: flex;
+    height: calc(100vh - 90px);
+    position: relative;
+    z-index: 1;
+    width: 100%;                            /* ← ensure full width */
+    margin: 0;
+    padding: 0;
+}
+
+/* Force no gap by making main + sidebar flush */
+.main.with-sidebar {
+    margin-right: 420px;
+    transition: margin-right 0.4s ease;
+}
+
+/* Video should now touch every edge */
+.video-container {
+    position: relative;
+    width: 100%;
+    height: 100%;
+    margin: 0;
+    padding: 0;
+    background: #000;
+    flex: 1 1 auto;                         /* grow to fill */
+    overflow: hidden;
+}
+
+.video-container iframe {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    border: none;
+    object-fit: cover;
+}
 </style>
 
 </head>
