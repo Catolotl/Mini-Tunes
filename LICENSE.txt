@@ -1,0 +1,22 @@
+JVST – All Rights Strictly Reserved
+Copyright © 2026 JVST
+
+This software, including all code, design, functionality, and associated materials 
+(the "Software"), is the exclusive intellectual property of JVST.
+
+Unauthorized copying, reproduction, modification, distribution, adaptation, 
+reverse engineering, decompilation, public display, resale, leasing, or any form 
+of commercial or non-commercial exploitation of this Software — in whole or in part 
+— is strictly prohibited without prior express written permission from JVST.
+
+Any attempt to clone, replicate, mirror, fork, rebrand, or create derivative works 
+based on this Software will be considered willful infringement and may result in 
+immediate legal action, including but not limited to claims for damages, injunctions, 
+and recovery of legal fees.
+
+THE SOFTWARE IS PROVIDED "AS IS" WITHOUT ANY WARRANTY OF ANY KIND. 
+JVST SHALL NOT BE LIABLE FOR ANY DAMAGES ARISING FROM ITS USE OR MISUSE.
+
+For licensing inquiries or to request permission, contact JVST directly.
+
+Violators will be pursued to the fullest extent of applicable law.
