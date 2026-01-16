@@ -2265,6 +2265,107 @@ button:focus-visible {
     border-color:var(--border);
     transform:translateY(-1px);
 }
+
+
+
+
+
+
+
+
+
+
+
+
+    /* ─────────────── MAIN LAYOUT ADJUSTMENTS ─────────────── */
+
+/* When now-playing sidebar is open, main content shrinks from the right */
+.main.with-sidebar {
+    margin-right: 420px;          /* matches .now-playing width */
+    transition: margin-right 0.4s ease;
+}
+
+/* When sidebar is hidden → take full remaining width */
+.main {
+    margin-right: 0;
+    transition: margin-right 0.4s ease;
+}
+
+/* ─────────────── VIDEO BACKGROUND IN NOW-PLAYING ─────────────── */
+
+.video-container {
+    position: relative;
+    width: 100%;
+    height: 100%;                    /* ← changed from aspect-ratio */
+    min-height: 420px;               /* minimum useful height */
+    margin-bottom: 0;                /* remove old margin */
+    overflow: hidden;
+    background: #000;
+}
+
+/* Make iframe fill the container completely */
+.video-container iframe {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    border: none;
+    object-fit: cover;               /* helps with different aspect ratios */
+}
+
+/* Dark vignette / film overlay + fade to black at bottom */
+.video-container::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    background: 
+        radial-gradient(circle at 50% 30%, transparent 40%, rgba(0,0,0,0.4) 70%, rgba(0,0,0,0.85) 100%),
+        linear-gradient(to bottom, transparent 40%, rgba(0,0,0,0.7) 70%, #000 95%);
+    opacity: 0.92;
+    mix-blend-mode: multiply;        /* stronger darkening effect */
+}
+
+/* Optional: stronger center vignette if you prefer */
+.video-container::before {
+    content: "";
+    position: absolute;
+    inset: -20%;
+    pointer-events: none;
+    background: radial-gradient(circle at 50% 50%, transparent 30%, rgba(0,0,0,0.6) 70%);
+    opacity: 0.5;
+    z-index: 1;
+}
+
+/* Make sure text appears above the overlay */
+.now-playing > * {
+    position: relative;
+    z-index: 2;
+}
+
+/* Make all text white & more readable over video */
+.now-playing h3,
+.now-playing .artist,
+.lyrics-section h4,
+.lyrics {
+    color: #ffffff !important;
+    text-shadow: 0 2px 10px rgba(0,0,0,0.9),
+                 0 0 20px rgba(0,0,0,0.7);
+    mix-blend-mode: difference;     /* optional – increases contrast */
+}
+
+/* Optional: slightly larger & bolder title when video is background */
+.now-playing h3 {
+    font-size: 32px;
+    margin-bottom: 8px;
+    font-weight: 800;
+    letter-spacing: -0.5px;
+}
+
+.now-playing .artist {
+    font-size: 18px;
+    opacity: 0.9;
+}
 </style>
 
 </head>
@@ -3701,6 +3802,90 @@ window.addEventListener('load', () => {
     }, 1200);
 });
 
+
+
+
+
+
+
+
+
+
+    // ─────────────── IMPROVED AUTOPLAY ───────────────
+
+// Global YouTube player reference
+let ytPlayer = null;
+
+// Called by YouTube API when iframe is ready
+function onYouTubeIframeAPIReady() {
+    ytPlayer = new YT.Player('player', {
+        events: {
+            'onReady': onPlayerReady,
+            'onStateChange': onPlayerStateChange
+        }
+    });
+}
+
+function onPlayerReady(event) {
+    // Optional: you can set volume, playback rate, etc. here
+    event.target.setVolume(80);
+}
+
+// ─── This is the key function ───
+function onPlayerStateChange(event) {
+    // YT.PlayerState.ENDED = 0
+    if (event.data === YT.PlayerState.ENDED) {
+        playNext();
+    }
+}
+
+// Improved playNext – works for both queue and playlists
+function playNext() {
+    let songs;
+    let nextIndex;
+
+    if (currentPlaylist && playlists[currentPlaylist]) {
+        songs = playlists[currentPlaylist].songs;
+        nextIndex = index + 1;
+        if (nextIndex < songs.length) {
+            index = nextIndex;
+            playNow(songs[index]);
+            saveData("index", index);
+            renderPlaylistContent();   // highlight new playing song
+        }
+    } else if (queue.length > 0) {
+        songs = queue;
+        nextIndex = index + 1;
+        if (nextIndex < songs.length) {
+            index = nextIndex;
+            playNow(songs[index]);
+            saveData("index", index);
+            renderQueue();             // highlight new playing song
+        }
+    }
+    // else: end of list reached – could restart, play radio, etc.
+    // currently does nothing (you can add bg jazz resume here if wanted)
+}
+
+// Make sure playNow updates the correct index & context
+function playNow(song) {
+    // ... your existing code ...
+
+    // Update index correctly
+    if (currentPlaylist) {
+        index = playlists[currentPlaylist].songs.findIndex(s => s.id === song.id);
+    } else {
+        index = queue.findIndex(s => s.id === song.id);
+    }
+
+    saveData("index", index);
+
+    // Make sure sidebar opens
+    nowPlaying.classList.add('active');
+    mainDiv.classList.add('with-sidebar');
+
+    // ... rest of your playNow code ...
+}
 </script>
     
 </body>
