@@ -2265,6 +2265,76 @@ button:focus-visible {
     border-color:var(--border);
     transform:translateY(-1px);
 }
+
+
+
+
+    /* ─────────────── FULL-BLEED VIDEO IN RIGHT SIDEBAR ─────────────── */
+
+/* Make sidebar itself have no internal padding (critical for zero gaps) */
+.now-playing {
+    padding: 0 !important;
+    margin: 0;
+    background: #000;               /* solid black base so no bleed-through */
+    overflow: hidden;               /* prevent scrollbars or overflow */
+}
+
+/* Video container fills entire sidebar top-to-bottom */
+.video-container {
+    width: 100%;
+    height: 100%;                   /* ← changed: full height of sidebar */
+    margin: 0 !important;
+    padding: 0 !important;
+    border-radius: 0 !important;    /* no rounded corners */
+    background: #000;
+    overflow: hidden;
+    position: relative;             /* for absolute overlay */
+}
+
+/* Iframe fills container completely + crops to fit */
+.video-container iframe {
+    position: absolute;
+    inset: 0;
+    width: 100% !important;
+    height: 100% !important;
+    border: none;
+    object-fit: cover;              /* key: fills + crops, keeps ratio */
+}
+
+/* Subtle dark overlay over the whole video (adjust opacity 0.3–0.55) */
+.video-container::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.45);   /* ← tune this: 0.35 = subtle, 0.6 = much darker */
+    pointer-events: none;
+    z-index: 1;
+}
+
+/* Title + artist stay BELOW video (your current position), but now video is taller */
+.now-playing h3,
+.now-playing .artist {
+    position: relative;
+    z-index: 2;                     /* above any future overlays if needed */
+    margin: 20px 0 0 0;             /* keep your original spacing feel */
+    padding: 0 32px;                /* matches old sidebar padding feel */
+}
+
+/* Lyrics section follows naturally below title/artist */
+.lyrics-section {
+    margin-top: 24px;               /* slight breathing room after artist */
+    padding: 0 32px 32px 32px;      /* consistent with old look */
+}
+
+/* Optional: make title/artist pop more on darker video bg */
+#npTitle {
+    color: #fff;
+    text-shadow: 0 2px 12px rgba(0,0,0,0.9);
+}
+#npArtist {
+    color: #ddd;
+    text-shadow: 0 1px 8px rgba(0,0,0,0.8);
+}
 </style>
 
 </head>
