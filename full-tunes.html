@@ -2557,6 +2557,96 @@ button:focus-visible {
         font-size: 12px;
     }
 }
+
+
+    /* ─────────────── RIGHT SIDEBAR FIXES ─────────────── */
+
+/* 1. Remove left padding completely + flush to edges */
+.now-playing {
+    padding: 0 !important;           /* ← most important */
+    margin: 0;
+    width: 420px;
+    background: #000;
+    border-left: 1px solid rgba(255,255,255,0.07);
+    overflow: hidden;
+    display: none;
+    flex-direction: column;
+}
+
+/* 2. Make sure video starts right at the top with no gap */
+.video-container {
+    margin: 0 !important;
+    padding: 0 !important;
+    border-radius: 0 !important;     /* remove rounded corners at top */
+    width: 100%;
+    aspect-ratio: 16/9;              /* or keep height: auto; if you prefer */
+    background: #000;
+    overflow: hidden;
+    flex: 0 0 auto;                  /* don't let it grow too much */
+}
+
+/* 3. Move title + artist higher + better alignment */
+.now-playing-info {
+    position: absolute;
+    bottom: 0;                       /* keep at bottom of video */
+    left: 0;
+    right: 0;
+    padding: 24px 20px 20px 20px;    /* ← more left padding = better readability */
+    background: linear-gradient(to top, rgba(0,0,0,0.92) 30%, transparent);
+    text-align: left;                /* ← changed from center */
+    z-index: 10;
+}
+
+/* Song title – bigger, higher contrast, left-aligned */
+#npTitle {
+    font-size: 26px;                 /* was 28px – slightly smaller but clearer */
+    font-weight: 800;
+    margin: 0 0 4px 0;
+    line-height: 1.15;
+    color: #ffffff;
+    text-align: left;
+    text-shadow: 0 2px 12px rgba(0,0,0,0.95);
+    letter-spacing: -0.4px;
+}
+
+/* Artist – smaller, muted, left-aligned */
+#npArtist {
+    font-size: 15px;                 /* was 17px */
+    font-weight: 500;
+    color: rgba(255,255,255,0.85);
+    text-align: left;
+    margin: 0;
+    text-shadow: 0 1px 8px rgba(0,0,0,0.9);
+}
+
+/* 4. Lyrics section – starts right after video, no extra top gap */
+.lyrics-section {
+    margin: 0;
+    padding: 28px 20px 40px 20px;    /* ← good left/right breathing room */
+    background: rgba(0,0,0,0.75);
+    flex: 1 1 auto;
+    overflow-y: auto;
+}
+
+/* Optional: make lyrics title more prominent */
+.lyrics-section h4 {
+    font-size: 18px;
+    font-weight: 700;
+    color: var(--accent);
+    margin: 0 0 16px 0;
+    letter-spacing: -0.2px;
+}
+
+/* Bonus: make scrollbar less intrusive in sidebar */
+.now-playing ::-webkit-scrollbar {
+    width: 6px;
+}
+.now-playing ::-webkit-scrollbar-thumb {
+    background: rgba(255,255,255,0.18);
+}
+.now-playing ::-webkit-scrollbar-thumb:hover {
+    background: rgba(255,255,255,0.32);
+}
 </style>
 
 </head>
