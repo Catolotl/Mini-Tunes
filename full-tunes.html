@@ -2522,6 +2522,89 @@ button:focus-visible {
 .lyrics-section * {
     display: none !important;
 }
+
+
+    /* ─────────────── RIGHT SIDEBAR – BLACK + SHRINKED VIDEO FOR SKIP BUTTON ─────────────── */
+
+.now-playing {
+    padding: 0 !important;
+    margin: 0;
+    background: #000000 !important;     /* solid black – no transparency */
+    overflow: hidden;
+    border-left: 1px solid rgba(255,255,255,0.04);  /* very subtle separator */
+}
+
+.now-playing.active {
+    display: flex !important;
+    flex-direction: column;
+}
+
+/* Video container: slightly smaller than full sidebar → creates ~20-40px black margin around iframe */
+.video-container {
+    position: relative;
+    flex: 1 1 auto;
+    width: calc(100% - 40px);           /* shrink by 20px left + 20px right */
+    height: calc(100% - 60px);          /* shrink top/bottom a bit more if needed */
+    margin: 30px auto 30px auto;        /* centered with equal black space around */
+    background: #000000;
+    overflow: hidden;
+    border-radius: 12px;                /* optional: slight rounding so it looks intentional */
+    box-shadow: 0 8px 32px rgba(0,0,0,0.6);  /* subtle depth */
+}
+
+/* Iframe fills its (now smaller) container completely */
+.video-container iframe {
+    width: 100% !important;
+    height: 100% !important;
+    border: none;
+    object-fit: cover;                  /* still fills nicely, crops if needed */
+}
+
+/* Dark gradient overlay at bottom for title readability (optional but recommended) */
+.video-container::after {
+    content: "";
+    position: absolute;
+    left: 0; right: 0; bottom: 0;
+    height: 140px;                      /* tall enough for text + gradient fade */
+    background: linear-gradient(to top, rgba(0,0,0,0.92) 0%, transparent 100%);
+    pointer-events: none;
+    z-index: 1;
+}
+
+/* Title + artist overlay at bottom of video container */
+.now-playing-overlay {  /* add this wrapper in HTML if not already there */
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    z-index: 3;
+    padding: 70px 32px 28px 32px;       /* space for gradient + text */
+    pointer-events: none;
+}
+
+#npTitle {
+    font-size: 26px;
+    font-weight: 800;
+    color: #ffffff;
+    margin: 0 0 6px 0;
+    line-height: 1.15;
+    text-shadow: 0 3px 16px rgba(0,0,0,0.95);
+    white-space: normal;
+    overflow: visible;
+}
+
+#npArtist {
+    font-size: 16px;
+    color: rgba(255,255,255,0.92);
+    margin: 0;
+    text-shadow: 0 2px 12px rgba(0,0,0,0.9);
+    white-space: normal;
+}
+
+/* Hide lyrics section completely */
+.lyrics-section {
+    display: none !important;
+}
 </style>
 
 </head>
@@ -2575,13 +2658,13 @@ button:focus-visible {
 
 <aside id="nowPlaying" class="now-playing">
     <div class="video-container">
-        <iframe id="player" allow="autoplay; encrypted-media"></iframe>
-        
-        <!-- Title + artist moved here → will overlay bottom of video -->
-        <div class="now-playing-overlay">
-            <h3 id="npTitle"></h3>
-            <div id="npArtist" class="artist"></div>
-        </div>
+    <iframe id="player" allow="autoplay; encrypted-media"></iframe>
+    
+    <div class="now-playing-overlay">
+        <h3 id="npTitle"></h3>
+        <div id="npArtist" class="artist"></div>
+    </div>
+</div>
     </div>
 
     <!-- Lyrics section stays in HTML/JS but will be hidden via CSS -->
@@ -2735,7 +2818,7 @@ document.addEventListener('click', (e) => {
 
 /* PLAYBACK */
 function playNow(song) {
-    player.src = `https://www.youtube.com-nocookie/embed/${song.id}?autoplay=1&enablejsapi=1`;
+    player.src = `https://www.youtube.com/embed/${song.id}?autoplay=1&enablejsapi=1`;
     nowPlaying.classList.add('active');
     mainDiv.classList.add('with-sidebar');
     
@@ -2841,7 +2924,7 @@ function playNext() {
 // Load YouTube IFrame API
 if (!window.YT) {
     const tag = document.createElement('script');
-    tag.src = "https://www.youtube.com-nocookie/iframe_api";
+    tag.src = "https://www.youtube.com/iframe_api";
     const firstScriptTag = document.getElementsByTagName('script')[0];
     firstScriptTag.parentNode.insertBefore(tag, firstScriptTag);
 }
