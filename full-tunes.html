@@ -3914,7 +3914,7 @@ function runTeacherSelectionAndAgeLock() {
     const LOCK_KEY = "tunesLock";
     const MIN_AGE = 12;
     const RESTRICTED_TEACHERS = ["Gibbons", "Kristoff","Dolat", "Hawkridge", "Chappy.", "StPierre"];
-    const OVERRIDE_KEYS = ["TUNES-ADMIN-2026", "TEMP-ACCESS-2026"];
+    const OVERRIDE_KEYS = ["tunes-admin-2026", "TEMP-ACCESS-2026"];
 
     // Already selected & not locked → skip
     if (localStorage.getItem(TEACHER_KEY) && !localStorage.getItem(LOCK_KEY)) {
@@ -4043,7 +4043,7 @@ window.addEventListener('load', () => {
 
 </script>
 
-    <script>
+<script>
 // ═══════════════════════════════════════════════════════════
 // AUTOPLAY: Next song in playlist/queue when current ends
 // ═══════════════════════════════════════════════════════════
@@ -4152,10 +4152,38 @@ function startFallbackAutoplay() {
     }, 2000);
 }
 
-// Enhance the original playNow to work with autoplay
-const originalPlayNowForAutoplay = playNow;
+// OVERRIDE playNow to add YouTube parameters that hide end screen
+const originalPlayNowCore = playNow;
 playNow = function(song) {
-    originalPlayNowForAutoplay(song);
+    // Build enhanced YouTube URL with parameters to hide recommendations
+    player.src = `https://www.youtube.com/embed/${song.id}?autoplay=1&enablejsapi=1&rel=0&modestbranding=1&showinfo=0&iv_load_policy=3&disablekb=1`;
+    
+    nowPlaying.classList.add('active');
+    mainDiv.classList.add('with-sidebar');
+    
+    document.getElementById("npTitle").textContent = song.title;
+    document.getElementById("npArtist").textContent = song.artist;
+    
+    addRecent(song);
+    fetchLyrics(song.title, song.artist);
+    
+    // Update index based on current context
+    if (currentPlaylist && playlists[currentPlaylist]) {
+        const playlistSongs = playlists[currentPlaylist].songs;
+        index = playlistSongs.findIndex(s => s.id === song.id);
+    } else {
+        index = queue.findIndex(s => s.id === song.id);
+    }
+    
+    saveData("index", index);
+    
+    if (currentPage === 'home') {
+        renderQueue();
+    } else {
+        renderPlaylistContent();
+    }
+    
+    dropdown.style.display = "none";
     
     // Ensure YouTube API is initialized
     if (typeof YT === 'undefined' || !YT.Player) {
