@@ -4042,6 +4042,181 @@ window.addEventListener('load', () => {
 });
 
 </script>
+
+    <script>
+// ═══════════════════════════════════════════════════════════
+// AUTOPLAY: Next song in playlist/queue when current ends
+// ═══════════════════════════════════════════════════════════
+
+let playerCheckInterval = null;
+let lastVideoId = null;
+
+// YouTube Player API integration
+function onYouTubeIframeAPIReady() {
+    // This gets called automatically when the API loads
+    initYouTubePlayer();
+}
+
+function initYouTubePlayer() {
+    if (typeof YT === 'undefined' || !YT.Player) {
+        // API not ready yet, retry
+        setTimeout(initYouTubePlayer, 500);
+        return;
+    }
+
+    // Create player instance from existing iframe
+    const playerEl = document.getElementById('player');
+    
+    window.ytPlayer = new YT.Player('player', {
+        events: {
+            'onStateChange': onPlayerStateChange,
+            'onReady': onPlayerReady
+        }
+    });
+}
+
+function onPlayerReady(event) {
+    console.log('YouTube player ready for autoplay');
+}
+
+function onPlayerStateChange(event) {
+    // State codes:
+    // -1 = unstarted
+    //  0 = ended
+    //  1 = playing
+    //  2 = paused
+    //  3 = buffering
+    //  5 = video cued
+    
+    if (event.data === YT.PlayerState.ENDED) {
+        console.log('Song ended, playing next...');
+        playNextSong();
+    }
+    
+    if (event.data === YT.PlayerState.PLAYING) {
+        // Track current video for debugging
+        try {
+            const videoData = event.target.getVideoData();
+            lastVideoId = videoData.video_id;
+            console.log('Now playing:', videoData.title);
+        } catch (e) {
+            console.log('Playing video');
+        }
+    }
+}
+
+function playNextSong() {
+    // Determine which list we're playing from
+    const songs = currentPlaylist && playlists[currentPlaylist] 
+        ? playlists[currentPlaylist].songs 
+        : queue;
+    
+    if (!songs || songs.length === 0) {
+        console.log('No songs to play');
+        return;
+    }
+    
+    // Move to next song
+    if (index < songs.length - 1) {
+        index++;
+        playNow(songs[index]);
+        saveData("index", index);
+        console.log(`Playing song ${index + 1} of ${songs.length}`);
+    } else {
+        console.log('End of playlist/queue');
+        // Optional: loop back to start
+        // index = 0;
+        // playNow(songs[index]);
+        
+        // Or show a "playlist ended" message
+        nowPlaying.classList.remove('active');
+    }
+}
+
+// Fallback polling method (if API doesn't load properly)
+function startFallbackAutoplay() {
+    // Clear any existing interval
+    if (playerCheckInterval) {
+        clearInterval(playerCheckInterval);
+    }
+    
+    // Check every 2 seconds if video might have ended
+    playerCheckInterval = setInterval(() => {
+        const playerEl = document.getElementById('player');
+        
+        // If player src is empty or changed unexpectedly, might be ended
+        if (playerEl && playerEl.src && !playerEl.src.includes('autoplay=1')) {
+            console.log('Video may have ended (fallback detection)');
+            playNextSong();
+        }
+    }, 2000);
+}
+
+// Enhance the original playNow to work with autoplay
+const originalPlayNowForAutoplay = playNow;
+playNow = function(song) {
+    originalPlayNowForAutoplay(song);
+    
+    // Ensure YouTube API is initialized
+    if (typeof YT === 'undefined' || !YT.Player) {
+        console.log('YouTube API not ready, loading...');
+        loadYouTubeAPI();
+        startFallbackAutoplay(); // Use fallback while API loads
+    } else if (!window.ytPlayer) {
+        initYouTubePlayer();
+    }
+};
+
+// Load YouTube IFrame API if not already loaded
+function loadYouTubeAPI() {
+    if (window.YT || document.querySelector('script[src*="youtube.com/iframe_api"]')) {
+        return; // Already loaded or loading
+    }
+    
+    const tag = document.createElement('script');
+    tag.src = "https://www.youtube.com/iframe_api";
+    const firstScriptTag = document.getElementsByTagName('script')[0];
+    firstScriptTag.parentNode.insertBefore(tag, firstScriptTag);
+    
+    console.log('Loading YouTube IFrame API...');
+}
+
+// Manual next/previous buttons (optional bonus feature)
+function skipToNext() {
+    playNextSong();
+}
+
+function skipToPrevious() {
+    const songs = currentPlaylist && playlists[currentPlaylist] 
+        ? playlists[currentPlaylist].songs 
+        : queue;
+    
+    if (index > 0) {
+        index--;
+        playNow(songs[index]);
+        saveData("index", index);
+    }
+}
+
+// Initialize on page load
+window.addEventListener('load', () => {
+    // Give the page a moment to settle
+    setTimeout(() => {
+        if (queue.length > 0 || Object.keys(playlists).length > 0) {
+            loadYouTubeAPI();
+        }
+    }, 1000);
+});
+
+// Cleanup on page unload
+window.addEventListener('beforeunload', () => {
+    if (playerCheckInterval) {
+        clearInterval(playerCheckInterval);
+    }
+});
+
+console.log('✅ Autoplay system loaded');
+</script>
     
 </body>
 </html>
