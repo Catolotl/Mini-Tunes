@@ -687,6 +687,140 @@ body{
 .minimized .toggle-right{
     left:0;
 }
+/* Album/Playlist View */
+.album-view, .playlist-view {
+    animation: fadeIn 0.3s ease;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+.back-btn {
+    background: rgba(0,0,0,.3);
+    border: none;
+    color: var(--text);
+    padding: 10px 20px;
+    border-radius: 20px;
+    cursor: pointer;
+    font-size: 14px;
+    font-weight: 600;
+    margin-bottom: 24px;
+    transition: all .2s;
+}
+
+.back-btn:hover {
+    background: rgba(0,0,0,.5);
+}
+
+.album-header, .playlist-header {
+    display: flex;
+    gap: 24px;
+    margin-bottom: 32px;
+    align-items: flex-end;
+}
+
+.album-cover {
+    width: 200px;
+    height: 200px;
+    border-radius: 8px;
+    box-shadow: 0 8px 24px rgba(0,0,0,.5);
+}
+
+.playlist-icon-large {
+    width: 200px;
+    height: 200px;
+    font-size: 120px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(0,0,0,.3);
+    border-radius: 8px;
+}
+
+.album-info, .playlist-info-large {
+    flex: 1;
+}
+
+.album-info h1, .playlist-info-large h1 {
+    font-size: 48px;
+    font-weight: 900;
+    margin-bottom: 8px;
+}
+
+.album-info p, .playlist-info-large p {
+    color: var(--muted);
+    font-size: 14px;
+    margin-bottom: 16px;
+}
+
+.play-all-btn {
+    background: var(--accent);
+    color: #000;
+    border: none;
+    padding: 14px 32px;
+    border-radius: 30px;
+    font-size: 16px;
+    font-weight: 700;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    transition: all .2s;
+}
+
+.play-all-btn:hover {
+    background: var(--accent-dim);
+    transform: scale(1.05);
+}
+
+.album-songs, .playlist-songs {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.album-song-item {
+    background: rgba(0,0,0,.3);
+    border-radius: 8px;
+    padding: 12px;
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    cursor: pointer;
+    transition: all .2s;
+}
+
+.album-song-item:hover {
+    background: rgba(0,0,0,.5);
+}
+
+.song-number {
+    color: var(--muted);
+    font-size: 16px;
+    font-weight: 600;
+    min-width: 24px;
+}
+
+.album-song-item img {
+    width: 48px;
+    height: 48px;
+    border-radius: 4px;
+}
+
+.left-sidebar.minimized .nav-btn span:first-child {
+    font-size: 24px;
+}
+
+.left-sidebar.minimized .nav-btn {
+    justify-content: center;
+    padding: 12px;
+}
+
+.left-sidebar.minimized .logo {
+    font-size: 20px;
+}
 </style>
 </head>
 <body>
@@ -847,32 +981,142 @@ renderMixes();
 updateLikedCount();
 
 // Load YouTube API
-const tag = document.createElement('script');
-tag.src = "https://www.youtube.com/iframe_api";
-document.getElementsByTagName('script')[0].parentNode.insertBefore(tag, document.getElementsByTagName('script')[0]);
+if (!window.YT) {
+    const tag = document.createElement('script');
+    tag.src = "https://www.youtube.com/iframe_api";
+    const firstScriptTag = document.getElementsByTagName('script')[0];
+    firstScriptTag.parentNode.insertBefore(tag, firstScriptTag);
+}
 
-function onYouTubeIframeAPIReady() {
-    ytPlayer = new YT.Player('player', {
-        events: {
-            'onStateChange': onPlayerStateChange
-        }
-    });
+window.onYouTubeIframeAPIReady = function() {
+    console.log('YouTube IFrame API is fully loaded');
+    playerReady = true;
+    
+    // If we were waiting for a song → start it now
+    if (pendingVideo) {
+        initPlayer(pendingVideo);
+        pendingVideo = null;
+    }
+};
+
+let playerReady = false;
+let pendingVideo = null;
+
+function initPlayer(videoId) {
+    if (!window.YT || !window.YT.Player) {
+        console.log('API not ready yet — will try again soon');
+        pendingVideo = videoId;           // remember which video to play
+        return;
+    }
+
+    if (!ytPlayer || !ytPlayer.loadVideoById) {
+        console.log('Creating new YT.Player instance');
+        ytPlayer = new YT.Player('player', {
+            height: '100%',
+            width: '100%',
+            videoId: videoId,
+            playerVars: {
+                autoplay: 1,
+                enablejsapi: 1,
+                rel: 0,
+                modestbranding: 1,
+                origin: window.location.origin   // ← very helpful for local/dev
+            },
+            events: {
+                onReady: (e) => {
+                    console.log('Player is ready — should start playing');
+                    playerReady = true;
+                    // Optional: e.target.playVideo();
+                },
+                onStateChange: onPlayerStateChange,
+                onError: (e) => {
+                    console.error('YouTube Player error:', e.data);
+                }
+            }
+        });
+    } else {
+        console.log('Loading video into existing player');
+        ytPlayer.loadVideoById(videoId);
+    }
 }
 
 function onPlayerStateChange(event) {
-    if (event.data === YT.PlayerState.ENDED) {
+    if (event.data === window.YT.PlayerState.ENDED) {
         skipToNext();
     }
 }
 
-// Navigation
 function showHome() {
-    document.getElementById('homeView').style.display = 'block';
-    document.getElementById('searchView').classList.remove('active');
-    document.getElementById('homeBtn').classList.add('active');
-    document.getElementById('searchBtn').classList.remove('active');
-}
+    const mainContent = document.getElementById('mainContent');
+    const searchView = document.getElementById('searchView');
+    const homeBtn = document.getElementById('homeBtn');
+    const searchBtn = document.getElementById('searchBtn');
+    
+    mainContent.innerHTML = `
+        <div id="homeView">
+            <div class="section">
+                <div class="section-header">
+                    <h2>Recently Played</h2>
+                </div>
+                <div class="recent-grid" id="recentGrid"></div>
+            </div>
 
+            <div class="section">
+                <div class="section-header">
+                    <h2>Recent Albums</h2>
+                </div>
+                <div class="scroll-container" id="albumsScroll"></div>
+            </div>
+
+            <div class="section">
+                <div class="section-header">
+                    <h2>Recommended Mixes</h2>
+                </div>
+                <div class="scroll-container" id="mixesScroll"></div>
+            </div>
+        </div>
+        
+        <div class="search-view" id="searchView">
+            <div class="search-header">
+                <input type="text" class="search-input" id="searchInput" placeholder="What do you want to listen to?">
+            </div>
+            <div class="search-results" id="searchResults"></div>
+        </div>
+    `;
+    
+    if (searchView) searchView.classList.remove('active');
+    if (homeBtn) homeBtn.classList.add('active');
+    if (searchBtn) searchBtn.classList.remove('active');
+    
+    // Re-render content
+    renderRecent();
+    renderAlbums();
+    renderMixes();
+    
+    // Re-attach search listener
+    document.getElementById('searchInput').oninput = async (e) => {
+        clearTimeout(searchTimeout);
+        const q = e.target.value.trim();
+        
+        if (!q) {
+            document.getElementById('searchResults').innerHTML = '';
+            return;
+        }
+        
+        searchTimeout = setTimeout(async () => {
+            try {
+                const [videos, playlists] = await Promise.all([
+                    fetch(`https://www.googleapis.com/youtube/v3/search?part=snippet&type=video&videoCategoryId=10&maxResults=10&q=${encodeURIComponent(q)}&key=${YT_KEY}`).then(r => r.json()),
+                    fetch(`https://www.googleapis.com/youtube/v3/search?part=snippet&type=playlist&maxResults=4&q=${encodeURIComponent(q + ' album')}&key=${YT_KEY}`).then(r => r.json())
+                ]);
+                
+                renderSearchResults(videos, playlists);
+            } catch (error) {
+                console.error("Search error:", error);
+            }
+        }, 300);
+    };
+}
 function showSearch() {
     document.getElementById('homeView').style.display = 'none';
     document.getElementById('searchView').classList.add('active');
@@ -937,7 +1181,7 @@ function renderSearchResults(videos, playlists) {
                 <div class="album-title">${escapeHtml(item.snippet.title)}</div>
                 <div class="album-artist">${escapeHtml(item.snippet.channelTitle)}</div>
             `;
-            div.onclick = () => playPlaylist(item.id.playlistId);
+            div.onclick = () => playPlaylist(item.id.playlistId, true);
             scrollContainer.appendChild(div);
         });
         
@@ -979,7 +1223,7 @@ function renderSearchResults(videos, playlists) {
     }
 }
 
-async function playPlaylist(playlistId) {
+async function playPlaylist(playlistId, isAlbum = false) {
     try {
         const response = await fetch(`https://www.googleapis.com/youtube/v3/playlistItems?part=snippet&maxResults=50&playlistId=${playlistId}&key=${YT_KEY}`);
         const data = await response.json();
@@ -990,18 +1234,72 @@ async function playPlaylist(playlistId) {
                 title: item.snippet.title,
                 artist: item.snippet.channelTitle,
                 art: item.snippet.thumbnails.medium.url
-            }));
+            })).filter(song => song.id && song.title !== 'Private video' && song.title !== 'Deleted video');
+            
             currentIndex = 0;
-            playSong(currentSongs[0]);
+            currentPlaylist = null;
+            
+            if (isAlbum) {
+                showAlbumView(currentSongs, data.items[0].snippet.channelTitle);
+            } else {
+                playSong(currentSongs[0]);
+            }
         }
     } catch (error) {
         console.error("Playlist error:", error);
     }
 }
 
+function showAlbumView(songs, albumName) {
+    const mainContent = document.getElementById('mainContent');
+    mainContent.innerHTML = `
+        <div class="album-view">
+            <button class="back-btn" onclick="showHome()">← Back</button>
+            <div class="album-header">
+                <img src="${songs[0].art}" class="album-cover">
+                <div class="album-info">
+                    <h1>${escapeHtml(albumName)}</h1>
+                    <p>${songs.length} songs</p>
+                    <button class="play-all-btn" onclick="playSong(currentSongs[0])">▶ Play All</button>
+                </div>
+            </div>
+            <div class="album-songs" id="albumSongsList"></div>
+        </div>
+    `;
+    
+    const songsList = document.getElementById('albumSongsList');
+    songs.forEach((song, i) => {
+        const div = document.createElement('div');
+        div.className = 'album-song-item';
+        div.innerHTML = `
+            <span class="song-number">${i + 1}</span>
+            <img src="${song.art}">
+            <div class="song-info">
+                <div class="song-title">${escapeHtml(song.title)}</div>
+                <div class="song-artist">${escapeHtml(song.artist)}</div>
+            </div>
+        `;
+        div.onclick = () => {
+            currentIndex = i;
+            playSong(song);
+        };
+        songsList.appendChild(div);
+    });
+}
+
 // Playback
-function playSong(song) {
-    document.getElementById('player').src = `https://www.youtube.com/embed/${song.id}?autoplay=1&enablejsapi=1&rel=0`;
+function playSong(song, fromPlaylist = null) {
+    if (fromPlaylist) {
+        currentPlaylist = fromPlaylist;
+        currentSongs = playlists[fromPlaylist].songs;
+        currentIndex = currentSongs.findIndex(s => s.id === song.id);
+    } else {
+        const idx = currentSongs.findIndex(s => s.id === song.id);
+        if (idx !== -1) currentIndex = idx;
+    }
+    
+    initPlayer(song.id);
+    
     document.getElementById('npTitle').textContent = song.title;
     document.getElementById('npArtist').textContent = song.artist;
     
@@ -1009,10 +1307,6 @@ function playSong(song) {
     updateGradient(song.art);
     fetchLyrics(song.title, song.artist);
     showToast(song);
-    
-    // Update index if song is in current playlist
-    const idx = currentSongs.findIndex(s => s.id === song.id);
-    if (idx !== -1) currentIndex = idx;
 }
 
 function skipToNext() {
@@ -1076,16 +1370,6 @@ function renderRecent() {
 // Albums (from recent)
 function renderAlbums() {
     const container = document.getElementById('albumsScroll');
-    const albums = recent.slice(0, 6);
-    
-    albums.forEach(song => {
-        const div = document.createElement('div');
-        div.className = 'album-card';
-        div.innerHTML = `
-            <img src="${song.art}">
-            <div class="album-title">${esc// Albums (from recent)
-function renderAlbums() {
-    const container = document.getElementById('albumsScroll');
     container.innerHTML = '';
     const albums = recent.slice(0, 6);
     
@@ -1145,17 +1429,89 @@ function renderPlaylists() {
 function viewPlaylist(name) {
     currentPlaylist = name;
     currentSongs = playlists[name].songs;
-    currentIndex = 0;
-    if (currentSongs.length > 0) {
-        playSong(currentSongs[0]);
+    
+    const mainContent = document.getElementById('mainContent');
+    mainContent.innerHTML = `
+        <div class="playlist-view">
+            <button class="back-btn" onclick="showHome()">← Back</button>
+            <div class="playlist-header">
+                <div class="playlist-icon-large">${playlists[name].emoji || '🎵'}</div>
+                <div class="playlist-info-large">
+                    <h1>${escapeHtml(name)}</h1>
+                    <p>${currentSongs.length} songs</p>
+                    ${currentSongs.length > 0 ? '<button class="play-all-btn" onclick="currentIndex=0; playSong(currentSongs[0])">▶ Play All</button>' : ''}
+                </div>
+            </div>
+            <div class="playlist-songs" id="playlistSongsList"></div>
+        </div>
+    `;
+    
+    const songsList = document.getElementById('playlistSongsList');
+    if (currentSongs.length === 0) {
+        songsList.innerHTML = '<p style="text-align:center; color:var(--muted); padding:40px;">No songs yet. Search and add some!</p>';
+    } else {
+        currentSongs.forEach((song, i) => {
+            const div = document.createElement('div');
+            div.className = 'album-song-item';
+            div.innerHTML = `
+                <span class="song-number">${i + 1}</span>
+                <img src="${song.art}">
+                <div class="song-info">
+                    <div class="song-title">${escapeHtml(song.title)}</div>
+                    <div class="song-artist">${escapeHtml(song.artist)}</div>
+                </div>
+            `;
+            div.onclick = () => {
+                currentIndex = i;
+                playSong(song);
+            };
+            songsList.appendChild(div);
+        });
     }
 }
 
 function viewLikedSongs() {
     currentSongs = liked;
     currentIndex = 0;
-    if (currentSongs.length > 0) {
-        playSong(currentSongs[0]);
+    currentPlaylist = null;
+    
+    const mainContent = document.getElementById('mainContent');
+    mainContent.innerHTML = `
+        <div class="playlist-view">
+            <button class="back-btn" onclick="showHome()">← Back</button>
+            <div class="playlist-header">
+                <div class="playlist-icon-large">💚</div>
+                <div class="playlist-info-large">
+                    <h1>Liked Songs</h1>
+                    <p>${currentSongs.length} songs</p>
+                    ${currentSongs.length > 0 ? '<button class="play-all-btn" onclick="currentIndex=0; playSong(currentSongs[0])">▶ Play All</button>' : ''}
+                </div>
+            </div>
+            <div class="playlist-songs" id="likedSongsList"></div>
+        </div>
+    `;
+    
+    const songsList = document.getElementById('likedSongsList');
+    if (currentSongs.length === 0) {
+        songsList.innerHTML = '<p style="text-align:center; color:var(--muted); padding:40px;">No liked songs yet</p>';
+    } else {
+        currentSongs.forEach((song, i) => {
+            const div = document.createElement('div');
+            div.className = 'album-song-item';
+            div.innerHTML = `
+                <span class="song-number">${i + 1}</span>
+                <img src="${song.art}">
+                <div class="song-info">
+                    <div class="song-title">${escapeHtml(song.title)}</div>
+                    <div class="song-artist">${escapeHtml(song.artist)}</div>
+                </div>
+            `;
+            div.onclick = () => {
+                currentIndex = i;
+                playSong(song);
+            };
+            songsList.appendChild(div);
+        });
     }
 }
 
