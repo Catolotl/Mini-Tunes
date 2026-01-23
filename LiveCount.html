@@ -946,6 +946,25 @@ body{
 <script>
 const YT_KEY = "AIzaSyDNd7dwB1rZEpJzpyRrVZQwSKHvnt3Q7vQ";
 
+// At the very top of <script> (or in a separate early script tag)
+if (!window.YT) {
+    const tag = document.createElement('script');
+    tag.src = "https://www.youtube.com/iframe_api";
+    const first = document.getElementsByTagName('script')[0];
+    first.parentNode.insertBefore(tag, first);
+}
+
+window.onYouTubeIframeAPIReady = function() {
+    console.log('YouTube IFrame API fully ready');
+    window.ytPlayer = new YT.Player('player', {
+        events: {
+            'onReady': () => console.log('Player ready'),
+            'onStateChange': onPlayerStateChange,
+            'onError': (e) => console.error('YT Player error:', e.data)
+        }
+    });
+};
+
 // Storage
 function save(key, data) {
     try {
@@ -972,6 +991,8 @@ let currentPlaylist = null;
 let currentSongs = [];
 let currentIndex = -1;
 let ytPlayer = null;
+
+let lastPlayedVideoId = null;
 
 // Initialize
 renderRecent();
@@ -1286,27 +1307,72 @@ function showAlbumView(songs, albumName) {
         songsList.appendChild(div);
     });
 }
-
-// Playback
 function playSong(song, fromPlaylist = null) {
+    // Prevent playing the exact same video again immediately
+    if (lastPlayedVideoId === song.id) {
+        console.log("Already playing this exact video — skipping duplicate call");
+        return;
+    }
+    lastPlayedVideoId = song.id;
+
+    // ── 1. Update playback context & index ─────────────────────────────────
     if (fromPlaylist) {
         currentPlaylist = fromPlaylist;
         currentSongs = playlists[fromPlaylist].songs;
         currentIndex = currentSongs.findIndex(s => s.id === song.id);
+        if (currentIndex === -1) currentIndex = 0;
     } else {
         const idx = currentSongs.findIndex(s => s.id === song.id);
         if (idx !== -1) currentIndex = idx;
     }
-    
-    initPlayer(song.id);
-    
-    document.getElementById('npTitle').textContent = song.title;
-    document.getElementById('npArtist').textContent = song.artist;
-    
+
+    // ── 2. Update UI ───────────────────────────────────────────────────────
+    document.getElementById('npTitle').textContent = song.title || "Unknown Title";
+    document.getElementById('npArtist').textContent = song.artist || "Unknown Artist";
+
     addToRecent(song);
-    updateGradient(song.art);
+    if (song.art) updateGradient(song.art);
     fetchLyrics(song.title, song.artist);
     showToast(song);
+
+    // ── 3. Build clean embed parameters ────────────────────────────────────
+    const params = new URLSearchParams({
+        autoplay: 1,
+        enablejsapi: 1,
+        origin: window.location.origin,           // Critical for postMessage / security
+        rel: 0,
+        modestbranding: 1,
+        showinfo: 0,
+        iv_load_policy: 3,
+        playsinline: 1,
+        fs: 1
+    });
+
+    const embedUrl = `https://www.youtube.com/embed/${song.id}?${params.toString()}`;
+
+    // ── 4. Try to use the real YouTube Player API first ─────────────────────
+    if (window.ytPlayer && typeof window.ytPlayer.loadVideoById === 'function') {
+        try {
+            window.ytPlayer.loadVideoById({
+                videoId: song.id,
+                startSeconds: 0
+            });
+            console.log(`Playing "${song.title}" via ytPlayer.loadVideoById`);
+        } catch (err) {
+            console.error("loadVideoById failed:", err);
+            // Fallback to src
+            document.getElementById('player').src = embedUrl;
+            console.log(`Fallback: set iframe src directly`);
+        }
+    } else {
+        // API not ready or not initialized → direct src change
+        document.getElementById('player').src = embedUrl;
+        console.log(`Playing "${song.title}" via direct iframe src (API not ready)`);
+    }
+
+    // Optional: give focus to iframe (helps autoplay policies in some browsers)
+    const playerEl = document.getElementById('player');
+    if (playerEl) playerEl.focus?.();
 }
 
 function skipToNext() {
@@ -1349,9 +1415,16 @@ function addToRecent(song) {
 }
 
 function renderRecent() {
-    const grid = document.getElementById('recentGrid');
-    grid.innerHTML = '';
-    
+    const recentDiv = document.getElementById('recentGrid');  // ← use correct ID!
+    if (!recentDiv) return;
+
+    recentDiv.innerHTML = '';
+
+    if (recent.length === 0) {
+        recentDiv.innerHTML = '<div style="padding:40px;text-align:center;color:var(--muted);grid-column:1/-1">No recent songs yet</div>';
+        return;
+    }
+
     recent.forEach(song => {
         const div = document.createElement('div');
         div.className = 'song-card';
@@ -1363,7 +1436,7 @@ function renderRecent() {
             </div>
         `;
         div.onclick = () => playSong(song);
-        grid.appendChild(div);
+        recentDiv.appendChild(div);   // ← fixed: recentDiv, not grid
     });
 }
 
