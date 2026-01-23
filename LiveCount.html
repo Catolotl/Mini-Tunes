@@ -348,6 +348,7 @@ body{
     text-overflow:ellipsis;
     display:-webkit-box;
     -webkit-line-clamp:2;
+    line-clamp:2;
     -webkit-box-orient:vertical;
 }
 
@@ -944,7 +945,19 @@ body{
 </div>
 
 <script>
-const YT_KEY = "AIzaSyDNd7dwB1rZEpJzpyRrVZQwSKHvnt3Q7vQ";
+const API_KEYS = [
+    "AIzaSyDNd7dwB1rZEpJzpyRrVZQwSKHvnt3Q7vQ",   // your first key
+    "AIzaSyBhL_4HiCFl_WWDSGtXHz-yUVrtE1UThNQ"   // ← paste the new one here
+];
+
+let currentKeyIndex = 0;
+
+function getNextKey() {
+    const key = API_KEYS[currentKeyIndex];
+    currentKeyIndex = (currentKeyIndex + 1) % API_KEYS.length;
+    console.log(`API call using key #${currentKeyIndex + 1}: ${key.slice(0, 10)}...`);
+    return key;
+}
 
 // At the very top of <script> (or in a separate early script tag)
 if (!window.YT) {
@@ -1127,8 +1140,8 @@ function showHome() {
         searchTimeout = setTimeout(async () => {
             try {
                 const [videos, playlists] = await Promise.all([
-                    fetch(`https://www.googleapis.com/youtube/v3/search?part=snippet&type=video&videoCategoryId=10&maxResults=10&q=${encodeURIComponent(q)}&key=${YT_KEY}`).then(r => r.json()),
-                    fetch(`https://www.googleapis.com/youtube/v3/search?part=snippet&type=playlist&maxResults=4&q=${encodeURIComponent(q + ' album')}&key=${YT_KEY}`).then(r => r.json())
+                    fetch(`https://www.googleapis.com/youtube/v3/search?part=snippet&type=video&videoCategoryId=10&maxResults=10&q=${encodeURIComponent(q)}&key=${getNextKey()}`).then(r => r.json()),
+                    fetch(`https://www.googleapis.com/youtube/v3/search?part=snippet&type=playlist&maxResults=4&q=${encodeURIComponent(q + ' album')}&key=${getNextKey()}`).then(r => r.json())
                 ]);
                 
                 renderSearchResults(videos, playlists);
@@ -1153,32 +1166,6 @@ function toggleLeftSidebar() {
 function toggleRightSidebar() {
     document.getElementById('rightSidebar').classList.toggle('minimized');
 }
-
-// Search
-let searchTimeout;
-document.getElementById('searchInput').oninput = async (e) => {
-    clearTimeout(searchTimeout);
-    const q = e.target.value.trim();
-    
-    if (!q) {
-        document.getElementById('searchResults').innerHTML = '';
-        return;
-    }
-    
-    searchTimeout = setTimeout(async () => {
-        try {
-            // Search for both videos and playlists
-            const [videos, playlists] = await Promise.all([
-                fetch(`https://www.googleapis.com/youtube/v3/search?part=snippet&type=video&videoCategoryId=10&maxResults=10&q=${encodeURIComponent(q)}&key=${YT_KEY}`).then(r => r.json()),
-                fetch(`https://www.googleapis.com/youtube/v3/search?part=snippet&type=playlist&maxResults=4&q=${encodeURIComponent(q + ' album')}&key=${YT_KEY}`).then(r => r.json())
-            ]);
-            
-            renderSearchResults(videos, playlists);
-        } catch (error) {
-            console.error("Search error:", error);
-        }
-    }, 300);
-};
 
 function renderSearchResults(videos, playlists) {
     const container = document.getElementById('searchResults');
@@ -1246,7 +1233,7 @@ function renderSearchResults(videos, playlists) {
 
 async function playPlaylist(playlistId, isAlbum = false) {
     try {
-        const response = await fetch(`https://www.googleapis.com/youtube/v3/playlistItems?part=snippet&maxResults=50&playlistId=${playlistId}&key=${YT_KEY}`);
+        const response = await fetch(`https://www.googleapis.com/youtube/v3/playlistItems?part=snippet&maxResults=50&playlistId=${playlistId}&key=${getNextKey()}`);
         const data = await response.json();
         
         if (data.items && data.items.length > 0) {
