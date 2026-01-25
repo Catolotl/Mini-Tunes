@@ -939,18 +939,10 @@ body{
 </div>
 
 <script>
-const API_KEYS = [
-    "AIzaSyDNd7dwB1rZEpJzpyRrVZQwSKHvnt3Q7vQ",   // your first key
-    "AIzaSyDNd7dwB1rZEpJzpyRrVZQwSKHvnt3Q7vQ"
-];
-
-let currentKeyIndex = 0;
+const API_KEY = "AIzaSyDNd7dwB1rZEpJzpyRrVZQwSKHvnt3Q7vQ";
 
 function getNextKey() {
-    const key = API_KEYS[currentKeyIndex];
-    currentKeyIndex = (currentKeyIndex + 1) % API_KEYS.length;
-    console.log(`API call using key #${currentKeyIndex + 1}: ${key.slice(0, 10)}...`);
-    return key;
+    return API_KEY;
 }
 
 // At the very top of <script> (or in a separate early script tag)
@@ -998,6 +990,7 @@ let currentPlaylist = null;
 let currentSongs = [];
 let currentIndex = -1;
 let ytPlayer = null;
+let searchTimeout = null;  // ← Add this line
 
 let lastPlayedVideoId = null;
 
@@ -1216,6 +1209,7 @@ function renderSearchResults(videos, playlists) {
                     <div class="song-title">${escapeHtml(song.title)}</div>
                     <div class="song-artist">${escapeHtml(song.artist)}</div>
                 </div>
+                <button onclick="event.stopPropagation(); showAddToPlaylistMenu(${JSON.stringify(song).replace(/"/g, '&quot;')})" style="background:var(--accent);color:#000;border:none;width:32px;height:32px;border-radius:50%;cursor:pointer;font-size:18px;flex-shrink:0;">+</button>
             `;
             div.onclick = () => playSong(song);
             grid.appendChild(div);
@@ -1242,7 +1236,12 @@ async function playPlaylist(playlistId, isAlbum = false) {
             currentPlaylist = null;
             
             if (isAlbum) {
-                showAlbumView(currentSongs, data.items[0].snippet.channelTitle);
+                // Fetch playlist details to get the actual album name
+                const playlistResponse = await fetch(`https://www.googleapis.com/youtube/v3/playlists?part=snippet&id=${playlistId}&key=${getNextKey()}`);
+                const playlistData = await playlistResponse.json();
+                const albumName = playlistData.items?.[0]?.snippet?.title || data.items[0].snippet.channelTitle;
+                
+                showAlbumView(currentSongs, albumName);
             } else {
                 playSong(currentSongs[0]);
             }
@@ -1422,22 +1421,51 @@ function renderRecent() {
 }
 
 // Albums (from recent)
-function renderAlbums() {
+async function renderAlbums() {
     const container = document.getElementById('albumsScroll');
-    container.innerHTML = '';
-    const albums = recent.slice(0, 6);
+    if (!container) return;
     
-    albums.forEach(song => {
-        const div = document.createElement('div');
-        div.className = 'album-card';
-        div.innerHTML = `
-            <img src="${song.art}">
-            <div class="album-title">${escapeHtml(song.title)}</div>
-            <div class="album-artist">${escapeHtml(song.artist)}</div>
-        `;
-        div.onclick = () => playSong(song);
-        container.appendChild(div);
-    });
+    container.innerHTML = '<div style="padding:20px;color:var(--muted);">Loading albums...</div>';
+    
+    // Get unique artists from recent songs
+    const uniqueArtists = [...new Set(recent.map(s => s.artist))].slice(0, 3);
+    
+    if (uniqueArtists.length === 0) {
+        container.innerHTML = '<div style="padding:20px;color:var(--muted);">Play some songs to see album recommendations</div>';
+        return;
+    }
+    
+    try {
+        const albumPromises = uniqueArtists.map(artist => 
+            fetch(`https://www.googleapis.com/youtube/v3/search?part=snippet&type=playlist&maxResults=2&q=${encodeURIComponent(artist + ' album')}&key=${getNextKey()}`)
+            .then(r => r.json())
+        );
+        
+        const results = await Promise.all(albumPromises);
+        const albums = results.flatMap(data => data.items || []).slice(0, 6);
+        
+        container.innerHTML = '';
+        
+        if (albums.length === 0) {
+            container.innerHTML = '<div style="padding:20px;color:var(--muted);">No albums found</div>';
+            return;
+        }
+        
+        albums.forEach(item => {
+            const div = document.createElement('div');
+            div.className = 'album-card';
+            div.innerHTML = `
+                <img src="${item.snippet.thumbnails.medium.url}">
+                <div class="album-title">${escapeHtml(item.snippet.title)}</div>
+                <div class="album-artist">${escapeHtml(item.snippet.channelTitle)}</div>
+            `;
+            div.onclick = () => playPlaylist(item.id.playlistId, true);
+            container.appendChild(div);
+        });
+    } catch (error) {
+        console.error("Album fetch error:", error);
+        container.innerHTML = '<div style="padding:20px;color:var(--muted);">Could not load albums</div>';
+    }
 }
 
 // Mixes (recommended - using recent songs)
@@ -1493,7 +1521,11 @@ function viewPlaylist(name) {
                 <div class="playlist-info-large">
                     <h1>${escapeHtml(name)}</h1>
                     <p>${currentSongs.length} songs</p>
-                    ${currentSongs.length > 0 ? '<button class="play-all-btn" onclick="currentIndex=0; playSong(currentSongs[0])">▶ Play All</button>' : ''}
+                    <div style="display:flex;gap:12px;margin-top:16px;">
+                        ${currentSongs.length > 0 ? '<button class="play-all-btn" onclick="currentIndex=0; playSong(currentSongs[0])">▶ Play All</button>' : ''}
+                        <button onclick="editPlaylist('${escapeHtml(name)}')" style="background:var(--soft);color:var(--text);border:none;padding:14px 24px;border-radius:30px;font-size:14px;font-weight:600;cursor:pointer;">✏️ Edit</button>
+                        <button onclick="deletePlaylist('${escapeHtml(name)}')" style="background:rgba(255,0,0,.2);color:var(--text);border:none;padding:14px 24px;border-radius:30px;font-size:14px;font-weight:600;cursor:pointer;">🗑️ Delete</button>
+                    </div>
                 </div>
             </div>
             <div class="playlist-songs" id="playlistSongsList"></div>
@@ -1514,6 +1546,7 @@ function viewPlaylist(name) {
                     <div class="song-title">${escapeHtml(song.title)}</div>
                     <div class="song-artist">${escapeHtml(song.artist)}</div>
                 </div>
+                <button onclick="event.stopPropagation(); removeSongFromPlaylist('${escapeHtml(name)}', '${song.id}')" style="background:rgba(255,0,0,.2);color:var(--text);border:none;width:32px;height:32px;border-radius:50%;cursor:pointer;font-size:16px;margin-left:auto;">×</button>
             `;
             div.onclick = () => {
                 currentIndex = i;
@@ -1652,6 +1685,180 @@ function escapeHtml(text) {
     div.textContent = text;
     return div.innerHTML;
 }
+
+// Playlist Management Functions
+
+// Add current song to a playlist
+function addToPlaylist(song, playlistName) {
+    if (!playlists[playlistName]) return;
+    
+    // Check if song already exists
+    const exists = playlists[playlistName].songs.some(s => s.id === song.id);
+    if (exists) {
+        showNotification('Song already in playlist');
+        return;
+    }
+    
+    playlists[playlistName].songs.push(song);
+    save('playlists', playlists);
+    renderPlaylists();
+    showNotification(`Added to ${playlistName}`);
+}
+
+// Show add to playlist menu
+function showAddToPlaylistMenu(song) {
+    const playlistNames = Object.keys(playlists);
+    
+    if (playlistNames.length === 0) {
+        showNotification('Create a playlist first!');
+        return;
+    }
+    
+    const menu = document.createElement('div');
+    menu.className = 'modal active';
+    menu.innerHTML = `
+        <div class="modal-content">
+            <h3>Add to Playlist</h3>
+            <div style="max-height: 300px; overflow-y: auto; margin-bottom: 16px;">
+                ${playlistNames.map(name => `
+                    <div class="playlist-item" onclick="addToPlaylist(${JSON.stringify(song).replace(/"/g, '&quot;')}, '${escapeHtml(name)}'); closeAddMenu()" style="margin-bottom: 8px;">
+                        <span class="playlist-icon">${playlists[name].emoji || '🎵'}</span>
+                        <div class="playlist-info">
+                            <div class="playlist-name">${escapeHtml(name)}</div>
+                            <div class="playlist-count">${playlists[name].songs.length} songs</div>
+                        </div>
+                    </div>
+                `).join('')}
+            </div>
+            <div class="modal-buttons">
+                <button class="secondary" onclick="closeAddMenu()">Cancel</button>
+            </div>
+        </div>
+    `;
+    menu.id = 'addMenu';
+    document.body.appendChild(menu);
+}
+
+function closeAddMenu() {
+    const menu = document.getElementById('addMenu');
+    if (menu) menu.remove();
+}
+
+// Delete playlist
+function deletePlaylist(name) {
+    if (confirm(`Delete playlist "${name}"?`)) {
+        delete playlists[name];
+        save('playlists', playlists);
+        renderPlaylists();
+        showHome();
+        showNotification('Playlist deleted');
+    }
+}
+
+// Edit playlist
+function editPlaylist(name) {
+    const modal = document.createElement('div');
+    modal.className = 'modal active';
+    modal.id = 'editModal';
+    modal.innerHTML = `
+        <div class="modal-content">
+            <h3>Edit Playlist</h3>
+            <input type="text" id="editPlaylistNameInput" placeholder="Playlist name" value="${escapeHtml(name)}">
+            <input type="text" id="editPlaylistEmojiInput" placeholder="Emoji (e.g. 🎵)" maxlength="2" value="${playlists[name].emoji || '🎵'}">
+            <div class="modal-buttons">
+                <button class="secondary" onclick="closeEditModal()">Cancel</button>
+                <button class="primary" onclick="savePlaylistEdit('${escapeHtml(name)}')">Save</button>
+            </div>
+        </div>
+    `;
+    document.body.appendChild(modal);
+}
+
+function closeEditModal() {
+    const modal = document.getElementById('editModal');
+    if (modal) modal.remove();
+}
+
+function savePlaylistEdit(oldName) {
+    const newName = document.getElementById('editPlaylistNameInput').value.trim();
+    const newEmoji = document.getElementById('editPlaylistEmojiInput').value.trim() || '🎵';
+    
+    if (!newName) {
+        showNotification('Playlist name cannot be empty');
+        return;
+    }
+    
+    if (newName !== oldName && playlists[newName]) {
+        showNotification('Playlist name already exists');
+        return;
+    }
+    
+    const songs = playlists[oldName].songs;
+    delete playlists[oldName];
+    playlists[newName] = { emoji: newEmoji, songs: songs };
+    
+    save('playlists', playlists);
+    renderPlaylists();
+    closeEditModal();
+    showNotification('Playlist updated');
+    
+    // If we're currently viewing this playlist, refresh the view
+    if (currentPlaylist === oldName) {
+        viewPlaylist(newName);
+    } else {
+        showHome();
+    }
+}
+
+// Remove song from playlist
+function removeSongFromPlaylist(playlistName, songId) {
+    if (!playlists[playlistName]) return;
+    
+    playlists[playlistName].songs = playlists[playlistName].songs.filter(s => s.id !== songId);
+    save('playlists', playlists);
+    renderPlaylists();
+    viewPlaylist(playlistName);
+    showNotification('Song removed');
+}
+
+// Simple notification system
+function showNotification(message) {
+    const notif = document.createElement('div');
+    notif.style.cssText = `
+        position: fixed;
+        top: 24px;
+        right: 24px;
+        background: rgba(0,0,0,.95);
+        backdrop-filter: blur(10px);
+        color: var(--text);
+        padding: 16px 24px;
+        border-radius: 8px;
+        box-shadow: 0 8px 32px rgba(0,0,0,.5);
+        z-index: 10000;
+        animation: slideIn 0.3s ease;
+    `;
+    notif.textContent = message;
+    document.body.appendChild(notif);
+    
+    setTimeout(() => {
+        notif.style.animation = 'slideOut 0.3s ease';
+        setTimeout(() => notif.remove(), 300);
+    }, 2000);
+}
+
+// Add CSS animations
+const style = document.createElement('style');
+style.textContent = `
+    @keyframes slideIn {
+        from { transform: translateX(400px); opacity: 0; }
+        to { transform: translateX(0); opacity: 1; }
+    }
+    @keyframes slideOut {
+        from { transform: translateX(0); opacity: 1; }
+        to { transform: translateX(400px); opacity: 0; }
+    }
+`;
+document.head.appendChild(style);
 </script>
 </body>
 </html>
