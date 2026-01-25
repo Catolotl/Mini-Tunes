@@ -1471,21 +1471,99 @@ async function renderAlbums() {
 // Mixes (recommended - using recent songs)
 function renderMixes() {
     const container = document.getElementById('mixesScroll');
+    if (!container) return;
+
     container.innerHTML = '';
-    const mixes = recent.slice(0, 6);
-    
-    mixes.forEach(song => {
+
+    const seeds = recent.slice(0, 6);
+
+    if (seeds.length === 0) {
+        container.innerHTML = '<div style="padding:20px;color:var(--muted);">Play some music to get mixes</div>';
+        return;
+    }
+
+    seeds.forEach(song => {
         const div = document.createElement('div');
         div.className = 'album-card';
         div.innerHTML = `
             <img src="${song.art}">
             <div class="album-title">${escapeHtml(song.title)} Mix</div>
-            <div class="album-artist">AI Generated</div>
+            <div class="album-artist">Based on ${escapeHtml(song.artist)}</div>
         `;
-        div.onclick = () => playSong(song);
+        div.onclick = () => openMix(song);
         container.appendChild(div);
     });
 }
+
+async function openMix(seedSong) {
+    const songs = await generateMix(seedSong);
+
+    if (songs.length === 0) {
+        showNotification("Couldn't generate mix");
+        return;
+    }
+
+    currentSongs = songs;
+    currentIndex = 0;
+    currentPlaylist = null;
+
+    const mixName = `${seedSong.title} Mix`;
+
+    const mainContent = document.getElementById('mainContent');
+    mainContent.innerHTML = `
+        <div class="playlist-view">
+            <button class="back-btn" onclick="showHome()">← Back</button>
+            <div class="playlist-header">
+                <div class="playlist-icon-large">✦</div>
+                <div class="playlist-info-large">
+                    <h1>${escapeHtml(mixName)}</h1>
+                    <p>${songs.length} songs · Recommended</p>
+                    <button class="play-all-btn" onclick="playSong(currentSongs[0])">▶ Play</button>
+                </div>
+            </div>
+            <div class="playlist-songs" id="mixSongsList"></div>
+        </div>
+    `;
+
+    const list = document.getElementById('mixSongsList');
+    songs.forEach((song, i) => {
+        const div = document.createElement('div');
+        div.className = 'album-song-item';
+        div.innerHTML = `
+            <span class="song-number">${i + 1}</span>
+            <img src="${song.art}">
+            <div class="song-info">
+                <div class="song-title">${escapeHtml(song.title)}</div>
+                <div class="song-artist">${escapeHtml(song.artist)}</div>
+            </div>
+        `;
+        div.onclick = () => {
+            currentIndex = i;
+            playSong(song);
+        };
+        list.appendChild(div);
+    });
+}
+
+    async function generateMix(seedSong) {
+    const query = `${seedSong.artist} official audio`;
+
+    
+    const res = await fetch(
+        `https://www.googleapis.com/youtube/v3/search?part=snippet&type=video&videoCategoryId=10&maxResults=15&q=${encodeURIComponent(query)}&key=${getNextKey()}`
+    );
+    const data = await res.json();
+
+    return (data.items || [])
+        .map(item => ({
+            id: item.id.videoId,
+            title: item.snippet.title,
+            artist: item.snippet.channelTitle,
+            art: item.snippet.thumbnails.medium.url
+        }))
+        .filter(song => song.id);
+}
+
 
 // Playlists
 function renderPlaylists() {
