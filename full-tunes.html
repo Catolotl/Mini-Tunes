@@ -1267,7 +1267,7 @@ body::before {
     position: absolute;
     inset: 0;
     width: 100%;
-    height: 100%;
+    height: 50%;
     aspect-ratio: unset;
     border-bottom: none;
     z-index: 1;
@@ -2736,6 +2736,30 @@ style.textContent = `
     }
 `;
 document.head.appendChild(style);
+</script>
+
+<script>
+// Auto-minimize right sidebar on page load until a song is played
+(function() {
+    // Minimize right sidebar on page load
+    const rightSidebar = document.getElementById('rightSidebar');
+    if (rightSidebar) {
+        rightSidebar.classList.add('minimized');
+    }
+
+    // Override the playSong function to auto-open sidebar when playing
+    const originalPlaySong = window.playSong;
+    window.playSong = function(song, fromPlaylist) {
+        // Call the original playSong function
+        originalPlaySong.call(this, song, fromPlaylist);
+        
+        // Automatically open the right sidebar when a song starts playing
+        const rightSidebar = document.getElementById('rightSidebar');
+        if (rightSidebar && rightSidebar.classList.contains('minimized')) {
+            rightSidebar.classList.remove('minimized');
+        }
+    };
+})();
 </script>
 </body>
 </html>
