@@ -1712,12 +1712,13 @@ body::before {
 </div>
 
 <script>
-
 const API_KEY = "AIzaSyDNd7dwB1rZEpJzpyRrVZQwSKHvnt3Q7vQ";
 
 function getNextKey() {
     return API_KEY;
 }
+
+// At the very top of <script> (or in a separate early script tag)
 if (!window.YT) {
     const tag = document.createElement('script');
     tag.src = "https://www.youtube.com/iframe_api";
@@ -1762,58 +1763,9 @@ let currentPlaylist = null;
 let currentSongs = [];
 let currentIndex = -1;
 let ytPlayer = null;
-let searchTimeout = null;
+let searchTimeout = null;  // ← Add this line
+
 let lastPlayedVideoId = null;
-let playerReady = false;
-let pendingVideo = null;
-
-// ============================================
-// AI-POWERED SONG NAME CLEANING & COVER ART
-// ============================================
-
-// Clean song titles using Pollinations AI API
-async function cleanSongName(rawTitle, artist) {
-    try {
-        const prompt = `Extract only the core song title from this YouTube video title: "${rawTitle}". 
-Remove hashtags, artist names in parentheses, tags like [Official Video], (Audio), etc. 
-Return ONLY the clean song title, nothing else. 
-Examples:
-"popular wicked #cynthiaErivo #Broadway" → "Popular"
-"Shape of You (Official Video)" → "Shape of You"
-"Blinding Lights - The Weeknd (Audio)" → "Blinding Lights"
-
-Now clean: "${rawTitle}"`;
-
-        const response = await fetch('https://text.pollinations.ai/' + encodeURIComponent(prompt));
-        const cleanedTitle = await response.text();
-        
-        return cleanedTitle.trim().replace(/['"]/g, '');
-    } catch (error) {
-        console.error('Error cleaning song name:', error);
-        // Fallback to basic cleaning
-        return rawTitle.split('(')[0].split('[')[0].split('|')[0].split('#')[0].trim();
-    }
-}
-
-// Fetch cover art from iTunes API
-async function fetchCoverArt(songTitle, artist) {
-    try {
-        const query = encodeURIComponent(`${songTitle} ${artist}`);
-        const response = await fetch(`https://itunes.apple.com/search?term=${query}&entity=song&limit=1`);
-        const data = await response.json();
-        
-        if (data.results && data.results.length > 0) {
-            // Get high-res artwork (replace 100x100 with 600x600)
-            const artworkUrl = data.results[0].artworkUrl100.replace('100x100', '600x600');
-            return artworkUrl;
-        }
-        
-        return null;
-    } catch (error) {
-        console.error('Error fetching cover art:', error);
-        return null;
-    }
-}
 
 // Initialize
 renderRecent();
@@ -1841,10 +1793,13 @@ window.onYouTubeIframeAPIReady = function() {
     }
 };
 
+let playerReady = false;
+let pendingVideo = null;
+
 function initPlayer(videoId) {
     if (!window.YT || !window.YT.Player) {
         console.log('API not ready yet — will try again soon');
-        pendingVideo = videoId;
+        pendingVideo = videoId;           // remember which video to play
         return;
     }
 
@@ -1859,12 +1814,13 @@ function initPlayer(videoId) {
                 enablejsapi: 1,
                 rel: 0,
                 modestbranding: 1,
-                origin: window.location.origin
+                origin: window.location.origin   // ← very helpful for local/dev
             },
             events: {
                 onReady: (e) => {
                     console.log('Player is ready — should start playing');
                     playerReady = true;
+                    // Optional: e.target.playVideo();
                 },
                 onStateChange: onPlayerStateChange,
                 onError: (e) => {
@@ -1955,7 +1911,6 @@ function showHome() {
         }, 300);
     };
 }
-
 function showSearch() {
     document.getElementById('homeView').style.display = 'none';
     document.getElementById('searchView').classList.add('active');
@@ -1998,8 +1953,7 @@ function toggleRightSidebar() {
     document.getElementById('rightSidebar').classList.toggle('minimized');
 }
 
-// ENHANCED: Render search results with AI-cleaned titles and cover art
-async function renderSearchResults(videos, playlists) {
+function renderSearchResults(videos, playlists) {
     const container = document.getElementById('searchResults');
     container.innerHTML = '';
     
@@ -2028,20 +1982,17 @@ async function renderSearchResults(videos, playlists) {
         container.appendChild(albumSection);
     }
     
-    // Songs section with AI enhancement
+    // Songs section
     if (videos.items && videos.items.length > 0) {
         const songSection = document.createElement('div');
         songSection.className = 'section';
         songSection.innerHTML = `
             <div class="section-header"><h2>Songs</h2></div>
-            <div class="recent-grid" id="enhancedSongsGrid"></div>
+            <div class="recent-grid"></div>
         `;
         
-        container.appendChild(songSection);
-        const grid = document.getElementById('enhancedSongsGrid');
-        
-        // Enhance songs one by one
-        for (const item of videos.items) {
+        const grid = songSection.querySelector('.recent-grid');
+        videos.items.forEach(item => {
             const song = {
                 id: item.id.videoId,
                 title: item.snippet.title,
@@ -2049,29 +2000,21 @@ async function renderSearchResults(videos, playlists) {
                 art: item.snippet.thumbnails.medium.url
             };
             
-            // Clean title and fetch cover art
-            const cleanedTitle = await cleanSongName(song.title, song.artist);
-            const coverArt = await fetchCoverArt(cleanedTitle, song.artist);
-            
-            const enhancedSong = {
-                ...song,
-                cleanTitle: cleanedTitle,
-                coverArt: coverArt || song.art
-            };
-            
             const div = document.createElement('div');
             div.className = 'song-card';
             div.innerHTML = `
-                <img src="${enhancedSong.coverArt}" alt="${escapeHtml(enhancedSong.cleanTitle)}">
+                <img src="${song.art}">
                 <div class="song-info">
-                    <div class="song-title">${escapeHtml(enhancedSong.cleanTitle)}</div>
-                    <div class="song-artist">${escapeHtml(enhancedSong.artist)}</div>
+                    <div class="song-title">${escapeHtml(song.title)}</div>
+                    <div class="song-artist">${escapeHtml(song.artist)}</div>
                 </div>
-                <button onclick="event.stopPropagation(); showAddToPlaylistMenu(${JSON.stringify(enhancedSong).replace(/"/g, '&quot;')})" style="background:var(--accent);color:#000;border:none;width:32px;height:32px;border-radius:50%;cursor:pointer;font-size:18px;flex-shrink:0;">+</button>
+                <button onclick="event.stopPropagation(); showAddToPlaylistMenu(${JSON.stringify(song).replace(/"/g, '&quot;')})" style="background:var(--accent);color:#000;border:none;width:32px;height:32px;border-radius:50%;cursor:pointer;font-size:18px;flex-shrink:0;">+</button>
             `;
             div.onclick = () => playSong(song);
             grid.appendChild(div);
-        }
+        });
+        
+        container.appendChild(songSection);
     }
 }
 
@@ -2092,6 +2035,7 @@ async function playPlaylist(playlistId, isAlbum = false) {
             currentPlaylist = null;
             
             if (isAlbum) {
+                // Fetch playlist details to get the actual album name
                 const playlistResponse = await fetch(`https://www.googleapis.com/youtube/v3/playlists?part=snippet&id=${playlistId}&key=${getNextKey()}`);
                 const playlistData = await playlistResponse.json();
                 const albumName = playlistData.items?.[0]?.snippet?.title || data.items[0].snippet.channelTitle;
@@ -2142,16 +2086,15 @@ function showAlbumView(songs, albumName) {
         songsList.appendChild(div);
     });
 }
-
-// ENHANCED: Play song with AI-cleaned title and cover art
-async function playSong(song, fromPlaylist = null) {
+function playSong(song, fromPlaylist = null) {
+    // Prevent playing the exact same video again immediately
     if (lastPlayedVideoId === song.id) {
         console.log("Already playing this exact video — skipping duplicate call");
         return;
     }
     lastPlayedVideoId = song.id;
 
-    // Update playback context
+    // ── 1. Update playback context & index ─────────────────────────────────
     if (fromPlaylist) {
         currentPlaylist = fromPlaylist;
         currentSongs = playlists[fromPlaylist].songs;
@@ -2162,30 +2105,20 @@ async function playSong(song, fromPlaylist = null) {
         if (idx !== -1) currentIndex = idx;
     }
 
-    // AI Enhancement: Clean title and fetch cover art
-    const cleanedTitle = await cleanSongName(song.title, song.artist);
-    const coverArt = await fetchCoverArt(cleanedTitle, song.artist);
-    
-    const enhancedSong = {
-        ...song,
-        cleanTitle: cleanedTitle,
-        coverArt: coverArt || song.art
-    };
-
-    // Update UI with enhanced data
-    document.getElementById('npTitle').textContent = cleanedTitle || song.title;
+    // ── 2. Update UI ───────────────────────────────────────────────────────
+    document.getElementById('npTitle').textContent = song.title || "Unknown Title";
     document.getElementById('npArtist').textContent = song.artist || "Unknown Artist";
 
-    addToRecent(enhancedSong);
-    if (enhancedSong.coverArt) updateGradient(enhancedSong.coverArt);
-    fetchLyrics(cleanedTitle, song.artist);  // Use cleaned title for lyrics
-    showToast(enhancedSong);
+    addToRecent(song);
+    if (song.art) updateGradient(song.art);
+    fetchLyrics(song.title, song.artist);
+    showToast(song);
 
-    // Build embed parameters
+    // ── 3. Build clean embed parameters ────────────────────────────────────
     const params = new URLSearchParams({
         autoplay: 1,
         enablejsapi: 1,
-        origin: window.location.origin,
+        origin: window.location.origin,           // Critical for postMessage / security
         rel: 0,
         modestbranding: 1,
         showinfo: 0,
@@ -2196,24 +2129,27 @@ async function playSong(song, fromPlaylist = null) {
 
     const embedUrl = `https://www.youtube.com/embed/${song.id}?${params.toString()}`;
 
-    // Try YouTube Player API first
+    // ── 4. Try to use the real YouTube Player API first ─────────────────────
     if (window.ytPlayer && typeof window.ytPlayer.loadVideoById === 'function') {
         try {
             window.ytPlayer.loadVideoById({
                 videoId: song.id,
                 startSeconds: 0
             });
-            console.log(`Playing "${cleanedTitle}" via ytPlayer.loadVideoById`);
+            console.log(`Playing "${song.title}" via ytPlayer.loadVideoById`);
         } catch (err) {
             console.error("loadVideoById failed:", err);
+            // Fallback to src
             document.getElementById('player').src = embedUrl;
             console.log(`Fallback: set iframe src directly`);
         }
     } else {
+        // API not ready or not initialized → direct src change
         document.getElementById('player').src = embedUrl;
-        console.log(`Playing "${cleanedTitle}" via direct iframe src (API not ready)`);
+        console.log(`Playing "${song.title}" via direct iframe src (API not ready)`);
     }
 
+    // Optional: give focus to iframe (helps autoplay policies in some browsers)
     const playerEl = document.getElementById('player');
     if (playerEl) playerEl.focus?.();
 }
@@ -2236,11 +2172,11 @@ function togglePlay() {
     // Will be implemented with YouTube API
 }
 
-// Toast notification - ENHANCED to show cover art
+// Toast notification
 function showToast(song) {
     const toast = document.getElementById('toast');
-    document.getElementById('toastImg').src = song.coverArt || song.art;
-    document.getElementById('toastTitle').textContent = song.cleanTitle || song.title;
+    document.getElementById('toastImg').src = song.art;
+    document.getElementById('toastTitle').textContent = song.title;
     toast.classList.add('show');
     
     setTimeout(() => {
@@ -2257,9 +2193,8 @@ function addToRecent(song) {
     renderRecent();
 }
 
-// ENHANCED: Render recent with cover art
 function renderRecent() {
-    const recentDiv = document.getElementById('recentGrid');
+    const recentDiv = document.getElementById('recentGrid');  // ← use correct ID!
     if (!recentDiv) return;
 
     recentDiv.innerHTML = '';
@@ -2273,14 +2208,14 @@ function renderRecent() {
         const div = document.createElement('div');
         div.className = 'song-card';
         div.innerHTML = `
-            <img src="${song.coverArt || song.art}">
+            <img src="${song.art}">
             <div class="song-info">
-                <div class="song-title">${escapeHtml(song.cleanTitle || song.title)}</div>
+                <div class="song-title">${escapeHtml(song.title)}</div>
                 <div class="song-artist">${escapeHtml(song.artist)}</div>
             </div>
         `;
         div.onclick = () => playSong(song);
-        recentDiv.appendChild(div);
+        recentDiv.appendChild(div);   // ← fixed: recentDiv, not grid
     });
 }
 
@@ -2291,6 +2226,7 @@ async function renderAlbums() {
     
     container.innerHTML = '<div style="padding:20px;color:var(--muted);">Loading albums...</div>';
     
+    // Get unique artists from recent songs
     const uniqueArtists = [...new Set(recent.map(s => s.artist))].slice(0, 3);
     
     if (uniqueArtists.length === 0) {
@@ -2349,8 +2285,8 @@ function renderMixes() {
         const div = document.createElement('div');
         div.className = 'album-card';
         div.innerHTML = `
-            <img src="${song.coverArt || song.art}">
-            <div class="album-title">${escapeHtml(song.cleanTitle || song.title)} Mix</div>
+            <img src="${song.art}">
+            <div class="album-title">${escapeHtml(song.title)} Mix</div>
             <div class="album-artist">Based on ${escapeHtml(song.artist)}</div>
         `;
         div.onclick = () => openMix(song);
@@ -2370,7 +2306,7 @@ async function openMix(seedSong) {
     currentIndex = 0;
     currentPlaylist = null;
 
-    const mixName = `${seedSong.cleanTitle || seedSong.title} Mix`;
+    const mixName = `${seedSong.title} Mix`;
 
     const mainContent = document.getElementById('mainContent');
     mainContent.innerHTML = `
@@ -2408,8 +2344,9 @@ async function openMix(seedSong) {
     });
 }
 
-async function generateMix(seedSong) {
+    async function generateMix(seedSong) {
     const query = `${seedSong.artist} official audio`;
+
     
     const res = await fetch(
         `https://www.googleapis.com/youtube/v3/search?part=snippet&type=video&videoCategoryId=10&maxResults=15&q=${encodeURIComponent(query)}&key=${getNextKey()}`
@@ -2425,6 +2362,7 @@ async function generateMix(seedSong) {
         }))
         .filter(song => song.id);
 }
+
 
 // Playlists
 function renderPlaylists() {
@@ -2480,9 +2418,9 @@ function viewPlaylist(name) {
             div.className = 'album-song-item';
             div.innerHTML = `
                 <span class="song-number">${i + 1}</span>
-                <img src="${song.coverArt || song.art}">
+                <img src="${song.art}">
                 <div class="song-info">
-                    <div class="song-title">${escapeHtml(song.cleanTitle || song.title)}</div>
+                    <div class="song-title">${escapeHtml(song.title)}</div>
                     <div class="song-artist">${escapeHtml(song.artist)}</div>
                 </div>
                 <button onclick="event.stopPropagation(); removeSongFromPlaylist('${escapeHtml(name)}', '${song.id}')" style="background:rgba(255,0,0,.2);color:var(--text);border:none;width:32px;height:32px;border-radius:50%;cursor:pointer;font-size:16px;margin-left:auto;">×</button>
@@ -2526,9 +2464,9 @@ function viewLikedSongs() {
             div.className = 'album-song-item';
             div.innerHTML = `
                 <span class="song-number">${i + 1}</span>
-                <img src="${song.coverArt || song.art}">
+                <img src="${song.art}">
                 <div class="song-info">
-                    <div class="song-title">${escapeHtml(song.cleanTitle || song.title)}</div>
+                    <div class="song-title">${escapeHtml(song.title)}</div>
                     <div class="song-artist">${escapeHtml(song.artist)}</div>
                 </div>
             `;
@@ -2563,17 +2501,17 @@ function updateGradient(imageUrl) {
     };
 }
 
-// Lyrics - ENHANCED to use cleaned title
+// Lyrics
 async function fetchLyrics(title, artist) {
     const lyricsDiv = document.getElementById('lyrics');
     lyricsDiv.className = 'lyrics loading';
     lyricsDiv.textContent = 'Loading lyrics...';
     
     try {
-        // Title is already cleaned by playSong function
+        const cleanTitle = title.split('(')[0].split('[')[0].split('|')[0].trim();
         const cleanArtist = artist.split('-')[0].split('(')[0].trim();
         
-        const response = await fetch(`https://api.lyrics.ovh/v1/${encodeURIComponent(cleanArtist)}/${encodeURIComponent(title)}`);
+        const response = await fetch(`https://api.lyrics.ovh/v1/${encodeURIComponent(cleanArtist)}/${encodeURIComponent(cleanTitle)}`);
         const data = await response.json();
         
         if (data.lyrics) {
@@ -2626,9 +2564,12 @@ function escapeHtml(text) {
 }
 
 // Playlist Management Functions
+
+// Add current song to a playlist
 function addToPlaylist(song, playlistName) {
     if (!playlists[playlistName]) return;
     
+    // Check if song already exists
     const exists = playlists[playlistName].songs.some(s => s.id === song.id);
     if (exists) {
         showNotification('Song already in playlist');
@@ -2641,6 +2582,7 @@ function addToPlaylist(song, playlistName) {
     showNotification(`Added to ${playlistName}`);
 }
 
+// Show add to playlist menu
 function showAddToPlaylistMenu(song) {
     const playlistNames = Object.keys(playlists);
     
@@ -2679,6 +2621,7 @@ function closeAddMenu() {
     if (menu) menu.remove();
 }
 
+// Delete playlist
 function deletePlaylist(name) {
     if (confirm(`Delete playlist "${name}"?`)) {
         delete playlists[name];
@@ -2689,6 +2632,7 @@ function deletePlaylist(name) {
     }
 }
 
+// Edit playlist
 function editPlaylist(name) {
     const modal = document.createElement('div');
     modal.className = 'modal active';
@@ -2735,6 +2679,7 @@ function savePlaylistEdit(oldName) {
     closeEditModal();
     showNotification('Playlist updated');
     
+    // If we're currently viewing this playlist, refresh the view
     if (currentPlaylist === oldName) {
         viewPlaylist(newName);
     } else {
@@ -2742,6 +2687,7 @@ function savePlaylistEdit(oldName) {
     }
 }
 
+// Remove song from playlist
 function removeSongFromPlaylist(playlistName, songId) {
     if (!playlists[playlistName]) return;
     
@@ -2752,6 +2698,7 @@ function removeSongFromPlaylist(playlistName, songId) {
     showNotification('Song removed');
 }
 
+// Simple notification system
 function showNotification(message) {
     const notif = document.createElement('div');
     notif.style.cssText = `
