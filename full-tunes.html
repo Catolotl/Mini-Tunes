@@ -1755,6 +1755,31 @@ function load(key, def) {
     }
 }
 
+// Add near the top (after load/save functions)
+const CACHE_TTL = 24 * 60 * 60 * 1000; // 24 hours
+
+function cachedFetch(url, cacheKey, maxAge = CACHE_TTL) {
+    const cached = load(cacheKey, null);
+    if (cached && Date.now() - cached.timestamp < maxAge) {
+        console.log(`Cache hit: ${cacheKey}`);
+        return Promise.resolve(cached.data);
+    }
+
+    return fetch(url)
+        .then(r => {
+            if (!r.ok) throw new Error(r.status);
+            return r.json();
+        })
+        .then(data => {
+            save(cacheKey, { timestamp: Date.now(), data });
+            return data;
+        })
+        .catch(err => {
+            console.warn("Fetch failed, using stale cache if available", err);
+            return cached ? cached.data : null;
+        });
+}
+
 // State
 let recent = load("recent", []);
 let playlists = load("playlists", {});
@@ -1921,14 +1946,14 @@ function showSearch() {
     searchInput.focus();
     
     // Re-attach the search event listener
-    searchInput.oninput = async (e) => {
-        clearTimeout(searchTimeout);
-        const q = e.target.value.trim();
-        
-        if (!q) {
-            document.getElementById('searchResults').innerHTML = '';
-            return;
-        }
+searchInput.oninput = (e) => {
+    clearTimeout(searchTimeout);
+    const q = e.target.value.trim();
+
+    if (q.length < 3) {                // ← add this
+        document.getElementById('searchResults').innerHTML = '';
+        return;
+    }
         
         searchTimeout = setTimeout(async () => {
             try {
@@ -2235,10 +2260,13 @@ async function renderAlbums() {
     }
     
     try {
-        const albumPromises = uniqueArtists.map(artist => 
-            fetch(`https://www.googleapis.com/youtube/v3/search?part=snippet&type=playlist&maxResults=2&q=${encodeURIComponent(artist + ' album')}&key=${getNextKey()}`)
-            .then(r => r.json())
-        );
+// In renderAlbums()
+const albumPromises = uniqueArtists.map(artist =>
+    cachedFetch(
+        `https://www.googleapis.com/youtube/v3/search?...q=${encodeURIComponent(artist + ' album')}...`,
+        `album-cache-${artist.replace(/\W/g,'_')}`
+    )
+);
         
         const results = await Promise.all(albumPromises);
         const albums = results.flatMap(data => data.items || []).slice(0, 6);
@@ -2760,6 +2788,257 @@ document.head.appendChild(style);
         }
     };
 })();
+
+// ====================
+// IMPROVED: Smart search + direct URL paste + title fetch (1 quota unit)
+// Paste at the END of your main <script>
+// ====================
+
+// ── 1. Extract video ID from almost any YouTube URL ────────────────────────
+function extractYouTubeVideoId(input) {
+    if (!input) return null;
+
+    // Clean up input slightly
+    input = input.trim();
+
+    // Direct video ID (11 chars alphanumeric/-/_)
+    if (/^[a-zA-Z0-9_-]{11}$/.test(input)) return input;
+
+    // Common URL patterns
+    const patterns = [
+        /(?:youtube(?:-nocookie)?\.com\/(?:[^\/\n\s]+\/\S+\/|(?:v|e(?:mbed)?)\/|\S*?[?&]v=))([a-zA-Z0-9_-]{11})/i,
+        /youtu\.be\/([a-zA-Z0-9_-]{11})/i,
+        /youtube\.com\/shorts\/([a-zA-Z0-9_-]{11})/i,
+        /(?:v|embed)\/([a-zA-Z0-9_-]{11})/i,
+        /[?&]v=([a-zA-Z0-9_-]{11})/i
+    ];
+
+    for (const regex of patterns) {
+        const match = input.match(regex);
+        if (match && match[1]) return match[1];
+    }
+
+    return null;
+}
+
+// ── 2. Fetch real title + channel (artist) ──────────────────────────────────
+async function fetchVideoDetails(videoId, song) {
+    if (!videoId) return;
+
+    try {
+        const url = `https://www.googleapis.com/youtube/v3/videos?part=snippet&id=${videoId}&key=${getNextKey()}`;
+        const res = await fetch(url);
+        if (!res.ok) throw new Error(res.status);
+
+        const data = await res.json();
+        const item = data.items?.[0];
+
+        if (item?.snippet) {
+            const realTitle  = item.snippet.title;
+            const realArtist = item.snippet.channelTitle;
+
+            // Update global song reference if possible
+            if (song) {
+                song.title  = realTitle;
+                song.artist = realArtist;
+            }
+
+            // Update UI immediately
+            const npTitle  = document.getElementById('npTitle');
+            const npArtist = document.getElementById('npArtist');
+
+            if (npTitle)  npTitle.textContent  = realTitle  || "Unknown Title";
+            if (npArtist) npArtist.textContent = realArtist || "Unknown Artist";
+
+            // Optional: update toast if still visible (a bit hacky but nice)
+            const toastTitle = document.getElementById('toastTitle');
+            if (toastTitle && toastTitle.textContent.includes("Loading")) {
+                toastTitle.textContent = realTitle;
+            }
+
+            console.log(`Updated metadata: "${realTitle}" by ${realArtist}`);
+        }
+    } catch (err) {
+        console.warn("Could not fetch video details:", err);
+        // Fallback: keep "YouTube" or whatever was set
+    }
+}
+
+// ── 3. Override search input to handle BOTH normal search + pasted URLs ─────
+function enhanceSearchInput() {
+    const searchInput = document.getElementById('searchInput');
+    if (!searchInput || searchInput.dataset.enhanced) return;
+
+    // Mark as already enhanced to avoid double-binding
+    searchInput.dataset.enhanced = 'true';
+
+    // Replace the oninput handler with our smart version
+    searchInput.oninput = (e) => {
+        clearTimeout(searchTimeout);
+        const value = e.target.value.trim();
+
+        if (!value) {
+            document.getElementById('searchResults').innerHTML = '';
+            return;
+        }
+
+        searchTimeout = setTimeout(async () => {
+            // Step 1: Check if it's a YouTube URL or direct ID
+            const videoId = extractYouTubeVideoId(value);
+
+            if (videoId) {
+                // ── Direct play mode ──
+                e.target.value = ''; // clear input after success
+
+                const song = {
+                    id: videoId,
+                    title: "Loading title...",
+                    artist: "YouTube",
+                    art: `https://img.youtube.com/vi/${videoId}/mqdefault.jpg`
+                };
+
+                playSong(song);
+                showNotification("Playing pasted YouTube video...");
+
+                // Fetch real metadata in background (cheap 1-unit call)
+                fetchVideoDetails(videoId, song);
+
+            } else if (value.length >= 3) {
+                // ── Normal keyword search ──
+                try {
+                    const [videos, playlists] = await Promise.all([
+                        fetch(`https://www.googleapis.com/youtube/v3/search?part=snippet&type=video&videoCategoryId=10&maxResults=10&q=${encodeURIComponent(value)}&key=${getNextKey()}`).then(r => r.json()),
+                        fetch(`https://www.googleapis.com/youtube/v3/search?part=snippet&type=playlist&maxResults=4&q=${encodeURIComponent(value + ' album')}&key=${getNextKey()}`).then(r => r.json())
+                    ]);
+
+                    renderSearchResults(videos, playlists);
+                } catch (error) {
+                    console.error("Search error:", error);
+                    showNotification("Search failed – check console");
+                }
+            }
+        }, 500); // slightly longer debounce for better UX when typing URLs
+    };
+
+    // Also support Enter key explicitly (in case browser doesn't trigger oninput)
+    searchInput.addEventListener('keypress', (e) => {
+        if (e.key === 'Enter') {
+            clearTimeout(searchTimeout);
+            // Trigger the same logic immediately
+            const value = searchInput.value.trim();
+            const videoId = extractYouTubeVideoId(value);
+
+            if (videoId) {
+                const song = {
+                    id: videoId,
+                    title: "Loading title...",
+                    artist: "YouTube",
+                    art: `https://img.youtube.com/vi/${videoId}/mqdefault.jpg`
+                };
+                playSong(song);
+                searchInput.value = '';
+                showNotification("Playing pasted video!");
+                fetchVideoDetails(videoId, song);
+            }
+            // Normal search already handled by oninput debounce
+        }
+    });
+}
+
+// ── 4. Hook into showSearch() and showHome() to apply enhancement ───────────
+const originalShowSearch = window.showSearch;
+window.showSearch = function() {
+    originalShowSearch();
+    setTimeout(enhanceSearchInput, 150); // wait for DOM
+};
+
+const originalShowHome = window.showHome;
+window.showHome = function() {
+    originalShowHome();
+    setTimeout(() => {
+        if (document.getElementById('searchView')?.classList.contains('active')) {
+            enhanceSearchInput();
+        }
+    }, 150);
+};
+
+// Optional: If you want to force it on initial load (if search is default view)
+setTimeout(enhanceSearchInput, 800);
 </script>
+
+<script>
+// TUNΞS Data-Saving Update Popup (brief version)
+// Paste before </body>
+
+(function() {
+    const UPDATE_KEY = "tunes_datasaving_update_v1";
+
+    if (localStorage.getItem(UPDATE_KEY) === "true") return;
+
+    const modal = document.createElement("div");
+    modal.style.cssText = `
+        position:fixed; inset:0; background:rgba(0,0,0,0.85); backdrop-filter:blur(10px);
+        z-index:9999; display:flex; align-items:center; justify-content:center; opacity:0;
+        transition:opacity 0.4s ease;
+    `;
+
+    const content = document.createElement("div");
+    content.style.cssText = `
+        background:rgba(30,30,40,0.95); border:1px solid rgba(255,255,255,0.12);
+        border-radius:16px; max-width:420px; width:90%; padding:28px 24px; text-align:center;
+        box-shadow:0 20px 60px rgba(0,0,0,0.7); transform:scale(0.92);
+        transition:all 0.4s cubic-bezier(0.34,1.56,0.64,1);
+    `;
+
+    content.innerHTML = `
+        <div style="font-size:48px; margin-bottom:12px;">✦</div>
+        <h2 style="font-family:'Syne',sans-serif; font-weight:800; font-size:26px; margin-bottom:16px; letter-spacing:-1px;">
+            Data-Saving Update
+        </h2>
+        <p style="font-size:15px; color:#ddd; line-height:1.6; margin-bottom:20px;">
+            TUNΞS now lasts way longer each day — less quota burn, more music.
+        </p>
+        <ul style="text-align:left; max-width:360px; margin:0 auto 24px; padding-left:20px; font-size:14px; color:#ccc; line-height:1.7; list-style-type:'→ ';">
+            <li>Cached album/mix recommendations (0 quota after first load)</li>
+            <li>Smarter search (min 3 chars + longer debounce)</li>
+            <li>Paste YouTube URLs → instant play (0 quota to start)</li>
+            <li>Pasted video metadata fetch = only 1 unit</li>
+        </ul>
+        <button id="acceptUpdateBtn" style="
+            background:linear-gradient(135deg,#ffffff,#e0e0e0); color:#000; border:none;
+            padding:12px 44px; font-size:16px; font-weight:700; border-radius:50px;
+            cursor:pointer; box-shadow:0 6px 20px rgba(255,255,255,0.15);
+            transition:all 0.3s ease;
+        ">
+            Cool!
+        </button>
+    `;
+
+    modal.appendChild(content);
+    document.body.appendChild(modal);
+
+    setTimeout(() => {
+        modal.style.opacity = "1";
+        content.style.transform = "scale(1)";
+    }, 50);
+
+    document.getElementById("acceptUpdateBtn").onclick = () => {
+        localStorage.setItem(UPDATE_KEY, "true");
+        modal.style.opacity = "0";
+        content.style.transform = "scale(0.92)";
+        setTimeout(() => modal.remove(), 400);
+    };
+
+    modal.onclick = (e) => {
+        if (e.target === modal) {
+            localStorage.setItem(UPDATE_KEY, "true");
+            modal.style.opacity = "0";
+            content.style.transform = "scale(0.92)";
+            setTimeout(() => modal.remove(), 400);
+        }
+    };
+})();
+</script>
+
 </body>
 </html>
