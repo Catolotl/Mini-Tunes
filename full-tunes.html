@@ -1634,6 +1634,9 @@ body::before {
                 <button class="nav-btn" id="searchBtn" onclick="showSearch()">
                     <span>⌕</span> Search
                 </button>
+                <button class="nav-btn" id="searchBtn" onclick="linkIndy()">
+                    <span>✦</span> Link to INDY account
+                </button>
             </div>
         </div>
         
@@ -2992,6 +2995,10 @@ window.showHome = function() {
 
 // Optional: If you want to force it on initial load (if search is default view)
 setTimeout(enhanceSearchInput, 800);
+
+function linkIndy() {
+  alert("Link your tunes account to INDY or INDY+ coming soon!");
+}
 </script>
 
 <script>
@@ -3100,7 +3107,7 @@ function onPlayerStateChange(event) {
 document.addEventListener('click', (e) => {
     if (e.target.id === 'addToPlaylistBtn' || e.target.closest('#addToPlaylistBtn')) {
         if (!currentPlayingSong) {
-            showNotification("Nothing playing right now 😭");
+            showNotification("Nothing playing right now");
             return;
         }
         showAddToPlaylistMenu(currentPlayingSong);
