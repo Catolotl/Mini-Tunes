@@ -1595,6 +1595,29 @@ body::before {
 .control-btn.play:hover {
     background: rgba(255, 255, 255, 1);
 }
+    .add-to-playlist-btn {
+    margin-top: 16px;
+    padding: 10px 20px;
+    background: rgba(255,255,255,0.12);
+    border: 1px solid rgba(255,255,255,0.2);
+    border-radius: 30px;
+    color: var(--text);
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    backdrop-filter: blur(10px);
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.add-to-playlist-btn:hover {
+    background: rgba(255,255,255,0.25);
+    transform: translateY(-2px);
+    box-shadow: 0 8px 24px rgba(0,0,0,0.4);
+    border-color: rgba(255,255,255,0.4);
+}
 </style>
 </head>
 <body>
@@ -1675,10 +1698,15 @@ body::before {
             <iframe id="player" allow="autoplay; encrypted-media"></iframe>
         </div>
         
-        <div class="now-playing-info">
-            <div class="np-title" id="npTitle">Start playing a song</div>
-            <div class="np-artist" id="npArtist"></div>
-        </div>
+<div class="now-playing-info">
+    <div class="np-title" id="npTitle">Start playing a song</div>
+    <div class="np-artist" id="npArtist"></div>
+    
+    <!-- NEW: Add to Playlist button (hidden by default) -->
+    <button id="addToPlaylistBtn" class="add-to-playlist-btn" style="display:none;">
+        <span style="font-size:18px;">+</span> Add to Playlist
+    </button>
+</div>
         
         <div class="lyrics-section">
             <h4>Lyrics</h4>
@@ -3039,6 +3067,45 @@ setTimeout(enhanceSearchInput, 800);
         }
     };
 })();
+    // ======================
+// ADD TO PLAYLIST FROM RIGHT SIDEBAR 🔥
+// ======================
+
+let currentPlayingSong = null; // We'll store the currently playing song here
+
+// Override playSong to also save current song + show button
+const originalPlaySong = window.playSong;
+window.playSong = function(song, fromPlaylist) {
+    originalPlaySong.call(this, song, fromPlaylist);
+    
+    // Save current song so we can add it later
+    currentPlayingSong = { ...song }; // copy it
+    
+    // Show the button
+    const btn = document.getElementById('addToPlaylistBtn');
+    if (btn) {
+        btn.style.display = 'flex';
+    }
+};
+
+// When song ends or new one starts, we can hide if needed (optional)
+function onPlayerStateChange(event) {
+    if (event.data === window.YT.PlayerState.ENDED) {
+        skipToNext();
+        // Optionally hide button if no more songs, but we keep it visible
+    }
+}
+
+// Click handler for the new button
+document.addEventListener('click', (e) => {
+    if (e.target.id === 'addToPlaylistBtn' || e.target.closest('#addToPlaylistBtn')) {
+        if (!currentPlayingSong) {
+            showNotification("Nothing playing right now 😭");
+            return;
+        }
+        showAddToPlaylistMenu(currentPlayingSong);
+    }
+});
 </script>
 
 </body>
