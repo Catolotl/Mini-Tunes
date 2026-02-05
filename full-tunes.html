@@ -557,13 +557,16 @@ body{
 }
 
 /* MAIN CONTENT */
-.main-content{
-    flex:1;
-    background:linear-gradient(180deg, var(--gradient-color) 0%, var(--bg) 20%);
-    border-radius:12px;
-    overflow-y:auto;
-    padding:32px;
-    transition:background .8s;
+.main-content {
+    flex: 1;
+    background: linear-gradient(180deg, var(--gradient-color) 0%, var(--bg) 20%);
+    border-radius: 12px;
+    overflow-y: auto;
+    padding: 32px;
+    transition: background .8s;
+    position: relative;
+    height: 100%; /* ADD THIS */
+    margin-left: 0; /* REMOVE margin-left if present */
 }
 
 .section{
@@ -1254,9 +1257,9 @@ body {
     overflow-y: auto;
     padding: 32px;
     transition: background .8s;
-    /* Add these to prevent overlap */
-    margin-left: 12px; /* Match the gap in .app-container */
-    position: relative; /* Ensure proper stacking */
+    position: relative;
+    height: 100%; /* ADD THIS */
+    margin-left: 0; /* REMOVE margin-left if present */
 }
 /* Ensure sidebar z-index doesn't interfere with main content */
 .left-sidebar {
@@ -1467,6 +1470,1439 @@ body {
     font-style: italic !important;
     color: rgba(255, 255, 255, 0.5) !important;
 }
+/* SYNC BUTTON STYLING */
+.sync-btn {
+    margin-top: 8px;
+}
+
+.sync-btn.synced {
+    background: rgba(16, 185, 129, 0.15) !important;
+    color: #10b981 !important;
+}
+
+.sync-btn.synced:hover {
+    background: rgba(16, 185, 129, 0.25) !important;
+}
+
+/* PROFILE OVERLAY */
+.profile-overlay {
+    position: absolute;
+    top: 12px;
+    left: 12px;
+    right: 12px;
+    background: linear-gradient(135deg, rgba(99, 102, 241, 0.15) 0%, rgba(99, 102, 241, 0.05) 100%);
+    backdrop-filter: blur(20px);
+    border-radius: 12px;
+    padding: 16px;
+    border: 1px solid rgba(99, 102, 241, 0.2);
+    z-index: 100;
+    opacity: 0;
+    transform: translateY(-10px);
+    visibility: hidden;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.profile-overlay.show {
+    opacity: 1;
+    transform: translateY(0);
+    visibility: visible;
+}
+
+.profile-overlay-content {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    position: relative;
+}
+
+.profile-overlay-avatar {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
+    background-size: cover;
+    background-position: center;
+    border: 2px solid rgba(99, 102, 241, 0.3);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 18px;
+    color: white;
+    flex-shrink: 0;
+}
+
+.profile-overlay-name {
+    font-size: 14px;
+    font-weight: 700;
+    color: var(--text);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    flex: 1;
+    min-width: 0;
+}
+
+.profile-overlay-status {
+    font-size: 12px;
+    color: var(--muted);
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.profile-overlay-close {
+    background: rgba(0, 0, 0, 0.3);
+    border: none;
+    color: var(--muted);
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    font-size: 16px;
+    transition: all 0.2s;
+    flex-shrink: 0;
+}
+
+.profile-overlay-close:hover {
+    background: rgba(0, 0, 0, 0.5);
+    color: var(--text);
+}
+
+/* Make sidebar-top stretch when no profile is shown */
+.sidebar-top {
+    background: var(--sidebar-bg);
+    border-radius: 12px;
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    border: none;
+    flex: 1; /* ADD THIS - makes it stretch */
+    min-height: 0; /* ADD THIS */
+}
+
+/* Adjust sidebar-library to account for flexible sizing */
+.sidebar-library {
+    background: var(--sidebar-bg);
+    border-radius: 12px;
+    padding: 20px;
+    flex: 1; /* Changed from flex: 1 to auto */
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    min-height: 0; /* ADD THIS */
+}
+
+/* When sidebar is minimized */
+.left-sidebar.minimized .sync-btn span:first-child {
+    font-size: 24px;
+}
+
+.left-sidebar.minimized .sync-btn {
+    justify-content: center;
+    padding: 12px;
+}
+
+.left-sidebar.minimized .profile-overlay {
+    display: none;
+}
+/* Add this to your CSS for sync button states */
+.sync-btn:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
+.sync-btn.searching {
+    animation: pulse-glow 2s infinite;
+}
+
+@keyframes pulse-glow {
+    0%, 100% { 
+        box-shadow: 0 0 0 0 rgba(99, 102, 241, 0.4);
+    }
+    50% { 
+        box-shadow: 0 0 0 4px rgba(99, 102, 241, 0);
+    }
+}
+
+/* ============================================
+   PROFILE EDITOR MODAL
+   ============================================ */
+
+.profile-editor-modal {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.9);
+    backdrop-filter: blur(20px);
+    z-index: 4000;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    animation: fadeIn 0.3s ease;
+}
+
+.profile-editor-modal.active {
+    display: flex;
+}
+
+.profile-editor-content {
+    background: var(--panel);
+    border: 1px solid rgba(99, 102, 241, 0.3);
+    border-radius: 24px;
+    width: 95%;
+    max-width: 1200px;
+    max-height: 90vh;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    box-shadow: 0 24px 80px rgba(0, 0, 0, 0.8);
+    animation: popupSlide 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.profile-editor-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 24px 32px;
+    border-bottom: 1px solid var(--border);
+    background: rgba(0, 0, 0, 0.3);
+}
+
+.profile-editor-title {
+    font-size: 24px;
+    font-weight: 700;
+    background: linear-gradient(135deg, #ffffff 0%, #a5b4fc 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+
+.profile-editor-close {
+    background: rgba(0, 0, 0, 0.3);
+    border: none;
+    color: var(--muted);
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    font-size: 24px;
+    transition: all 0.2s;
+}
+
+.profile-editor-close:hover {
+    background: rgba(0, 0, 0, 0.5);
+    color: var(--text);
+    transform: scale(1.1);
+}
+
+.profile-editor-main {
+    display: flex;
+    flex: 1;
+    overflow: hidden;
+}
+
+.profile-editor-left {
+    flex: 1;
+    padding: 32px;
+    overflow-y: auto;
+    border-right: 1px solid var(--border);
+}
+
+.profile-editor-right {
+    width: 400px;
+    padding: 32px;
+    overflow-y: auto;
+    background: rgba(0, 0, 0, 0.1);
+}
+
+/* Banner Section */
+.profile-banner-section {
+    margin-bottom: 32px;
+}
+
+.profile-banner {
+    width: 100%;
+    height: 200px;
+    background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
+    border-radius: 16px;
+    overflow: hidden;
+    position: relative;
+    cursor: pointer;
+    transition: all 0.3s;
+}
+
+.profile-banner:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 32px rgba(99, 102, 241, 0.3);
+}
+
+.profile-banner img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.banner-placeholder {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: rgba(255, 255, 255, 0.7);
+    font-size: 18px;
+    font-weight: 600;
+    background: rgba(0, 0, 0, 0.3);
+}
+
+.banner-upload-btn {
+    margin-top: 12px;
+    padding: 12px 24px;
+    background: rgba(99, 102, 241, 0.2);
+    border: 1px solid rgba(99, 102, 241, 0.4);
+    border-radius: 12px;
+    color: var(--text);
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s;
+}
+
+.banner-upload-btn:hover {
+    background: rgba(99, 102, 241, 0.3);
+    transform: scale(1.05);
+}
+
+/* Profile Picture Section */
+.profile-pic-wrapper {
+    display: flex;
+    align-items: center;
+    gap: 24px;
+    margin-bottom: 24px;
+}
+
+.profile-pic-preview {
+    width: 100px;
+    height: 100px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
+    border: 4px solid rgba(99, 102, 241, 0.3);
+    position: relative;
+    overflow: hidden;
+    transition: all 0.3s;
+}
+
+.profile-pic-preview:hover {
+    transform: scale(1.05);
+    border-color: rgba(99, 102, 241, 0.5);
+}
+
+.profile-pic-preview img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.profile-pic-placeholder {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 48px;
+    font-weight: 700;
+    color: white;
+}
+
+.online-dot {
+    position: absolute;
+    bottom: 8px;
+    right: 8px;
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    background: #10b981;
+    border: 3px solid var(--panel);
+    box-shadow: 0 0 12px rgba(16, 185, 129, 0.5);
+}
+
+.profile-pic-upload-btn {
+    padding: 12px 24px;
+    background: rgba(255, 255, 255, 0.1);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    color: var(--text);
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s;
+}
+
+.profile-pic-upload-btn:hover {
+    background: rgba(255, 255, 255, 0.2);
+    transform: scale(1.05);
+}
+
+/* Form Elements */
+.form-group {
+    margin-bottom: 24px;
+}
+
+.form-group label {
+    display: block;
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--muted);
+    margin-bottom: 8px;
+}
+
+.profile-input {
+    width: 100%;
+    padding: 14px 16px;
+    background: var(--soft);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    color: var(--text);
+    font-size: 16px;
+    transition: all 0.2s;
+}
+
+.profile-input:focus {
+    outline: none;
+    border-color: var(--profile-accent);
+    background: var(--hover);
+}
+
+.profile-textarea {
+    width: 100%;
+    padding: 16px;
+    background: var(--soft);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    color: var(--text);
+    font-size: 14px;
+    resize: vertical;
+    min-height: 100px;
+    transition: all 0.2s;
+}
+
+.profile-textarea:focus {
+    outline: none;
+    border-color: var(--profile-accent);
+    background: var(--hover);
+}
+
+/* Languages */
+.languages-input-container {
+    background: var(--soft);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 16px;
+}
+
+.languages-tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-bottom: 16px;
+}
+
+.language-tag {
+    background: rgba(99, 102, 241, 0.2);
+    color: #a5b4fc;
+    padding: 8px 16px;
+    border-radius: 20px;
+    font-size: 14px;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.remove-language {
+    cursor: pointer;
+    font-size: 18px;
+    color: var(--muted);
+    transition: color 0.2s;
+}
+
+.remove-language:hover {
+    color: var(--text);
+}
+
+.language-input-wrapper {
+    display: flex;
+    gap: 12px;
+}
+
+.language-input-wrapper .profile-input {
+    flex: 1;
+    margin: 0;
+}
+
+.add-language-btn {
+    padding: 12px 24px;
+    background: rgba(99, 102, 241, 0.3);
+    border: none;
+    border-radius: 12px;
+    color: var(--text);
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s;
+}
+
+.add-language-btn:hover {
+    background: rgba(99, 102, 241, 0.4);
+    transform: scale(1.05);
+}
+
+/* Featured Playlists */
+.featured-playlists-section {
+    background: var(--soft);
+    border-radius: 16px;
+    padding: 24px;
+    margin-bottom: 24px;
+}
+
+.featured-playlists-section .section-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 16px;
+}
+
+.featured-playlists-section h3 {
+    font-size: 18px;
+    font-weight: 700;
+    color: var(--text);
+}
+
+.add-playlist-btn {
+    padding: 8px 16px;
+    background: rgba(99, 102, 241, 0.2);
+    border: 1px solid rgba(99, 102, 241, 0.4);
+    border-radius: 12px;
+    color: var(--text);
+    font-size: 12px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s;
+}
+
+.add-playlist-btn:hover {
+    background: rgba(99, 102, 241, 0.3);
+}
+
+.playlists-scroll-container {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+    max-height: 200px;
+    overflow-y: auto;
+    padding: 8px;
+}
+
+.featured-playlist-card {
+    background: rgba(0, 0, 0, 0.3);
+    border-radius: 12px;
+    padding: 16px;
+    width: calc(50% - 6px);
+    cursor: pointer;
+    transition: all 0.3s;
+    position: relative;
+}
+
+.featured-playlist-card:hover {
+    background: rgba(0, 0, 0, 0.5);
+    transform: translateY(-2px);
+}
+
+.playlist-card-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 8px;
+}
+
+.playlist-emoji {
+    font-size: 24px;
+}
+
+.remove-playlist-btn {
+    background: rgba(239, 68, 68, 0.2);
+    border: none;
+    color: #ef4444;
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    cursor: pointer;
+    font-size: 16px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.remove-playlist-btn:hover {
+    background: rgba(239, 68, 68, 0.3);
+}
+
+.playlist-card-name {
+    font-size: 14px;
+    font-weight: 600;
+    margin-bottom: 4px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.playlist-card-count {
+    font-size: 12px;
+    color: var(--muted);
+}
+
+.empty-playlists {
+    padding: 40px;
+    text-align: center;
+    color: var(--muted);
+    font-size: 14px;
+    background: rgba(0, 0, 0, 0.2);
+    border-radius: 12px;
+}
+
+/* Add Playlist Modal */
+.add-playlist-modal {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.9);
+    z-index: 5000;
+    display: none;
+    align-items: center;
+    justify-content: center;
+}
+
+.add-playlist-modal.active {
+    display: flex;
+}
+
+.add-playlist-content {
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    width: 400px;
+    max-height: 80vh;
+    overflow: hidden;
+}
+
+.add-playlist-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 20px;
+    border-bottom: 1px solid var(--border);
+}
+
+.add-playlist-header h3 {
+    font-size: 20px;
+    font-weight: 700;
+}
+
+.close-modal-btn {
+    background: none;
+    border: none;
+    color: var(--muted);
+    font-size: 24px;
+    cursor: pointer;
+    padding: 0;
+    width: 32px;
+    height: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.close-modal-btn:hover {
+    color: var(--text);
+}
+
+.add-playlist-list {
+    padding: 20px;
+    overflow-y: auto;
+    max-height: 60vh;
+}
+
+.available-playlist-item {
+    padding: 16px;
+    background: rgba(0, 0, 0, 0.2);
+    border-radius: 12px;
+    margin-bottom: 12px;
+    cursor: pointer;
+    transition: all 0.3s;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.available-playlist-item:hover {
+    background: rgba(0, 0, 0, 0.4);
+    transform: translateX(4px);
+}
+
+.available-playlist-emoji {
+    font-size: 24px;
+}
+
+.available-playlist-info {
+    flex: 1;
+    min-width: 0;
+}
+
+.available-playlist-name {
+    font-size: 14px;
+    font-weight: 600;
+    margin-bottom: 4px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.available-playlist-count {
+    font-size: 12px;
+    color: var(--muted);
+}
+
+/* Save Button */
+.save-section {
+    margin-top: 32px;
+}
+
+.save-profile-btn {
+    width: 100%;
+    padding: 16px 32px;
+    background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
+    border: none;
+    border-radius: 16px;
+    color: white;
+    font-size: 16px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.3s;
+}
+
+.save-profile-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 32px rgba(99, 102, 241, 0.4);
+}
+
+.save-info {
+    margin-top: 12px;
+    text-align: center;
+    color: var(--muted);
+    font-size: 12px;
+}
+
+/* Scrollbar for all scrollable elements */
+.profile-editor-left::-webkit-scrollbar,
+.profile-editor-right::-webkit-scrollbar,
+.playlists-scroll-container::-webkit-scrollbar,
+.add-playlist-list::-webkit-scrollbar {
+    width: 8px;
+}
+
+.profile-editor-left::-webkit-scrollbar-track,
+.profile-editor-right::-webkit-scrollbar-track,
+.playlists-scroll-container::-webkit-scrollbar-track,
+.add-playlist-list::-webkit-scrollbar-track {
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 4px;
+}
+
+.profile-editor-left::-webkit-scrollbar-thumb,
+.profile-editor-right::-webkit-scrollbar-thumb,
+.playlists-scroll-container::-webkit-scrollbar-thumb,
+.add-playlist-list::-webkit-scrollbar-thumb {
+    background: rgba(99, 102, 241, 0.4);
+    border-radius: 4px;
+}
+
+.profile-editor-left::-webkit-scrollbar-thumb:hover,
+.profile-editor-right::-webkit-scrollbar-thumb:hover,
+.playlists-scroll-container::-webkit-scrollbar-thumb:hover,
+.add-playlist-list::-webkit-scrollbar-thumb:hover {
+    background: rgba(99, 102, 241, 0.6);
+}
+
+/* ============================================
+   PROFILE EDITOR FORM ELEMENTS STYLING
+   ============================================ */
+
+/* Custom Select/Dropdown Styling */
+.profile-select {
+    width: 100%;
+    padding: 14px 16px;
+    background: var(--soft);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    color: var(--text);
+    font-size: 14px;
+    font-family: 'DM Sans', sans-serif;
+    cursor: pointer;
+    appearance: none;
+    -webkit-appearance: none;
+    -moz-appearance: none;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%23b3b3b3' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 16px center;
+    background-size: 16px;
+    padding-right: 40px;
+    transition: all 0.2s;
+}
+
+.profile-select:hover {
+    background-color: var(--hover);
+    border-color: rgba(99, 102, 241, 0.4);
+}
+
+.profile-select:focus {
+    outline: none;
+    border-color: var(--profile-accent);
+    background-color: var(--hover);
+    box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.2);
+}
+
+.profile-select:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+/* Pronouns Container */
+.pronouns-container {
+    display: flex;
+    gap: 12px;
+    align-items: center;
+}
+
+.pronouns-container .profile-select {
+    flex: 1;
+}
+
+/* Badges Controls */
+.badges-controls {
+    display: flex;
+    gap: 12px;
+    align-items: center;
+    margin-top: 12px;
+}
+
+.badges-controls .profile-select {
+    flex: 1;
+    margin: 0;
+}
+
+/* Add Button Styling */
+.add-badge-btn,
+.add-language-btn,
+.add-playlist-btn,
+.add-to-featured-btn,
+.banner-upload-btn,
+.profile-pic-upload-btn {
+    background: linear-gradient(135deg, rgba(99, 102, 241, 0.3) 0%, rgba(99, 102, 241, 0.2) 100%);
+    border: 1px solid rgba(99, 102, 241, 0.4);
+    color: var(--text);
+    font-weight: 600;
+    font-size: 14px;
+    padding: 12px 24px;
+    border-radius: 12px;
+    cursor: pointer;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    backdrop-filter: blur(10px);
+    position: relative;
+    overflow: hidden;
+}
+
+/* Specific button sizes */
+.add-badge-btn,
+.add-to-featured-btn {
+    padding: 10px 16px;
+    font-size: 13px;
+}
+
+.add-playlist-btn {
+    padding: 8px 16px;
+    font-size: 12px;
+}
+
+.add-language-btn {
+    padding: 12px 20px;
+    min-width: 60px;
+}
+
+/* Button Hover Effects */
+.add-badge-btn:hover,
+.add-language-btn:hover,
+.add-playlist-btn:hover,
+.add-to-featured-btn:hover,
+.banner-upload-btn:hover,
+.profile-pic-upload-btn:hover {
+    background: linear-gradient(135deg, rgba(99, 102, 241, 0.4) 0%, rgba(99, 102, 241, 0.3) 100%);
+    border-color: rgba(99, 102, 241, 0.6);
+    transform: translateY(-2px);
+    box-shadow: 0 8px 24px rgba(99, 102, 241, 0.3);
+}
+
+/* Button Active (Click) Effect */
+.add-badge-btn:active,
+.add-language-btn:active,
+.add-playlist-btn:active,
+.add-to-featured-btn:active,
+.banner-upload-btn:active,
+.profile-pic-upload-btn:active {
+    transform: translateY(0);
+    box-shadow: 0 4px 12px rgba(99, 102, 241, 0.2);
+}
+
+/* Button Focus State */
+.add-badge-btn:focus,
+.add-language-btn:focus,
+.add-playlist-btn:focus,
+.add-to-featured-btn:focus,
+.banner-upload-btn:focus,
+.profile-pic-upload-btn:focus {
+    outline: none;
+    box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.3);
+}
+
+/* Button Ripple Effect */
+.add-badge-btn::after,
+.add-language-btn::after,
+.add-playlist-btn::after,
+.add-to-featured-btn::after,
+.banner-upload-btn::after,
+.profile-pic-upload-btn::after {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 5px;
+    height: 5px;
+    background: rgba(255, 255, 255, 0.5);
+    opacity: 0;
+    border-radius: 100%;
+    transform: scale(1, 1) translate(-50%, -50%);
+    transform-origin: 50% 50%;
+}
+
+.add-badge-btn:focus:not(:active)::after,
+.add-language-btn:focus:not(:active)::after,
+.add-playlist-btn:focus:not(:active)::after,
+.add-to-featured-btn:focus:not(:active)::after,
+.banner-upload-btn:focus:not(:active)::after,
+.profile-pic-upload-btn:focus:not(:active)::after {
+    animation: ripple 1s ease-out;
+}
+
+@keyframes ripple {
+    0% {
+        transform: scale(0, 0);
+        opacity: 0.5;
+    }
+    100% {
+        transform: scale(40, 40);
+        opacity: 0;
+    }
+}
+
+/* Button Icons */
+.add-badge-btn::before,
+.add-language-btn::before,
+.add-playlist-btn::before,
+.add-to-featured-btn::before {
+    content: '+';
+    font-size: 18px;
+    font-weight: 700;
+}
+
+.banner-upload-btn::before {
+    content: '';
+    font-size: 16px;
+}
+
+.profile-pic-upload-btn::before {
+    content: '📸';
+    font-size: 16px;
+}
+
+/* Remove Button Styling */
+.remove-playlist-btn,
+.remove-language,
+.remove-badge,
+.banner-remove-btn {
+    background: rgba(239, 68, 68, 0.2);
+    border: 1px solid rgba(239, 68, 68, 0.3);
+    color: #ef4444;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.2s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 14px;
+    font-weight: 600;
+}
+
+/* Specific remove button sizes */
+.remove-playlist-btn {
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    font-size: 16px;
+}
+
+.remove-language,
+.remove-badge {
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    margin-left: 4px;
+    font-size: 12px;
+    opacity: 0.7;
+}
+
+.banner-remove-btn {
+    padding: 12px 24px;
+    font-size: 14px;
+    margin-left: 12px;
+}
+
+/* Remove Button Hover Effects */
+.remove-playlist-btn:hover,
+.remove-language:hover,
+.remove-badge:hover,
+.banner-remove-btn:hover {
+    background: rgba(239, 68, 68, 0.3);
+    border-color: rgba(239, 68, 68, 0.5);
+    transform: scale(1.1);
+}
+
+.remove-language:hover,
+.remove-badge:hover {
+    opacity: 1;
+}
+
+/* Remove Button Active Effect */
+.remove-playlist-btn:active,
+.remove-language:active,
+.remove-badge:active,
+.banner-remove-btn:active {
+    transform: scale(1);
+}
+
+/* Language Tags with Remove Button */
+.language-tag {
+    display: inline-flex;
+    align-items: center;
+    background: rgba(99, 102, 241, 0.2);
+    color: #a5b4fc;
+    padding: 8px 12px;
+    border-radius: 20px;
+    font-size: 13px;
+    font-weight: 600;
+    gap: 6px;
+    transition: all 0.2s;
+}
+
+.language-tag:hover {
+    background: rgba(99, 102, 241, 0.25);
+    transform: translateY(-1px);
+}
+
+/* Badge Tags with Remove Button */
+.badge-tag {
+    display: inline-flex;
+    align-items: center;
+    background: rgba(99, 102, 241, 0.2);
+    color: #a5b4fc;
+    padding: 8px 12px;
+    border-radius: 20px;
+    font-size: 14px;
+    font-weight: 600;
+    gap: 6px;
+    margin: 4px;
+    transition: all 0.2s;
+}
+
+.badge-tag:hover {
+    background: rgba(99, 102, 241, 0.25);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(99, 102, 241, 0.2);
+}
+
+/* Form Group Layout */
+.form-group {
+    margin-bottom: 24px;
+}
+
+.form-group label {
+    display: block;
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--muted);
+    margin-bottom: 8px;
+}
+
+/* Profile Header Section Layout */
+.profile-header-section {
+    display: flex;
+    gap: 24px;
+    margin-bottom: 24px;
+}
+
+.profile-pic-wrapper {
+    display: flex;
+    align-items: center;
+    gap: 24px;
+}
+
+.profile-name-section {
+    flex: 1;
+}
+
+/* Banner Controls Layout */
+.banner-controls {
+    display: flex;
+    gap: 12px;
+    margin-top: 12px;
+}
+
+/* Preview Section Styling */
+.preview-section {
+    background: rgba(0, 0, 0, 0.2);
+    border-radius: 16px;
+    padding: 20px;
+    margin-top: 24px;
+}
+
+.preview-section h4 {
+    font-size: 16px;
+    font-weight: 600;
+    color: var(--text);
+    margin-bottom: 16px;
+}
+
+.profile-preview {
+    background: var(--soft);
+    border-radius: 12px;
+    overflow: hidden;
+    border: 1px solid var(--border);
+}
+
+.preview-banner {
+    height: 80px;
+    background-size: cover;
+    background-position: center;
+    position: relative;
+}
+
+.preview-banner-placeholder {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: rgba(255, 255, 255, 0.7);
+    font-size: 14px;
+    font-weight: 600;
+    background: rgba(99, 102, 241, 0.3);
+}
+
+.preview-profile-info {
+    padding: 20px;
+    position: relative;
+}
+
+.preview-avatar {
+    width: 60px;
+    height: 60px;
+    border-radius: 50%;
+    border: 3px solid var(--panel);
+    position: absolute;
+    top: -30px;
+    left: 20px;
+    background-size: cover;
+    background-position: center;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 24px;
+    font-weight: 700;
+    color: white;
+}
+
+.preview-online-dot {
+    position: absolute;
+    bottom: 4px;
+    right: 4px;
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    background: #10b981;
+    border: 2px solid var(--panel);
+}
+
+.preview-name-section {
+    margin-left: 70px;
+}
+
+.preview-name-row {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-bottom: 8px;
+}
+
+.preview-name {
+    font-size: 18px;
+    font-weight: 700;
+    color: var(--text);
+}
+
+.preview-pronouns {
+    font-size: 12px;
+    color: var(--muted);
+    background: rgba(255, 255, 255, 0.1);
+    padding: 2px 8px;
+    border-radius: 10px;
+}
+
+.preview-badge {
+    font-size: 14px;
+}
+
+.preview-description {
+    font-size: 14px;
+    color: var(--muted);
+    line-height: 1.5;
+    margin-bottom: 8px;
+}
+
+.preview-languages {
+    font-size: 13px;
+    color: var(--muted);
+}
+
+.preview-language {
+    background: rgba(99, 102, 241, 0.1);
+    color: #a5b4fc;
+    padding: 2px 8px;
+    border-radius: 10px;
+    font-size: 12px;
+    margin: 0 4px;
+}
+
+.preview-featured-playlists {
+    padding: 16px;
+    border-top: 1px solid var(--border);
+}
+
+.preview-featured-playlists h4 {
+    font-size: 14px;
+    font-weight: 600;
+    margin-bottom: 12px;
+}
+
+.preview-playlists-scroll {
+    display: flex;
+    gap: 12px;
+    overflow-x: auto;
+    padding-bottom: 8px;
+}
+
+.preview-playlist-card {
+    min-width: 120px;
+    background: rgba(0, 0, 0, 0.2);
+    border-radius: 8px;
+    padding: 12px;
+}
+
+.preview-playlist-emoji {
+    font-size: 24px;
+    display: block;
+    margin-bottom: 8px;
+}
+
+.preview-playlist-name {
+    font-size: 12px;
+    font-weight: 600;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.preview-playlist-count {
+    font-size: 11px;
+    color: var(--muted);
+}
+
+/* Save Section Styling */
+.save-section {
+    margin-top: 32px;
+}
+
+.save-profile-btn {
+    width: 100%;
+    padding: 16px 32px;
+    background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
+    border: none;
+    border-radius: 16px;
+    color: white;
+    font-size: 16px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.3s;
+    position: relative;
+    overflow: hidden;
+}
+
+.save-profile-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 32px rgba(99, 102, 241, 0.4);
+}
+
+.save-profile-btn:active {
+    transform: translateY(0);
+}
+
+.save-profile-btn.saving {
+    background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%);
+}
+
+.save-profile-btn.saving::before {
+    content: '';
+    position: absolute;
+    left: 16px;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 20px;
+    height: 20px;
+    border: 2px solid rgba(255, 255, 255, 0.3);
+    border-top-color: white;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    to { transform: translateY(-50%) rotate(360deg); }
+}
+
+/* Responsive Adjustments */
+@media (max-width: 1024px) {
+    .profile-editor-main {
+        flex-direction: column;
+    }
+    
+    .profile-editor-right {
+        width: 100%;
+        border-top: 1px solid var(--border);
+        border-left: none;
+    }
+    
+    .profile-header-section {
+        flex-direction: column;
+    }
+    
+    .pronouns-container {
+        flex-direction: column;
+        align-items: stretch;
+    }
+}
+
+/* Custom Scrollbar for Profile Editor */
+.profile-editor-left::-webkit-scrollbar-thumb,
+.profile-editor-right::-webkit-scrollbar-thumb,
+.playlists-scroll-container::-webkit-scrollbar-thumb {
+    background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
+}
+
+/* Focus states for better accessibility */
+.profile-input:focus,
+.profile-textarea:focus,
+.profile-select:focus {
+    outline: none;
+    border-color: var(--profile-accent);
+    box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.2);
+}
+
+/* Loading states */
+.add-badge-btn.loading,
+.add-language-btn.loading,
+.add-playlist-btn.loading {
+    opacity: 0.7;
+    cursor: not-allowed;
+}
+
+.add-badge-btn.loading::before,
+.add-language-btn.loading::before,
+.add-playlist-btn.loading::before {
+    animation: spin 1s linear infinite;
+}
+
+/* Disabled states */
+button:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    transform: none !important;
+    box-shadow: none !important;
+}
+/* Sync Status Indicator */
+.sync-indicator {
+    display: inline-block;
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    margin-left: 8px;
+    background: #ef4444; /* Red for not synced */
+}
+
+.sync-indicator.synced {
+    background: #10b981; /* Green for synced */
+    box-shadow: 0 0 0 2px rgba(16, 185, 129, 0.2);
+    animation: pulse 2s infinite;
+}
+
+/* Edit Profile Button States */
+#editProfileBtn.hidden {
+    display: none !important;
+}
+
+#editProfileBtn.visible {
+    display: flex !important;
+}
+
+/* Pulse animation for sync button */
+@keyframes pulse-glow {
+    0%, 100% { 
+        box-shadow: 0 0 0 0 rgba(99, 102, 241, 0.7);
+    }
+    50% { 
+        box-shadow: 0 0 0 10px rgba(99, 102, 241, 0);
+    }
+}
+
+/* Highlight sync button when edit profile is blocked */
+.sync-btn.highlight {
+    animation: pulse-glow 1s ease-in-out infinite !important;
+    background: linear-gradient(135deg, rgba(99, 102, 241, 0.4) 0%, rgba(99, 102, 241, 0.3) 100%) !important;
+}
 </style>
 </head>
 <body>
@@ -1474,19 +2910,6 @@ body {
 <div class="app-container">
     <!-- LEFT SIDEBAR -->
     <aside class="left-sidebar" id="leftSidebar">
-        <!-- User Profile Header -->
-        <div class="user-profile-header" id="userProfileHeader" onclick="linkIndy()">
-            <div class="profile-avatar-large" id="profileAvatarLarge">✦</div>
-            <div class="profile-info-large">
-                <div class="profile-name-large" id="profileNameLarge">Guest</div>
-                <div class="profile-status">
-                    <span class="status-dot" id="statusDot" style="background: #ef4444;"></span>
-                    <span id="profileStatusText">Not linked</span>
-                </div>
-            </div>
-            <div class="profile-badge" id="profileBadge" style="display: none;">INDY+</div>
-            <div class="sync-status" id="syncStatus">🔗</div>
-        </div>
 
         <div class="sidebar-top">
             <div class="nav-buttons">
@@ -1496,8 +2919,28 @@ body {
                 <button class="nav-btn" id="searchBtn" onclick="showSearch()">
                     <span>⌕</span> Search
                 </button>
+<button class="nav-btn sync-btn" id="syncBtn" onclick="syncIndy()">
+    <span>🔗</span> Sync
+</button>
+<!-- In the nav-buttons section -->
+<button class="nav-btn" id="editProfileBtn" onclick="openProfileEditor()" style="display: none;">
+    <span>👤</span> Edit Profile
+</button>
             </div>
         </div>
+
+            <!-- ADD THIS PROFILE OVERLAY (hidden by default) -->
+    <div class="profile-overlay" id="profileOverlay">
+        <div class="profile-overlay-content">
+            <div class="profile-overlay-avatar" id="profileOverlayAvatar">✦</div>
+            <div class="profile-overlay-name" id="profileOverlayName">Guest</div>
+            <div class="profile-overlay-status">
+                <span class="status-dot" id="overlayStatusDot"></span>
+                <span id="overlayStatusText">Synced</span>
+            </div>
+            <button class="profile-overlay-close" onclick="hideProfileOverlay()">×</button>
+        </div>
+    </div>
         
         <div class="sidebar-library">
             <div class="library-header">
@@ -1754,6 +3197,8 @@ function initPlayer(videoId) {
         ytPlayer.loadVideoById(videoId);
     }
 }
+
+
 
 function onPlayerStateChange(event) {
     if (event.data === window.YT.PlayerState.ENDED) {
@@ -2813,26 +4258,38 @@ document.addEventListener('click', (e) => {
 })();
 
 // ============================================
-// INDY ACCOUNT INTEGRATION
+// UPDATED SYNC FUNCTION - WITH COOL POPUPS
 // ============================================
 
-function linkIndy() {
+function syncIndy() {
     const indyProfile = JSON.parse(localStorage.getItem('userProfile')) || { name: '', picture: '' };
+    const isLinked = localStorage.getItem('indyMusicLinked') === 'true';
     
-    if (!indyProfile.name || indyProfile.name.trim() === '') {
-        showSyncNotification('⚠️', 'No INDY Account Found', 'Please set up your profile in INDY Sunrise AI first');
+    // If already linked, just show success and ensure edit button is visible
+    if (isLinked) {
+        showSyncNotification('✓', 'Already Synced', `You're connected as ${indyProfile.name || 'Guest'}`);
+        
+        // Force update UI to show edit button
+        updateSyncUI();
         return;
     }
     
+    // Check if user has an INDY profile
+    if (!indyProfile.name || indyProfile.name.trim() === '') {
+        showSyncNotification('⚠️', 'No INDY Profile', 'Set up your profile in INDY Sunrise AI first');
+        return;
+    }
+    
+    // Show the cool searching popup
     const popup = document.getElementById('accountSearchPopup');
     const searchingState = document.getElementById('searchingState');
     const confirmState = document.getElementById('confirmState');
     
     searchingState.style.display = 'block';
     confirmState.classList.remove('active');
-    
     popup.classList.add('active');
     
+    // Random wait time between 3-10 seconds
     const waitTime = Math.floor(Math.random() * 7000) + 3000;
     
     setTimeout(() => {
@@ -2845,7 +4302,7 @@ function linkIndy() {
             foundAvatar.style.backgroundImage = `url(${indyProfile.picture})`;
             foundAvatar.textContent = '';
         } else {
-            foundAvatar.style.backgroundImage = 'none';
+            foundAvatar.style.backgroundImage = 'linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%)';
             foundAvatar.textContent = indyProfile.name.charAt(0).toUpperCase();
         }
         
@@ -2863,8 +4320,19 @@ function cancelLink() {
         document.getElementById('searchingState').style.display = 'block';
         document.getElementById('confirmState').classList.remove('active');
     }, 300);
+    
+    // Make sure edit profile button is hidden
+    const editProfileBtn = document.getElementById('editProfileBtn');
+    if (editProfileBtn) {
+        editProfileBtn.style.display = 'none';
+        editProfileBtn.classList.add('hidden');
+        editProfileBtn.classList.remove('visible');
+    }
+    
+    showSyncNotification('⚠️', 'Sync Cancelled', 'Your account was not linked');
 }
 
+// Keep the existing confirmLink function
 function confirmLink() {
     const popup = document.getElementById('accountSearchPopup');
     popup.classList.remove('active');
@@ -2873,12 +4341,10 @@ function confirmLink() {
     // Save link status
     localStorage.setItem('indyMusicLinked', 'true');
     localStorage.setItem('indyMusicLinkTime', Date.now());
-    
-    // Also save a reference in INDY Sunrise (so it knows Music is linked)
     localStorage.setItem('indyMusicAppConnected', 'true');
     
-    // Update profile display
-    updateProfileDisplay();
+    // Update UI - force update
+    updateSyncUI();
     
     // Show success notification
     showSyncNotification('✓', 'Account Linked!', `Welcome back, ${indyProfile.name}`);
@@ -2889,61 +4355,39 @@ function confirmLink() {
     }, 300);
 }
 
-function updateProfileDisplay() {
-    const indyProfile = JSON.parse(localStorage.getItem('userProfile')) || { name: '', picture: '' };
+// Update sync UI function
+// Update sync UI function
+function updateSyncUI() {
     const isLinked = localStorage.getItem('indyMusicLinked') === 'true';
+    const syncBtn = document.getElementById('syncBtn');
+    const editProfileBtn = document.getElementById('editProfileBtn');
     
-    const avatar = document.getElementById('profileAvatarLarge');
-    const name = document.getElementById('profileNameLarge');
-    const status = document.getElementById('profileStatusText');
-    const statusDot = document.getElementById('statusDot');
-    const badge = document.getElementById('profileBadge');
-    
-    if (isLinked && indyProfile.name) {
-        // Update avatar
-        if (indyProfile.picture && indyProfile.picture.trim()) {
-            avatar.style.backgroundImage = `url(${indyProfile.picture})`;
-            avatar.textContent = '';
-        } else {
-            avatar.style.backgroundImage = 'linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%)';
-            avatar.textContent = indyProfile.name.charAt(0).toUpperCase();
+    if (isLinked) {
+        syncBtn.classList.add('synced');
+        syncBtn.innerHTML = '<span>✓</span> Synced';
+        
+        // Show edit profile button
+        if (editProfileBtn) {
+            editProfileBtn.style.display = 'flex';
+            editProfileBtn.classList.add('visible');
+            editProfileBtn.classList.remove('hidden');
         }
-        
-        // Update name
-        name.textContent = indyProfile.name;
-        
-        // Update status
-        status.textContent = 'Synced';
-        statusDot.style.background = '#10b981';
-        
-        // Show badge
-        badge.style.display = 'block';
     } else {
-        avatar.style.backgroundImage = 'linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%)';
-        avatar.textContent = '✦';
-        name.textContent = 'Guest';
-        status.textContent = 'Not linked';
-        statusDot.style.background = '#ef4444';
-        badge.style.display = 'none';
+        syncBtn.classList.remove('synced');
+        syncBtn.innerHTML = '<span>🔗</span> Sync';
+        
+        // Hide edit profile button
+        if (editProfileBtn) {
+            editProfileBtn.style.display = 'none';
+            editProfileBtn.classList.add('hidden');
+            editProfileBtn.classList.remove('visible');
+        }
     }
 }
 
-function showSyncNotification(icon, title, message) {
-    const notif = document.getElementById('syncNotification');
-    document.querySelector('.sync-notification-icon').textContent = icon;
-    document.getElementById('syncNotifTitle').textContent = title;
-    document.getElementById('syncNotifMessage').textContent = message;
-    
-    notif.classList.add('show');
-    
-    setTimeout(() => {
-        notif.classList.remove('show');
-    }, 4000);
-}
-
-// Auto-update profile on page load
+// Auto-update sync UI on page load
 document.addEventListener('DOMContentLoaded', () => {
-    updateProfileDisplay();
+    updateSyncUI();
     
     // Check for profile changes every 2 seconds
     setInterval(() => {
@@ -2952,26 +4396,1583 @@ document.addEventListener('DOMContentLoaded', () => {
         const currentProfileString = JSON.stringify(currentProfile);
         
         if (lastProfileCheck !== currentProfileString) {
-            updateProfileDisplay();
+            updateSyncUI();
             localStorage.setItem('lastProfileCheck', currentProfileString);
         }
     }, 2000);
 });
 
+// Make sure popup closes when clicking outside
 document.getElementById('accountSearchPopup')?.addEventListener('click', (e) => {
     if (e.target.id === 'accountSearchPopup') {
         cancelLink();
     }
 });
-// Add double-click to profile to toggle left sidebar
-document.getElementById('userProfileHeader').addEventListener('dblclick', function() {
-    toggleLeftSidebar();
+
+// Add ESC key to close popup
+document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape' && document.getElementById('accountSearchPopup').classList.contains('active')) {
+        cancelLink();
+    }
 });
 
-// Add double-click to now playing info to toggle right sidebar
-document.getElementById('now-playing-info').addEventListener('dblclick', function() {
-    toggleRightSidebar();
+// Add this for a better user experience - disable sync button while searching
+document.getElementById('accountSearchPopup').addEventListener('animationstart', (e) => {
+    if (e.animationName === 'fadeIn') {
+        const syncBtn = document.getElementById('syncBtn');
+        syncBtn.disabled = true;
+        syncBtn.innerHTML = '<span>⏳</span> Searching...';
+    }
 });
+
+document.getElementById('accountSearchPopup').addEventListener('animationend', (e) => {
+    if (e.animationName === 'fadeIn') {
+        const syncBtn = document.getElementById('syncBtn');
+        syncBtn.disabled = false;
+        syncBtn.innerHTML = '<span>🔗</span> Sync';
+    }
+});
+
+// ============================================
+// CONSOLIDATED PROFILE EDITOR - ALL IN ONE
+// ============================================
+
+// Define available badges (customizable)
+const AVAILABLE_BADGES = [
+    '🎹', '🎵', '🎤', '🎸', '🥁', '🎷', '🎺', '🎻', '🎧', '📻',
+    '🌟', '✨', '⚡', '🔥', '💫', '⭐', '🏆', '👑', '💎', '🔮',
+    '💻', '🎨', '📸', '🎮', '📚', '✏️', '🎭', '🎬', '🎪', '🎟️'
+];
+
+// Available pronouns
+const AVAILABLE_PRONOUNS = [
+    'he/him', 'she/her', 'they/them', 'he/they', 'she/they',
+    'any/all', 'ask me', 'other'
+];
+
+// Global variables for profile editor
+let currentProfileData = null;
+let currentIndyProfile = null;
+let isSaving = false;
+
+
+// Helper function to check sync status
+function checkSyncStatus() {
+    const isLinked = localStorage.getItem('indyMusicLinked') === 'true';
+    const syncTime = localStorage.getItem('indyMusicLinkTime');
+    const oneWeek = 7 * 24 * 60 * 60 * 1000; // One week in milliseconds
+    
+    // Check if sync is older than one week (optional)
+    if (isLinked && syncTime) {
+        const timeSinceSync = Date.now() - parseInt(syncTime);
+        if (timeSinceSync > oneWeek) {
+            showSyncNotification('⚠️', 'Sync Expired', 'Please re-sync your account');
+            localStorage.setItem('indyMusicLinked', 'false');
+            updateSyncUI();
+            return false;
+        }
+    }
+    
+    return isLinked;
+}
+
+function openProfileEditor() {
+    // Check if user is synced
+    const isLinked = localStorage.getItem('indyMusicLinked') === 'true';
+    if (!isLinked) {
+        showSyncNotification('⚠️', 'Not Synced', 'Sync your INDY account first');
+        
+        // Highlight the sync button to guide the user
+        const syncBtn = document.getElementById('syncBtn');
+        if (syncBtn) {
+            syncBtn.style.animation = 'pulse-glow 1s 3';
+            setTimeout(() => {
+                syncBtn.style.animation = '';
+            }, 3000);
+        }
+        return;
+    }
+
+        if (!checkSyncStatus()) {
+        showSyncNotification('⚠️', 'Not Synced', 'Sync your INDY account first');
+        
+        // Highlight the sync button
+        const syncBtn = document.getElementById('syncBtn');
+        if (syncBtn) {
+            syncBtn.style.animation = 'pulse-glow 1s 3';
+            setTimeout(() => {
+                syncBtn.style.animation = '';
+            }, 3000);
+        }
+        return;
+    }
+
+    // Load existing profile data
+    currentIndyProfile = JSON.parse(localStorage.getItem('userProfile')) || { 
+        name: 'Guest', 
+        picture: '',
+        description: '',
+        languages: [],
+        banner: '',
+        featuredPlaylists: [],
+        pronouns: '',
+        badges: []
+    };
+    
+    // Load additional profile data if it exists
+    currentProfileData = JSON.parse(localStorage.getItem('indyProfileData')) || {
+        description: currentIndyProfile.description || 'Music lover',
+        languages: currentIndyProfile.languages || ['English'],
+        banner: currentIndyProfile.banner || '',
+        featuredPlaylists: currentIndyProfile.featuredPlaylists || [],
+        pronouns: currentIndyProfile.pronouns || '',
+        badges: currentIndyProfile.badges || ['🎵']
+    };
+
+        // Check sessionStorage for banner (fallback)
+    if (!currentProfileData.banner) {
+        const sessionBanner = sessionStorage.getItem('profileBanner');
+        if (sessionBanner) {
+            currentProfileData.banner = sessionBanner;
+            currentIndyProfile.banner = sessionBanner;
+            console.log('Loaded banner from sessionStorage');
+        }
+    }
+    
+    console.log('Loading profile data:', {
+        name: currentIndyProfile.name,
+        hasBanner: !!currentProfileData.banner,
+        bannerLength: currentProfileData.banner ? currentProfileData.banner.length : 0
+    });
+    
+    // Merge data to keep both in sync
+    currentIndyProfile.description = currentProfileData.description;
+    currentIndyProfile.languages = currentProfileData.languages;
+    currentIndyProfile.banner = currentProfileData.banner;
+    currentIndyProfile.featuredPlaylists = currentProfileData.featuredPlaylists;
+    currentIndyProfile.pronouns = currentProfileData.pronouns;
+    currentIndyProfile.badges = currentProfileData.badges;
+    
+    // Create modal overlay
+    const modal = document.createElement('div');
+    modal.className = 'profile-editor-modal active';
+    modal.id = 'profileEditorModal';
+    
+    // Create banner HTML
+    const bannerHTML = currentProfileData.banner ? 
+        `<img src="${currentProfileData.banner}" alt="Banner" id="bannerImage">
+         <div class="banner-overlay">Click to change</div>` : 
+        '<div class="banner-placeholder">🎵 Click to add banner</div>' + 
+        '<div class="banner-overlay">Add Banner</div>';
+    
+    // Create profile picture HTML
+    const profilePicHTML = currentIndyProfile.picture ? 
+        `<img src="${currentIndyProfile.picture}" alt="Profile">
+         <div class="profile-pic-overlay">Change Photo</div>
+         <span class="online-dot"></span>` : 
+        '<div class="profile-pic-placeholder">' + (currentIndyProfile.name?.charAt(0) || 'G') + '</div>' +
+        '<div class="profile-pic-overlay">Add Photo</div>' +
+        '<span class="online-dot"></span>';
+    
+    // Create featured playlists HTML
+    const featuredPlaylistsHTML = currentProfileData.featuredPlaylists.length > 0 ? 
+        `<div class="playlists-scroll-container" id="playlistsScrollContainer">
+            ${currentProfileData.featuredPlaylists.map((playlist, index) => `
+                <div class="featured-playlist-card" data-index="${index}" draggable="true">
+                    <div class="playlist-card-header">
+                        <span class="playlist-emoji">${playlist.emoji || '🎵'}</span>
+                        <button class="remove-playlist-btn" onclick="removeFeaturedPlaylist(${index})">×</button>
+                    </div>
+                    <div class="playlist-card-name">${escapeHtml(playlist.name)}</div>
+                    <div class="playlist-card-count">${playlist.songs?.length || 0} songs</div>
+                </div>
+            `).join('')}
+        </div>` :
+        '<div class="empty-playlists">No playlists added yet. Click "Add Playlist" to feature some!</div>';
+    
+    modal.innerHTML = `
+        <div class="profile-editor-content">
+            <!-- Header -->
+            <div class="profile-editor-header">
+                <div class="profile-editor-title">Edit Profile</div>
+                <button class="profile-editor-close" id="profileEditorClose">×</button>
+            </div>
+            
+            <!-- Main Content -->
+            <div class="profile-editor-main">
+                <!-- Left Column -->
+                <div class="profile-editor-left">
+                    <!-- Banner Section -->
+                    <div class="profile-banner-section">
+                        <div class="profile-banner-container">
+                            <div class="profile-banner" id="profileBannerPreview">
+                                ${bannerHTML}
+                            </div>
+                        </div>
+                        <input type="file" id="bannerUpload" accept="image/*" style="display: none;">
+                        <div class="banner-controls">
+                            <button class="banner-upload-btn" id="bannerUploadBtn">
+                                ${currentProfileData.banner ? '📷 Change Banner' : '📷 Add Banner'}
+                            </button>
+                            ${currentProfileData.banner ? 
+                                '<button class="banner-remove-btn" id="bannerRemoveBtn">🗑️ Remove</button>' : 
+                                ''
+                            }
+                        </div>
+                    </div>
+                    
+                    <!-- Profile Info Section -->
+                    <div class="profile-info-main">
+                        <!-- Profile Picture & Name -->
+                        <div class="profile-header-section">
+                            <div class="profile-pic-wrapper">
+                                <div class="profile-pic-preview" id="profilePicPreview">
+                                    ${profilePicHTML}
+                                </div>
+                                <input type="file" id="profilePicUpload" accept="image/*" style="display: none;">
+                                <button class="profile-pic-upload-btn" id="profilePicUploadBtn">Change</button>
+                            </div>
+                            
+                            <div class="profile-name-section">
+                                <div class="form-group">
+                                    <label>Display Name</label>
+                                    <input type="text" id="profileNameInput" class="profile-input" 
+                                           value="${currentIndyProfile.name || 'Guest'}" 
+                                           placeholder="Your display name">
+                                </div>
+                                
+                                <div class="form-group">
+                                    <label>Pronouns</label>
+                                    <div class="pronouns-container">
+                                        <select id="pronounsSelect" class="profile-select">
+                                            <option value="">Select pronouns...</option>
+                                            ${AVAILABLE_PRONOUNS.map(pronoun => `
+                                                <option value="${pronoun}" ${currentProfileData.pronouns === pronoun ? 'selected' : ''}>
+                                                    ${pronoun}
+                                                </option>
+                                            `).join('')}
+                                            <option value="custom" ${!AVAILABLE_PRONOUNS.includes(currentProfileData.pronouns) && currentProfileData.pronouns ? 'selected' : ''}>
+                                                Custom
+                                            </option>
+                                        </select>
+                                        <input type="text" id="customPronounsInput" 
+                                               class="profile-input" 
+                                               style="${AVAILABLE_PRONOUNS.includes(currentProfileData.pronouns) || !currentProfileData.pronouns ? 'display: none;' : ''}"
+                                               value="${!AVAILABLE_PRONOUNS.includes(currentProfileData.pronouns) ? currentProfileData.pronouns : ''}" 
+                                               placeholder="Enter custom pronouns">
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Badges Section -->
+                        <div class="form-group">
+                            <label>Badges</label>
+                            <div class="badges-section">
+                                <div class="badges-display" id="badgesDisplay">
+                                    ${currentProfileData.badges.map(badge => `
+                                        <span class="badge-tag" data-badge="${badge}">
+                                            ${badge}
+                                            <span class="remove-badge" data-badge="${badge}">×</span>
+                                        </span>
+                                    `).join('')}
+                                </div>
+                                <div class="badges-controls">
+                                    <select id="badgeSelect" class="profile-select">
+                                        <option value="">Add a badge...</option>
+                                        ${AVAILABLE_BADGES.filter(badge => !currentProfileData.badges.includes(badge))
+                                            .map(badge => `<option value="${badge}">${badge}</option>`)
+                                            .join('')}
+                                    </select>
+                                    <button class="add-badge-btn" id="addBadgeBtn">+ Add</button>
+                                </div>
+                                <div class="badges-hint">
+                                    <small>Select badges that represent you!</small>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Description -->
+                        <div class="form-group">
+                            <label>Description</label>
+                            <textarea id="profileDescriptionInput" class="profile-textarea" 
+                                      placeholder="Tell us about your music taste...">${currentProfileData.description || ''}</textarea>
+                        </div>
+                        
+                        <!-- Languages -->
+                        <div class="form-group">
+                            <label>Languages</label>
+                            <div class="languages-input-container">
+                                <div class="languages-tags" id="languagesTags">
+                                    ${currentProfileData.languages.map(lang => `
+                                        <span class="language-tag">
+                                            ${lang}
+                                            <span class="remove-language" data-language="${lang}">×</span>
+                                        </span>
+                                    `).join('')}
+                                </div>
+                                <div class="language-input-wrapper">
+                                    <input type="text" id="languageInput" class="profile-input" placeholder="Add language (press Enter)">
+                                    <button class="add-language-btn" id="addLanguageBtn">+</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Right Column -->
+                <div class="profile-editor-right">
+                    <!-- Featured Playlists -->
+                    <div class="featured-playlists-section">
+                        <div class="section-header">
+                            <h3>Featured Playlists</h3>
+                            <button class="add-playlist-btn" id="addPlaylistBtn">Add Playlist</button>
+                        </div>
+                        
+                        <div class="featured-playlists-container" id="featuredPlaylistsContainer">
+                            ${featuredPlaylistsHTML}
+                        </div>
+                        
+                        <div class="playlists-info">
+                            <small>Drag playlists to reorder them</small>
+                        </div>
+                    </div>
+                    
+                    <!-- Preview Section -->
+                    <div class="preview-section">
+                        <h4>Profile Preview</h4>
+                        <div class="profile-preview" id="profilePreview">
+                            <!-- Preview will be updated dynamically -->
+                        </div>
+                    </div>
+                    
+                    <!-- Save Button -->
+                    <div class="save-section">
+                        <button class="save-profile-btn" id="saveProfileBtn">
+                            💾 Save All Changes
+                        </button>
+                        <div class="save-info">
+                            <small>All changes are saved locally to your browser</small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Add Playlist Modal -->
+        <div class="add-playlist-modal" id="addPlaylistModal">
+            <div class="add-playlist-content">
+                <div class="add-playlist-header">
+                    <h3>Add Playlist to Profile</h3>
+                    <button class="close-modal-btn" id="closeAddPlaylistBtn">×</button>
+                </div>
+                <div class="add-playlist-list" id="addPlaylistList">
+                    <!-- Playlists will be populated dynamically -->
+                </div>
+            </div>
+        </div>
+    `;
+    
+    document.body.appendChild(modal);
+    
+    // Initialize all functionality
+    initializeProfileEditor();
+}
+
+// ============================================
+// INITIALIZATION & EVENT HANDLERS
+// ============================================
+
+function initializeProfileEditor() {
+    // Add styles
+    addProfileEditorStyles();
+    
+    // Set up event listeners
+    setupEventListeners();
+    
+    // Update preview
+    updateProfilePreview();
+}
+
+function addProfileEditorStyles() {
+    const styles = `
+        /* Interactive button states */
+        .profile-pic-upload-btn:active,
+        .banner-upload-btn:active,
+        .add-language-btn:active,
+        .add-badge-btn:active {
+            transform: scale(0.95);
+        }
+        
+        /* Focus states for inputs */
+        .profile-input:focus,
+        .profile-textarea:focus,
+        .profile-select:focus {
+            box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.2);
+        }
+        
+        /* Loading states */
+        .save-profile-btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+        
+        .save-profile-btn.saving {
+            position: relative;
+            padding-left: 48px;
+        }
+        
+        .save-profile-btn.saving::before {
+            content: '';
+            position: absolute;
+            left: 16px;
+            top: 50%;
+            transform: translateY(-50%);
+            width: 20px;
+            height: 20px;
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            border-top-color: white;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+        
+        @keyframes spin {
+            to { transform: translateY(-50%) rotate(360deg); }
+        }
+        
+        /* Error states */
+        .profile-input.error,
+        .profile-textarea.error {
+            border-color: #ef4444 !important;
+        }
+        
+        .error-message {
+            color: #ef4444;
+            font-size: 12px;
+            margin-top: 4px;
+        }
+        
+        /* Success feedback */
+        .success-message {
+            color: #10b981;
+            font-size: 14px;
+            text-align: center;
+            padding: 8px;
+            background: rgba(16, 185, 129, 0.1);
+            border-radius: 8px;
+            margin-top: 12px;
+        }
+        
+        /* Badge selection feedback */
+        .badge-tag.selected {
+            background: rgba(99, 102, 241, 0.5) !important;
+            box-shadow: 0 0 0 2px rgba(99, 102, 241, 0.5);
+        }
+        
+        /* Language tag hover */
+        .language-tag:hover {
+            transform: scale(1.05);
+        }
+        
+        /* Profile picture preview hover */
+        .profile-pic-preview:hover .profile-pic-overlay {
+            opacity: 1;
+        }
+        
+        .profile-pic-overlay {
+            position: absolute;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.7);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            opacity: 0;
+            transition: opacity 0.3s;
+            color: white;
+            font-size: 14px;
+            font-weight: 600;
+        }
+        
+        /* Banner hover effect */
+        .profile-banner:hover .banner-overlay {
+            opacity: 1;
+        }
+        
+        .banner-overlay {
+            position: absolute;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.7);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            opacity: 0;
+            transition: opacity 0.3s;
+            color: white;
+            font-size: 16px;
+            font-weight: 600;
+        }
+        
+        /* Add button for playlist modal */
+        .add-to-featured-btn {
+            background: rgba(99, 102, 241, 0.3);
+            border: none;
+            border-radius: 8px;
+            color: var(--text);
+            padding: 8px 16px;
+            font-size: 12px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        
+        .add-to-featured-btn:hover {
+            background: rgba(99, 102, 241, 0.5);
+            transform: scale(1.05);
+        }
+        
+        .available-playlist-item {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 16px;
+            background: rgba(0, 0, 0, 0.2);
+            border-radius: 12px;
+            margin-bottom: 12px;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        
+        .available-playlist-item:hover {
+            background: rgba(0, 0, 0, 0.4);
+            transform: translateX(4px);
+        }
+        
+        .available-playlist-item .available-playlist-info {
+            flex: 1;
+            min-width: 0;
+        }
+    `;
+    
+    const styleSheet = document.createElement('style');
+    styleSheet.textContent = styles;
+    styleSheet.setAttribute('data-profile-editor', 'true');
+    document.head.appendChild(styleSheet);
+}
+
+function setupEventListeners() {
+    // Close button
+    document.getElementById('profileEditorClose')?.addEventListener('click', () => {
+            closeProfileEditor();
+    });
+    
+// Event delegation for banner controls (since they get recreated)
+document.addEventListener('click', function(e) {
+    // Banner upload button
+    if (e.target.id === 'bannerUploadBtn' || e.target.closest('#bannerUploadBtn')) {
+        const bannerUpload = document.getElementById('bannerUpload');
+        if (bannerUpload) bannerUpload.click();
+    }
+    
+    // Banner remove button
+    if (e.target.id === 'bannerRemoveBtn' || e.target.closest('#bannerRemoveBtn')) {
+        removeBanner();
+    }
+});
+
+// Modal background click
+document.getElementById('profileEditorModal')?.addEventListener('click', (e) => {
+    if (e.target.id === 'profileEditorModal') {
+        if (window.profileChangesSaved !== true) {
+                closeProfileEditor();
+        } else {
+            closeProfileEditor();
+        }
+    }
+});
+
+// ESC key
+document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape') {
+        const modal = document.getElementById('profileEditorModal');
+        if (modal && modal.classList.contains('active')) {
+            if (window.profileChangesSaved !== true) {
+                    closeProfileEditor();
+            } else {
+                closeProfileEditor();
+            }
+        }
+        
+        const playlistModal = document.getElementById('addPlaylistModal');
+        if (playlistModal && playlistModal.classList.contains('active')) {
+            hideAddPlaylistModal();
+        }
+    }
+});
+    
+    // File uploads
+    const bannerUpload = document.getElementById('bannerUpload');
+    const bannerUploadBtn = document.getElementById('bannerUploadBtn');
+    const bannerRemoveBtn = document.getElementById('bannerRemoveBtn');
+    const bannerPreview = document.getElementById('profileBannerPreview');
+    
+    if (bannerUploadBtn) bannerUploadBtn.addEventListener('click', () => bannerUpload.click());
+    if (bannerPreview) bannerPreview.addEventListener('click', () => bannerUpload.click());
+    
+    bannerUpload?.addEventListener('change', handleBannerUpload);
+    bannerRemoveBtn?.addEventListener('click', removeBanner);
+    
+    // Profile picture upload
+    const profilePicUpload = document.getElementById('profilePicUpload');
+    const profilePicUploadBtn = document.getElementById('profilePicUploadBtn');
+    const profilePicPreview = document.getElementById('profilePicPreview');
+    
+    if (profilePicUploadBtn) profilePicUploadBtn.addEventListener('click', () => profilePicUpload.click());
+    if (profilePicPreview) profilePicPreview.addEventListener('click', () => profilePicUpload.click());
+    
+    profilePicUpload?.addEventListener('change', handleProfilePicUpload);
+    
+    // Profile inputs
+    document.getElementById('profileNameInput')?.addEventListener('input', updateProfilePreview);
+    document.getElementById('profileDescriptionInput')?.addEventListener('input', updateProfilePreview);
+    document.getElementById('pronounsSelect')?.addEventListener('change', handlePronounsChange);
+    document.getElementById('customPronounsInput')?.addEventListener('input', updateProfilePreview);
+    
+    // Languages
+    document.getElementById('addLanguageBtn')?.addEventListener('click', addLanguage);
+    document.getElementById('languageInput')?.addEventListener('keypress', (e) => {
+        if (e.key === 'Enter') {
+            e.preventDefault();
+            addLanguage();
+        }
+    });
+    
+    // Badges
+    document.getElementById('addBadgeBtn')?.addEventListener('click', addBadge);
+    document.getElementById('badgeSelect')?.addEventListener('change', (e) => {
+        if (e.target.value) {
+            addBadgeFromSelect(e.target.value);
+            e.target.value = '';
+        }
+    });
+    
+    // Save button
+    document.getElementById('saveProfileBtn')?.addEventListener('click', saveProfileChanges);
+    
+    // Add playlist button
+    document.getElementById('addPlaylistBtn')?.addEventListener('click', showAddPlaylistModal);
+    
+    // Close add playlist modal
+    document.getElementById('closeAddPlaylistBtn')?.addEventListener('click', hideAddPlaylistModal);
+    
+    // Add playlist modal background click
+    document.getElementById('addPlaylistModal')?.addEventListener('click', (e) => {
+        if (e.target.id === 'addPlaylistModal') {
+            hideAddPlaylistModal();
+        }
+    });
+}
+
+// ============================================
+// CORE FUNCTIONS
+// ============================================
+
+function updateBannerControls(hasBanner) {
+    const bannerControls = document.querySelector('.banner-controls');
+    if (!bannerControls) return;
+    
+    // Update the HTML based on whether there's a banner
+    if (hasBanner) {
+        bannerControls.innerHTML = `
+            <button class="banner-upload-btn" id="bannerUploadBtn">📷 Change Banner</button>
+            <button class="banner-upload-btn" id="bannerRemoveBtn">🗑️ Remove</button>
+        `;
+    } else {
+        bannerControls.innerHTML = `
+            <button class="banner-upload-btn" id="bannerUploadBtn">📷 Add Banner</button>
+        `;
+    }
+    
+    // Re-attach event listeners
+    reattachBannerEventListeners();
+}
+
+function handleBannerUpload(e) {
+    const file = e.target.files[0];
+    if (!file) return;
+    
+    if (!file.type.startsWith('image/')) {
+        showSyncNotification('⚠️', 'Invalid File', 'Please select an image file (JPG, PNG, etc.)');
+        return;
+    }
+    
+    // Reduce size limit and compress
+    if (file.size > 2 * 1024 * 1024) { // Reduced to 2MB
+        showSyncNotification('⚠️', 'File Too Large', 'Please select an image smaller than 2MB');
+        return;
+    }
+    
+    const reader = new FileReader();
+    reader.onload = function(e) {
+        const imageData = e.target.result;
+        
+        // Create an image to compress it
+        const img = new Image();
+        img.onload = function() {
+            // Create canvas to resize/compress
+            const canvas = document.createElement('canvas');
+            const ctx = canvas.getContext('2d');
+            
+            // Max dimensions for banner
+            const maxWidth = 1200;
+            const maxHeight = 400;
+            
+            let width = img.width;
+            let height = img.height;
+            
+            // Calculate new dimensions
+            if (width > height) {
+                if (width > maxWidth) {
+                    height = Math.round((height * maxWidth) / width);
+                    width = maxWidth;
+                }
+            } else {
+                if (height > maxHeight) {
+                    width = Math.round((width * maxHeight) / height);
+                    height = maxHeight;
+                }
+            }
+            
+            // Set canvas dimensions
+            canvas.width = width;
+            canvas.height = height;
+            
+            // Draw and compress image
+            ctx.drawImage(img, 0, 0, width, height);
+            
+            // Get compressed base64 (quality 0.7 for good compression)
+            const compressedData = canvas.toDataURL('image/jpeg', 0.7);
+            
+            console.log('Banner size before compression:', imageData.length, 'bytes');
+            console.log('Banner size after compression:', compressedData.length, 'bytes');
+            
+            // Update preview
+            const bannerPreview = document.getElementById('profileBannerPreview');
+            if (bannerPreview) {
+                bannerPreview.innerHTML = `
+                    <img src="${compressedData}" alt="Banner" id="bannerImage">
+                    <div class="banner-overlay">Click to change</div>
+                `;
+                bannerPreview.style.backgroundImage = `url('${compressedData}')`;
+            }
+            
+            // Save compressed data
+            currentProfileData.banner = compressedData;
+            currentIndyProfile.banner = compressedData;
+            
+            // Update controls
+            updateBannerControls(true);
+            
+            // Clear file input and update preview
+            e.target.value = '';
+            updateProfilePreview();
+            
+            // TEST: Immediately save to localStorage
+            try {
+                localStorage.setItem('testBanner', compressedData);
+                console.log('Test save successful:', compressedData.length, 'bytes saved');
+            } catch (err) {
+                console.error('Failed to save banner to localStorage:', err);
+                showSyncNotification('⚠️', 'Storage Error', 'Banner too large to save');
+                // Clear banner if can't save
+                currentProfileData.banner = '';
+                currentIndyProfile.banner = '';
+                updateBannerControls(false);
+            }
+            
+            showSyncNotification('✓', 'Banner Updated', 'Your banner has been uploaded');
+        };
+        
+        img.onerror = function() {
+            showSyncNotification('⚠️', 'Image Error', 'Could not process image');
+        };
+        
+        img.src = imageData;
+    };
+    
+    reader.onerror = function() {
+        showSyncNotification('⚠️', 'Upload Failed', 'Could not read the image file');
+    };
+    
+    reader.readAsDataURL(file);
+}
+
+function handleProfilePicUpload(e) {
+    const file = e.target.files[0];
+    if (!file) return;
+    
+    if (!file.type.startsWith('image/')) {
+        showSyncNotification('⚠️', 'Invalid File', 'Please select an image file');
+        return;
+    }
+    
+    const reader = new FileReader();
+    reader.onload = function(e) {
+        const imageData = e.target.result;
+        
+        // Update preview
+        const picPreview = document.getElementById('profilePicPreview');
+        if (picPreview) {
+            picPreview.innerHTML = `
+                <img src="${imageData}" alt="Profile">
+                <span class="online-dot"></span>
+                <div class="profile-pic-overlay">Change Photo</div>
+            `;
+        }
+        
+        // Save to data
+        currentIndyProfile.picture = imageData;
+        
+        // Clear file input and update preview
+        e.target.value = '';
+        updateProfilePreview();
+        
+        showSyncNotification('✓', 'Profile Picture Updated', 'Your profile picture has been updated');
+    };
+    reader.readAsDataURL(file);
+}
+
+function removeBanner() {
+    if (!confirm('Remove banner image?')) return;
+    
+    // Clear from data
+    currentProfileData.banner = '';
+    currentIndyProfile.banner = '';
+    
+    // Update preview
+    const bannerPreview = document.getElementById('profileBannerPreview');
+    if (bannerPreview) {
+        bannerPreview.innerHTML = `
+            <div class="banner-placeholder">🎵 Click to add banner</div>
+            <div class="banner-overlay">Add Banner</div>
+        `;
+        bannerPreview.style.backgroundImage = '';
+    }
+    
+    // Update controls - FIXED: Use helper function
+    updateBannerControls(false);
+    
+    updateProfilePreview();
+    showSyncNotification('✓', 'Banner Removed', 'Your banner has been removed');
+}
+
+function handlePronounsChange() {
+    const select = document.getElementById('pronounsSelect');
+    const customInput = document.getElementById('customPronounsInput');
+    
+    if (select.value === 'custom') {
+        customInput.style.display = 'block';
+        customInput.focus();
+        currentProfileData.pronouns = customInput.value || '';
+    } else {
+        customInput.style.display = 'none';
+        currentProfileData.pronouns = select.value;
+    }
+    
+    currentIndyProfile.pronouns = currentProfileData.pronouns;
+    updateProfilePreview();
+}
+
+function addLanguage() {
+    const input = document.getElementById('languageInput');
+    if (!input) return;
+    
+    const lang = input.value.trim();
+    
+    if (lang && !currentProfileData.languages.includes(lang)) {
+        currentProfileData.languages.push(lang);
+        currentIndyProfile.languages = currentProfileData.languages;
+        
+        updateLanguagesDisplay();
+        input.value = '';
+        updateProfilePreview();
+        
+        showSyncNotification('✓', 'Language Added', `Added "${lang}" to languages`);
+    } else if (currentProfileData.languages.includes(lang)) {
+        showSyncNotification('⚠️', 'Duplicate', 'Language already added');
+    }
+}
+
+function updateLanguagesDisplay() {
+    const tagsContainer = document.getElementById('languagesTags');
+    if (tagsContainer) {
+        tagsContainer.innerHTML = currentProfileData.languages.map(lang => `
+            <span class="language-tag">
+                ${lang}
+                <span class="remove-language" data-language="${lang}">×</span>
+            </span>
+        `).join('');
+        
+        // Re-add event listeners for remove buttons
+        tagsContainer.querySelectorAll('.remove-language').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                const lang = btn.dataset.language;
+                removeLanguage(lang);
+            });
+        });
+    }
+}
+
+function removeLanguage(lang) {
+    if (!confirm(`Remove "${lang}" from languages?`)) return;
+    
+    currentProfileData.languages = currentProfileData.languages.filter(l => l !== lang);
+    currentIndyProfile.languages = currentProfileData.languages;
+    
+    updateLanguagesDisplay();
+    updateProfilePreview();
+    showSyncNotification('✓', 'Language Removed', `Removed "${lang}" from languages`);
+}
+
+function addBadge() {
+    const select = document.getElementById('badgeSelect');
+    if (!select) return;
+    
+    const badge = select.value;
+    if (badge) {
+        addBadgeFromSelect(badge);
+        select.value = '';
+    }
+}
+
+function addBadgeFromSelect(badge) {
+    if (!currentProfileData.badges.includes(badge)) {
+        currentProfileData.badges.push(badge);
+        currentIndyProfile.badges = currentProfileData.badges;
+        
+        updateBadgesDisplay();
+        updateBadgeSelect();
+        updateProfilePreview();
+        
+        showSyncNotification('✓', 'Badge Added', `Added ${badge} badge`);
+    }
+}
+
+function removeBadge(badge) {
+    if (!confirm(`Remove ${badge} badge?`)) return;
+    
+    currentProfileData.badges = currentProfileData.badges.filter(b => b !== badge);
+    currentIndyProfile.badges = currentProfileData.badges;
+    
+    updateBadgesDisplay();
+    updateBadgeSelect();
+    updateProfilePreview();
+    showSyncNotification('✓', 'Badge Removed', `Removed ${badge} badge`);
+}
+
+function updateBadgesDisplay() {
+    const display = document.getElementById('badgesDisplay');
+    if (display) {
+        display.innerHTML = currentProfileData.badges.map(badge => `
+            <span class="badge-tag" data-badge="${badge}">
+                ${badge}
+                <span class="remove-badge" data-badge="${badge}">×</span>
+            </span>
+        `).join('');
+        
+        // Re-add event listeners for remove buttons
+        display.querySelectorAll('.remove-badge').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                const badge = btn.dataset.badge;
+                removeBadge(badge);
+            });
+        });
+    }
+}
+
+function updateBadgeSelect() {
+    const select = document.getElementById('badgeSelect');
+    if (select) {
+        const currentValue = select.value;
+        const availableBadges = AVAILABLE_BADGES.filter(badge => !currentProfileData.badges.includes(badge));
+        
+        select.innerHTML = '<option value="">Add a badge...</option>' +
+            availableBadges.map(badge => `<option value="${badge}">${badge}</option>`).join('');
+        
+        select.disabled = availableBadges.length === 0;
+        if (availableBadges.length === 0) {
+            select.innerHTML = '<option value="">All badges added!</option>';
+        }
+        
+        select.value = currentValue;
+    }
+}
+
+function updateProfilePreview() {
+    const preview = document.getElementById('profilePreview');
+    if (!preview) return;
+    
+    const name = currentIndyProfile.name || 'Guest';
+    const pronouns = currentProfileData.pronouns || '';
+    const description = currentProfileData.description || 'No description yet';
+    const languages = currentProfileData.languages || [];
+    
+    preview.innerHTML = `
+        <div class="preview-banner" style="${currentProfileData.banner ? `background-image: url('${currentProfileData.banner}')` : 'background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%)'}">
+            ${!currentProfileData.banner ? '<div class="preview-banner-placeholder">🎵 Banner Preview</div>' : ''}
+        </div>
+        <div class="preview-profile-info">
+            <div class="preview-avatar" style="${currentIndyProfile.picture ? `background-image: url('${currentIndyProfile.picture}')` : 'background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%)'}">
+                ${!currentIndyProfile.picture ? (name.charAt(0).toUpperCase() || 'G') : ''}
+                <span class="preview-online-dot"></span>
+            </div>
+            <div class="preview-name-section">
+                <div class="preview-name-row">
+                    <h3 class="preview-name">${escapeHtml(name)}</h3>
+                    ${pronouns ? `<span class="preview-pronouns">${pronouns}</span>` : ''}
+                    ${currentProfileData.badges.map(badge => `<span class="preview-badge">${badge}</span>`).join('')}
+                </div>
+                <p class="preview-description">${escapeHtml(description)}</p>
+                <div class="preview-languages">
+                    <strong>Languages:</strong> 
+                    ${languages.length > 0 ? 
+                        languages.map(lang => `<span class="preview-language">${lang}</span>`).join(' ') : 
+                        'None added'}
+                </div>
+            </div>
+        </div>
+        ${currentProfileData.featuredPlaylists.length > 0 ? `
+            <div class="preview-featured-playlists">
+                <h4>Featured Playlists</h4>
+                <div class="preview-playlists-scroll">
+                    ${currentProfileData.featuredPlaylists.slice(0, 3).map(playlist => `
+                        <div class="preview-playlist-card">
+                            <span class="preview-playlist-emoji">${playlist.emoji || '🎵'}</span>
+                            <div class="preview-playlist-name">${escapeHtml(playlist.name)}</div>
+                            <div class="preview-playlist-count">${playlist.songs?.length || 0} songs</div>
+                        </div>
+                    `).join('')}
+                </div>
+            </div>
+        ` : ''}
+    `;
+}
+
+function showAddPlaylistModal() {
+    const modal = document.getElementById('addPlaylistModal');
+    const playlistList = document.getElementById('addPlaylistList');
+    
+    if (!modal || !playlistList) return;
+    
+    // Get all user playlists
+    const playlists = load("playlists", {});
+    const featuredNames = currentProfileData.featuredPlaylists.map(p => p.name);
+    
+    playlistList.innerHTML = '';
+    
+    const availablePlaylists = Object.keys(playlists).filter(name => !featuredNames.includes(name));
+    
+    if (availablePlaylists.length === 0) {
+        playlistList.innerHTML = `
+            <div style="padding:40px;text-align:center;color:var(--muted);">
+                No playlists available to feature!<br>
+                <small>Create a playlist first in your library.</small>
+            </div>
+        `;
+    } else {
+        availablePlaylists.forEach(name => {
+            const playlist = playlists[name];
+            const div = document.createElement('div');
+            div.className = 'available-playlist-item';
+            div.innerHTML = `
+                <span class="available-playlist-emoji">${playlist.emoji || '🎵'}</span>
+                <div class="available-playlist-info">
+                    <div class="available-playlist-name">${escapeHtml(name)}</div>
+                    <div class="available-playlist-count">${playlist.songs.length} songs</div>
+                </div>
+                <button class="add-to-featured-btn" data-name="${escapeHtml(name)}">+ Add</button>
+            `;
+            
+            div.addEventListener('click', (e) => {
+                if (!e.target.classList.contains('add-to-featured-btn')) {
+                    addToFeatured(name);
+                }
+            });
+            
+            div.querySelector('.add-to-featured-btn').addEventListener('click', (e) => {
+                e.stopPropagation();
+                addToFeatured(name);
+            });
+            
+            playlistList.appendChild(div);
+        });
+    }
+    
+    modal.classList.add('active');
+}
+
+function hideAddPlaylistModal() {
+    const modal = document.getElementById('addPlaylistModal');
+    if (modal) modal.classList.remove('active');
+}
+
+function addToFeatured(name) {
+    const playlists = load("playlists", {});
+    const playlist = playlists[name];
+    
+    if (!playlist) return;
+    
+    if (!currentProfileData.featuredPlaylists.some(p => p.name === name)) {
+        currentProfileData.featuredPlaylists.push({
+            name: name,
+            emoji: playlist.emoji || '🎵',
+            songs: playlist.songs || []
+        });
+        currentIndyProfile.featuredPlaylists = currentProfileData.featuredPlaylists;
+        
+        updateFeaturedPlaylistsDisplay();
+        initializePlaylistDragDrop();
+        hideAddPlaylistModal();
+        updateProfilePreview();
+        
+        showSyncNotification('✓', 'Playlist Added', `"${name}" added to featured playlists`);
+    }
+}
+
+function removeFeaturedPlaylist(index) {
+    if (!confirm('Remove this playlist from featured?')) return;
+    
+    const playlistName = currentProfileData.featuredPlaylists[index].name;
+    currentProfileData.featuredPlaylists.splice(index, 1);
+    currentIndyProfile.featuredPlaylists = currentProfileData.featuredPlaylists;
+    
+    updateFeaturedPlaylistsDisplay();
+    initializePlaylistDragDrop();
+    updateProfilePreview();
+    
+    showSyncNotification('✓', 'Playlist Removed', `"${playlistName}" removed from featured`);
+}
+
+function updateFeaturedPlaylistsDisplay() {
+    const container = document.getElementById('featuredPlaylistsContainer');
+    if (!container) return;
+    
+    if (currentProfileData.featuredPlaylists.length > 0) {
+        container.innerHTML = `
+            <div class="playlists-scroll-container" id="playlistsScrollContainer">
+                ${currentProfileData.featuredPlaylists.map((playlist, index) => `
+                    <div class="featured-playlist-card" data-index="${index}" draggable="true">
+                        <div class="playlist-card-header">
+                            <span class="playlist-emoji">${playlist.emoji || '🎵'}</span>
+                            <button class="remove-playlist-btn" data-index="${index}">×</button>
+                        </div>
+                        <div class="playlist-card-name">${escapeHtml(playlist.name)}</div>
+                        <div class="playlist-card-count">${playlist.songs?.length || 0} songs</div>
+                    </div>
+                `).join('')}
+            </div>`;
+        
+        // Re-add event listeners for remove buttons
+        container.querySelectorAll('.remove-playlist-btn').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                const index = parseInt(btn.dataset.index);
+                removeFeaturedPlaylist(index);
+            });
+        });
+        
+        initializePlaylistDragDrop();
+    } else {
+        container.innerHTML = `
+            <div class="empty-playlists">
+                No playlists added yet.<br>
+                <small>Click "Add Playlist" to feature your playlists!</small>
+            </div>`;
+    }
+}
+
+function initializePlaylistDragDrop() {
+    const container = document.getElementById('playlistsScrollContainer');
+    if (!container) return;
+    
+    let draggedItem = null;
+    
+    container.querySelectorAll('.featured-playlist-card').forEach(item => {
+        item.addEventListener('dragstart', function(e) {
+            draggedItem = this;
+            setTimeout(() => this.style.opacity = '0.4', 0);
+            e.dataTransfer.effectAllowed = 'move';
+        });
+        
+        item.addEventListener('dragend', function() {
+            setTimeout(() => {
+                this.style.opacity = '1';
+                this.style.background = '';
+            }, 0);
+            draggedItem = null;
+        });
+        
+        item.addEventListener('dragover', function(e) {
+            e.preventDefault();
+            e.dataTransfer.dropEffect = 'move';
+        });
+        
+        item.addEventListener('dragenter', function(e) {
+            e.preventDefault();
+            if (draggedItem !== this) {
+                this.style.background = 'rgba(99, 102, 241, 0.1)';
+            }
+        });
+        
+        item.addEventListener('dragleave', function() {
+            this.style.background = '';
+        });
+        
+        item.addEventListener('drop', function(e) {
+            e.preventDefault();
+            this.style.background = '';
+            
+            if (draggedItem !== this) {
+                const fromIndex = parseInt(draggedItem.dataset.index);
+                const toIndex = parseInt(this.dataset.index);
+                
+                // Swap in array
+                const [item] = currentProfileData.featuredPlaylists.splice(fromIndex, 1);
+                currentProfileData.featuredPlaylists.splice(toIndex, 0, item);
+                currentIndyProfile.featuredPlaylists = currentProfileData.featuredPlaylists;
+                
+                // Update UI
+                updateFeaturedPlaylistsDisplay();
+                updateProfilePreview();
+            }
+        });
+    });
+}
+async function saveProfileChanges() {
+    if (isSaving) return;
+    
+    // Get updated values from inputs FIRST
+    const nameInput = document.getElementById('profileNameInput');
+    const descInput = document.getElementById('profileDescriptionInput');
+    const pronounsSelect = document.getElementById('pronounsSelect');
+    const customPronounsInput = document.getElementById('customPronounsInput');
+    
+    if (!nameInput || !descInput) return;
+    
+    // CRITICAL: Update ALL data fields from inputs BEFORE saving
+    currentIndyProfile.name = nameInput.value.trim() || 'Guest';
+    currentProfileData.description = descInput.value.trim();
+    currentIndyProfile.description = currentProfileData.description;
+    
+    // Handle pronouns
+    if (pronounsSelect) {
+        currentProfileData.pronouns = pronounsSelect.value === 'custom' ? 
+                                      (customPronounsInput ? customPronounsInput.value.trim() : '') : 
+                                      pronounsSelect.value;
+        currentIndyProfile.pronouns = currentProfileData.pronouns;
+    }
+    
+    // ===== MOVE THE VALIDATION CHECK DOWN HERE =====
+    // Validate name (NOW after we've updated it from the input)
+    if (!currentIndyProfile.name || currentIndyProfile.name.length < 2) {
+        showSyncNotification('⚠️', 'Invalid Name', 'Display name must be at least 2 characters');
+        return;
+    }
+    
+    // Show saving state
+    const saveButton = document.getElementById('saveProfileBtn');
+    if (saveButton) {
+        isSaving = true;
+        saveButton.disabled = true;
+        saveButton.textContent = 'Saving...';
+        saveButton.classList.add('saving');
+    }
+    
+    
+    try {
+        console.log('Saving profile data:', {
+            name: currentIndyProfile.name,
+            hasBanner: !!currentProfileData.banner,
+            bannerLength: currentProfileData.banner ? currentProfileData.banner.length : 0,
+            hasPicture: !!currentIndyProfile.picture,
+            pictureLength: currentIndyProfile.picture ? currentIndyProfile.picture.length : 0,
+            languages: currentProfileData.languages.length,
+            badges: currentProfileData.badges.length,
+            featuredPlaylists: currentProfileData.featuredPlaylists.length
+        });
+        
+        // Try to save to localStorage
+        try {
+            // Save to localStorage - BOTH objects
+            localStorage.setItem('userProfile', JSON.stringify(currentIndyProfile));
+            localStorage.setItem('indyProfileData', JSON.stringify(currentProfileData));
+            
+            console.log('Save successful!');
+            
+            // Also update the sync status if profile is linked
+            if (localStorage.getItem('indyMusicLinked') === 'true') {
+                localStorage.setItem('indyMusicLastSync', Date.now());
+            }
+        } catch (storageError) {
+            console.error('Storage error:', storageError);
+            
+            // If banner is too large, try saving without it
+            if (storageError.name === 'QuotaExceededError') {
+                console.log('Storage full, trying without banner...');
+                
+                // Save banner separately or remove it
+                const bannerData = currentProfileData.banner;
+                currentProfileData.banner = '';
+                currentIndyProfile.banner = '';
+                
+                localStorage.setItem('userProfile', JSON.stringify(currentIndyProfile));
+                localStorage.setItem('indyProfileData', JSON.stringify(currentProfileData));
+                
+                // Try to save banner to sessionStorage as fallback
+                if (bannerData) {
+                    try {
+                        sessionStorage.setItem('profileBanner', bannerData);
+                        console.log('Banner saved to sessionStorage');
+                    } catch (e) {
+                        console.error('Could not save banner anywhere:', e);
+                    }
+                }
+                
+                showSyncNotification('⚠️', 'Storage Full', 'Saved profile without banner (too large)');
+            } else {
+                throw storageError;
+            }
+        }
+        
+        // Verify save worked
+        const savedProfile = JSON.parse(localStorage.getItem('userProfile') || '{}');
+        const savedData = JSON.parse(localStorage.getItem('indyProfileData') || '{}');
+        
+        console.log('Saved to localStorage:', {
+            savedName: savedProfile.name,
+            savedHasBanner: !!savedData.banner,
+            savedBannerLength: savedData.banner ? savedData.banner.length : 0,
+            savedHasPicture: !!savedProfile.picture,
+            savedPictureLength: savedProfile.picture ? savedProfile.picture.length : 0
+        });
+        
+        // Update main profile display
+        updateMainProfileDisplay();
+        
+        // Show success
+        showSyncNotification('✓', 'Profile Updated', 'All changes have been saved');
+        
+        // IMPORTANT: Set a flag that changes have been saved
+        window.profileChangesSaved = true;
+        
+        // Close editor after delay (no confirmation needed)
+        setTimeout(() => {
+            closeProfileEditor();
+        }, 1500);
+        
+    } catch (error) {
+        console.error('Error saving profile:', error);
+        showSyncNotification('⚠️', 'Save Failed', 'Could not save profile changes');
+    } finally {
+        // Restore button state
+        isSaving = false;
+        if (saveButton) {
+            saveButton.disabled = false;
+            saveButton.textContent = '💾 Save All Changes';
+            saveButton.classList.remove('saving');
+        }
+    }
+}
+
+function updateMainProfileDisplay() {
+    // Update main profile header
+    const profileName = document.querySelector('.profile-name-large');
+    const profileAvatar = document.querySelector('.profile-avatar-large');
+    const overlayName = document.getElementById('profileOverlayName');
+    const overlayAvatar = document.getElementById('profileOverlayAvatar');
+    
+    if (profileName) {
+        profileName.textContent = currentIndyProfile.name || 'Guest';
+    }
+    
+    if (profileAvatar) {
+        if (currentIndyProfile.picture) {
+            profileAvatar.style.backgroundImage = `url('${currentIndyProfile.picture}')`;
+            profileAvatar.textContent = '';
+        } else {
+            profileAvatar.style.backgroundImage = 'linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%)';
+            profileAvatar.textContent = currentIndyProfile.name.charAt(0).toUpperCase() || 'G';
+        }
+    }
+    
+    if (overlayName) {
+        overlayName.textContent = currentIndyProfile.name || 'Guest';
+    }
+    
+    if (overlayAvatar) {
+        if (currentIndyProfile.picture) {
+            overlayAvatar.style.backgroundImage = `url('${currentIndyProfile.picture}')`;
+            overlayAvatar.textContent = '';
+        } else {
+            overlayAvatar.style.backgroundImage = 'linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%)';
+            overlayAvatar.textContent = currentIndyProfile.name.charAt(0).toUpperCase() || 'G';
+        }
+    }
+}
+
+function closeProfileEditor() {
+    // Check if we have saved changes
+    if (window.profileChangesSaved !== true) {
+            removeModal();
+        return;
+    }
+    
+    removeModal();
+}
+
+function removeModal() {
+    const modal = document.getElementById('profileEditorModal');
+    if (modal) {
+        modal.remove();
+    }
+    
+    const addPlaylistModal = document.getElementById('addPlaylistModal');
+    if (addPlaylistModal) {
+        addPlaylistModal.remove();
+    }
+    
+    // Remove the added styles
+    const style = document.querySelector('style[data-profile-editor]');
+    if (style) style.remove();
+    
+    // Reset the saved flag
+    window.profileChangesSaved = false;
+}
+
+// Test function to verify localStorage is working
+function testProfileSave() {
+    console.log('=== Testing Profile Save ===');
+    console.log('userProfile in localStorage:', JSON.parse(localStorage.getItem('userProfile') || '{}'));
+    console.log('indyProfileData in localStorage:', JSON.parse(localStorage.getItem('indyProfileData') || '{}'));
+    console.log('indyMusicLinked:', localStorage.getItem('indyMusicLinked'));
+    console.log('=== End Test ===');
+}
+
+console.log('Banner data check before saving:', {
+    currentProfileDataBanner: currentProfileData.banner ? 'Has data' : 'Empty',
+    currentIndyProfileBanner: currentIndyProfile.banner ? 'Has data' : 'Empty',
+    bannerLength: currentProfileData.banner ? currentProfileData.banner.length : 0
+});
+
+function reattachBannerEventListeners() {
+    const bannerUpload = document.getElementById('bannerUpload');
+    const bannerUploadBtn = document.getElementById('bannerUploadBtn');
+    const bannerRemoveBtn = document.getElementById('bannerRemoveBtn');
+    
+    if (bannerUploadBtn) {
+        bannerUploadBtn.addEventListener('click', () => {
+            if (bannerUpload) bannerUpload.click();
+        });
+    }
+    
+    if (bannerRemoveBtn) {
+        bannerRemoveBtn.addEventListener('click', removeBanner);
+    }
+}
+
+// In addLanguage function:
+function addLanguage() {
+    const input = document.getElementById('languageInput');
+    const btn = document.getElementById('addLanguageBtn');
+    
+    if (!input || !btn) return;
+    
+    const lang = input.value.trim();
+    
+    if (lang && !currentProfileData.languages.includes(lang)) {
+        // Show loading state
+        btn.classList.add('loading');
+        btn.disabled = true;
+        
+        setTimeout(() => {
+            currentProfileData.languages.push(lang);
+            currentIndyProfile.languages = currentProfileData.languages;
+            
+            updateLanguagesDisplay();
+            input.value = '';
+            updateProfilePreview();
+            
+            // Remove loading state
+            btn.classList.remove('loading');
+            btn.disabled = false;
+            
+            showSyncNotification('✓', 'Language Added', `Added "${lang}" to languages`);
+        }, 300); // Small delay for UX
+    }
+}
+
+// In addBadge function:
+function addBadge() {
+    const select = document.getElementById('badgeSelect');
+    const btn = document.getElementById('addBadgeBtn');
+    
+    if (!select || !btn) return;
+    
+    const badge = select.value;
+    if (badge) {
+        // Show loading state
+        btn.classList.add('loading');
+        btn.disabled = true;
+        
+        setTimeout(() => {
+            addBadgeFromSelect(badge);
+            select.value = '';
+            
+            // Remove loading state
+            btn.classList.remove('loading');
+            btn.disabled = false;
+        }, 300);
+    }
+}
+
+// Auto-update sync UI on page load
+document.addEventListener('DOMContentLoaded', () => {
+    updateSyncUI();
+    
+    // Check for profile changes every 2 seconds
+    setInterval(() => {
+        const currentProfile = JSON.parse(localStorage.getItem('userProfile')) || { name: '', picture: '' };
+        const lastProfileCheck = localStorage.getItem('lastProfileCheck');
+        const currentProfileString = JSON.stringify(currentProfile);
+        
+        if (lastProfileCheck !== currentProfileString) {
+            updateSyncUI();
+            localStorage.setItem('lastProfileCheck', currentProfileString);
+        }
+        
+        // Also check sync status periodically
+        const isLinked = localStorage.getItem('indyMusicLinked') === 'true';
+        const editProfileBtn = document.getElementById('editProfileBtn');
+        
+        if (editProfileBtn) {
+            if (isLinked) {
+                editProfileBtn.style.display = 'flex';
+                editProfileBtn.classList.add('visible');
+                editProfileBtn.classList.remove('hidden');
+            } else {
+                editProfileBtn.style.display = 'none';
+                editProfileBtn.classList.add('hidden');
+                editProfileBtn.classList.remove('visible');
+            }
+        }
+    }, 2000);
+});
+
+
+
+// Call this after saving to verify
+testProfileSave();
 </script>
 
 </body>
