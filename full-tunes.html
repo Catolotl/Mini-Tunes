@@ -5969,7 +5969,112 @@ document.addEventListener('DOMContentLoaded', () => {
     }, 2000);
 });
 
+// ============================================
+// UNIVERSAL SYNC DEBUG & FIX FUNCTION
+// Paste this at the END of both scripts (before the closing </script> tag)
+// ============================================
 
+(function initCrossAppSync() {
+    console.log('🔗 INDY Sync Manager Initializing...');
+    console.log('Domain:', window.location.origin);
+    console.log('Path:', window.location.pathname);
+    
+    // 1. Debug function - check what's in storage
+    function debugStorage() {
+        console.log('🔍 STORAGE DEBUG ============');
+        console.log('All localStorage keys:');
+        
+        for (let i = 0; i < localStorage.length; i++) {
+            const key = localStorage.key(i);
+            const value = localStorage.getItem(key);
+            console.log(`  ${key}:`, value.length > 100 ? value.substring(0, 100) + '...' : value);
+        }
+        console.log('=============================');
+    }
+    
+    // 2. Force check and fix sync between apps
+    function checkAndFixSync() {
+        console.log('🔄 Checking sync status...');
+        
+        // Check if profile exists from either app
+        const userProfile = JSON.parse(localStorage.getItem('userProfile') || '{}');
+        const isMusicLinked = localStorage.getItem('indyMusicLinked') === 'true';
+        
+        console.log('User Profile found:', userProfile.name || 'No name');
+        console.log('Music Linked:', isMusicLinked);
+        
+        // If we're in INDY Sunrise and have a profile, make sure Music can see it
+        if (window.location.pathname.includes('indysunrise') && userProfile.name) {
+            console.log('✅ INDY Sunrise detected with profile');
+            
+            // Ensure profile is properly saved
+            localStorage.setItem('userProfile', JSON.stringify(userProfile));
+            
+            // Create a signal for Music app
+            localStorage.setItem('lastProfileUpdate', Date.now());
+            
+            console.log('📡 Profile broadcast from INDY Sunrise');
+        }
+        
+        // If we're in INDY Music and profile exists, auto-link
+        if (window.location.pathname.includes('indymusic')) {
+            console.log('🎵 INDY Music detected');
+            
+            if (userProfile.name && !isMusicLinked) {
+                console.log('🔗 Auto-linking Music to INDY profile...');
+                localStorage.setItem('indyMusicLinked', 'true');
+                localStorage.setItem('indyMusicLinkTime', Date.now());
+                localStorage.setItem('indyMusicAppConnected', 'true');
+                
+                // Update UI if function exists
+                if (typeof updateSyncUI === 'function') {
+                    updateSyncUI();
+                }
+                
+                console.log('✅ Auto-linked to INDY profile');
+            }
+            
+            // Show edit profile button if linked
+            const editBtn = document.getElementById('editProfileBtn');
+            if (editBtn && isMusicLinked) {
+                editBtn.style.display = 'flex';
+                console.log('👤 Showing edit profile button');
+            }
+        }
+    }
+    
+    // 3. Listen for storage changes (other tabs)
+    window.addEventListener('storage', function(event) {
+        console.log('📦 Storage event:', event.key, 'changed');
+        
+        if (event.key === 'userProfile' || event.key === 'lastProfileUpdate') {
+            console.log('🔄 Profile update detected from other tab');
+            
+            // If in Music, re-check sync
+            if (window.location.pathname.includes('indymusic')) {
+                setTimeout(checkAndFixSync, 500);
+            }
+        }
+    });
+    
+    // 4. Auto-fix on page load
+    setTimeout(() => {
+        debugStorage();
+        checkAndFixSync();
+    }, 1000);
+    
+    // 5. Add helper functions to window for manual debugging
+    window.debugStorage = debugStorage;
+    window.fixSync = checkAndFixSync;
+    window.clearSync = function() {
+        localStorage.removeItem('indyMusicLinked');
+        localStorage.removeItem('indyMusicLinkTime');
+        console.log('🧹 Cleared sync data');
+        debugStorage();
+    };
+    
+    console.log('✅ INDY Sync Manager Ready');
+})();
 
 // Call this after saving to verify
 testProfileSave();
