@@ -18,7 +18,6 @@
     --glow: rgba(29, 185, 84, .3);
     --gradient-color: #517c7a;
     --border: rgba(255, 255, 255, .08);
-    --profile-accent: #6366f1;
 }
 
 *{
@@ -50,369 +49,10 @@ body{
     gap:12px;
     transition:width .3s;
     border:none;
-    position: relative;
 }
 
 .left-sidebar.minimized{
     width:80px;
-}
-
-/* USER PROFILE HEADER */
-.user-profile-header {
-    background: linear-gradient(135deg, rgba(99, 102, 241, 0.15) 0%, rgba(99, 102, 241, 0.05) 100%);
-    backdrop-filter: blur(20px);
-    border-radius: 12px;
-    padding: 20px;
-    border: 1px solid rgba(99, 102, 241, 0.2);
-    display: flex;
-    align-items: center;
-    gap: 16px;
-    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-    cursor: pointer;
-    position: relative;
-    overflow: hidden;
-}
-
-.user-profile-header::before {
-    content: '';
-    position: absolute;
-    inset: 0;
-    background: linear-gradient(135deg, rgba(99, 102, 241, 0.1) 0%, transparent 100%);
-    opacity: 0;
-    transition: opacity 0.3s;
-}
-
-.user-profile-header:hover::before {
-    opacity: 1;
-}
-
-.user-profile-header:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 8px 24px rgba(99, 102, 241, 0.2);
-}
-
-.profile-avatar-large {
-    width: 56px;
-    height: 56px;
-    border-radius: 50%;
-    background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
-    background-size: cover;
-    background-position: center;
-    border: 3px solid rgba(99, 102, 241, 0.3);
-    flex-shrink: 0;
-    transition: all 0.3s;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 24px;
-    color: white;
-}
-
-.user-profile-header:hover .profile-avatar-large {
-    transform: scale(1.08);
-    border-color: rgba(99, 102, 241, 0.5);
-}
-
-.profile-info-large {
-    flex: 1;
-    min-width: 0;
-}
-
-.profile-name-large {
-    font-size: 16px;
-    font-weight: 700;
-    color: var(--text);
-    margin-bottom: 4px;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-}
-
-.profile-status {
-    font-size: 13px;
-    color: var(--muted);
-    display: flex;
-    align-items: center;
-    gap: 6px;
-}
-
-.status-dot {
-    width: 8px;
-    height: 8px;
-    border-radius: 50%;
-    background: #10b981;
-    box-shadow: 0 0 8px rgba(16, 185, 129, 0.5);
-    animation: pulse 2s ease-in-out infinite;
-}
-
-@keyframes pulse {
-    0%, 100% { opacity: 1; }
-    50% { opacity: 0.5; }
-}
-
-.profile-badge {
-    background: rgba(99, 102, 241, 0.2);
-    color: #a5b4fc;
-    padding: 4px 10px;
-    border-radius: 12px;
-    font-size: 11px;
-    font-weight: 600;
-    text-transform: uppercase;
-    letter-spacing: 0.5px;
-}
-
-.left-sidebar.minimized .user-profile-header {
-    flex-direction: column;
-    padding: 16px 12px;
-    gap: 8px;
-}
-
-.left-sidebar.minimized .profile-info-large,
-.left-sidebar.minimized .profile-badge {
-    display: none;
-}
-
-.left-sidebar.minimized .profile-avatar-large {
-    width: 48px;
-    height: 48px;
-}
-
-.sync-status {
-    position: absolute;
-    top: 12px;
-    right: 12px;
-    width: 32px;
-    height: 32px;
-    border-radius: 50%;
-    background: rgba(0, 0, 0, 0.3);
-    backdrop-filter: blur(10px);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 14px;
-    opacity: 0;
-    transition: all 0.3s;
-}
-
-.user-profile-header:hover .sync-status {
-    opacity: 1;
-}
-
-/* ACCOUNT SEARCH POPUP */
-.account-search-popup {
-    position: fixed;
-    inset: 0;
-    background: rgba(0, 0, 0, 0.9);
-    backdrop-filter: blur(30px);
-    display: none;
-    align-items: center;
-    justify-content: center;
-    z-index: 3000;
-    animation: fadeIn 0.3s ease;
-}
-
-.account-search-popup.active {
-    display: flex;
-}
-
-.search-popup-content {
-    background: var(--panel);
-    border: 1px solid rgba(99, 102, 241, 0.3);
-    border-radius: 24px;
-    padding: 48px 40px;
-    max-width: 440px;
-    width: 90%;
-    text-align: center;
-    box-shadow: 0 24px 80px rgba(0, 0, 0, 0.8);
-    animation: popupSlide 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
-}
-
-@keyframes popupSlide {
-    from {
-        transform: scale(0.8) translateY(40px);
-        opacity: 0;
-    }
-    to {
-        transform: scale(1) translateY(0);
-        opacity: 1;
-    }
-}
-
-.search-star {
-    font-size: 80px;
-    margin-bottom: 24px;
-    display: inline-block;
-    animation: thinkingSpin 1.5s cubic-bezier(0.68, -0.55, 0.265, 1.55) infinite;
-    transform-origin: center;
-}
-
-@keyframes thinkingSpin {
-    0% { transform: rotate(0deg) scale(1); opacity: 0.6; }
-    50% { transform: rotate(180deg) scale(1.3); opacity: 1; }
-    100% { transform: rotate(360deg) scale(1); opacity: 0.6; }
-}
-
-.search-text {
-    font-size: 24px;
-    font-weight: 700;
-    margin-bottom: 12px;
-    background: linear-gradient(135deg, #ffffff 0%, #c0c0c0 100%);
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-}
-
-.search-subtext {
-    font-size: 15px;
-    color: var(--muted);
-    line-height: 1.6;
-    margin-bottom: 8px;
-}
-
-.search-dots {
-    font-size: 24px;
-    color: var(--muted);
-    letter-spacing: 4px;
-    animation: dotPulse 1.5s ease-in-out infinite;
-}
-
-@keyframes dotPulse {
-    0%, 100% { opacity: 0.3; }
-    50% { opacity: 1; }
-}
-
-/* PROFILE CONFIRMATION POPUP */
-.profile-confirm-content {
-    display: none;
-}
-
-.profile-confirm-content.active {
-    display: block;
-}
-
-.found-profile-avatar {
-    width: 96px;
-    height: 96px;
-    border-radius: 50%;
-    background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
-    background-size: cover;
-    background-position: center;
-    border: 4px solid rgba(99, 102, 241, 0.4);
-    margin: 0 auto 24px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 48px;
-    color: white;
-    box-shadow: 0 12px 40px rgba(99, 102, 241, 0.3);
-    animation: avatarPop 0.6s cubic-bezier(0.34, 1.56, 0.64, 1);
-}
-
-@keyframes avatarPop {
-    from {
-        transform: scale(0);
-        opacity: 0;
-    }
-    to {
-        transform: scale(1);
-        opacity: 1;
-    }
-}
-
-.found-profile-name {
-    font-size: 28px;
-    font-weight: 800;
-    margin-bottom: 8px;
-    background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-}
-
-.found-profile-question {
-    font-size: 18px;
-    color: var(--text);
-    margin-bottom: 32px;
-}
-
-.confirm-actions {
-    display: flex;
-    gap: 12px;
-    justify-content: center;
-}
-
-.confirm-btn {
-    padding: 14px 32px;
-    border: none;
-    border-radius: 12px;
-    font-size: 16px;
-    font-weight: 600;
-    cursor: pointer;
-    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-}
-
-.confirm-btn.yes {
-    background: linear-gradient(135deg, #10b981 0%, #059669 100%);
-    color: white;
-    box-shadow: 0 4px 16px rgba(16, 185, 129, 0.3);
-}
-
-.confirm-btn.yes:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 8px 24px rgba(16, 185, 129, 0.4);
-}
-
-.confirm-btn.no {
-    background: var(--soft);
-    color: var(--text);
-}
-
-.confirm-btn.no:hover {
-    background: var(--hover);
-}
-
-/* SYNC NOTIFICATION */
-.sync-notification {
-    position: fixed;
-    top: 24px;
-    right: 24px;
-    background: rgba(0, 0, 0, 0.95);
-    backdrop-filter: blur(20px);
-    border: 1px solid rgba(99, 102, 241, 0.3);
-    border-radius: 16px;
-    padding: 16px 20px;
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
-    transform: translateX(400px);
-    opacity: 0;
-    transition: all 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
-    z-index: 3000;
-    max-width: 360px;
-}
-
-.sync-notification.show {
-    transform: translateX(0);
-    opacity: 1;
-}
-
-.sync-notification-icon {
-    font-size: 24px;
-}
-
-.sync-notification-content {
-    flex: 1;
-}
-
-.sync-notification-title {
-    font-size: 14px;
-    font-weight: 600;
-    color: var(--text);
-    margin-bottom: 2px;
-}
-
-.sync-notification-message {
-    font-size: 13px;
-    color: var(--muted);
 }
 
 .sidebar-top{
@@ -557,16 +197,13 @@ body{
 }
 
 /* MAIN CONTENT */
-.main-content {
-    flex: 1;
-    background: linear-gradient(180deg, var(--gradient-color) 0%, var(--bg) 20%);
-    border-radius: 12px;
-    overflow-y: auto;
-    padding: 32px;
-    transition: background .8s;
-    position: relative;
-    height: 100%; /* ADD THIS */
-    margin-left: 0; /* REMOVE margin-left if present */
+.main-content{
+    flex:1;
+    background:linear-gradient(180deg, var(--gradient-color) 0%, var(--bg) 20%);
+    border-radius:12px;
+    overflow-y:auto;
+    padding:32px;
+    transition:background .8s;
 }
 
 .section{
@@ -699,7 +336,7 @@ body{
 }
 
 .album-card img{
-    width:100%;
+    width:50%;
     aspect-ratio:1;
     border-radius:6px;
     margin-bottom:12px;
@@ -731,13 +368,11 @@ body{
     display:flex;
     flex-direction:column;
     transition:width .3s;
-    position: relative; /* ADD THIS - makes absolute children relative to sidebar */
 }
 
 .right-sidebar.minimized{
     width:0;
     padding:0;
-    overflow: hidden;
 }
 
 .video-container{
@@ -745,7 +380,6 @@ body{
     width:100%;
     aspect-ratio:16/9;
     background:#000;
-    flex-shrink: 0; /* Prevent video from shrinking */
 }
 
 .video-container iframe{
@@ -754,42 +388,20 @@ body{
     border:none;
 }
 
-.video-container::after {
-    content: '';
-    position: absolute;
-    inset: 0;
-    background: linear-gradient(
-        180deg,
-        rgba(0, 0, 0, 0.4) 0%,
-        rgba(0, 0, 0, 0.3) 40%,
-        rgba(0, 0, 0, 0.5) 100%);
-    pointer-events: none;
-    z-index: 2;
-}
-
 .now-playing-info{
     padding:20px;
-    position: absolute;
-    top: 55%;  /* Changed from 35% to 55% */
-    left: 0;
-    right: 0;
-    transform: translateY(-20%);  /* Changed from -50% to -20% */
-    z-index: 3;
-    text-align: center;
 }
 
 .np-title{
     font-size:18px;
     font-weight:700;
     margin-bottom:4px;
-    text-shadow: 0 4px 16px rgba(0, 0, 0, 0.9), 0 2px 4px rgba(0, 0, 0, 0.8);
 }
 
 .np-artist{
     font-size:14px;
     color:var(--muted);
     margin-bottom:16px;
-    text-shadow: 0 4px 16px rgba(0, 0, 0, 0.9), 0 2px 4px rgba(0, 0, 0, 0.8);
 }
 
 .playback-controls{
@@ -798,36 +410,44 @@ body{
     justify-content:center;
     gap:16px;
     padding:16px 0;
-    position: absolute;
-    bottom: 5%;
-    left: 0;
-    right: 0;
-    background: linear-gradient(
-        0deg,
-        rgba(0, 0, 0, 0.85) 0%,
-        rgba(0, 0, 0, 0.5) 70%,
-        transparent 100%
-    );
-    backdrop-filter: blur(16px);
-    z-index: 3;
 }
 
-.lyrics-section {
-    position: absolute !important;
-    top: 65% !important; /* Changed from 55% to 65% */
-    bottom: 0 !important;
-    left: 0 !important;
-    right: 0 !important;
-    padding: 20px !important;
-    overflow-y: auto !important;
-    z-index: 3 !important;
-    background: linear-gradient(
-        0deg,
-        rgba(0, 0, 0, 0.95) 0%,
-        rgba(0, 0, 0, 0.8) 20%,
-        transparent 100%
-    ) !important;
-    margin-top: 0 !important;
+.control-btn{
+    width:40px;
+    height:40px;
+    background:transparent;
+    border:none;
+    color:var(--text);
+    cursor:pointer;
+    border-radius:50%;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    transition:all .2s;
+    font-size:20px;
+}
+
+.control-btn:hover{
+    background:var(--hover);
+}
+
+.control-btn.play{
+    background:var(--accent);
+    color:#000;
+    width:48px;
+    height:48px;
+    font-size:24px;
+}
+
+.control-btn.play:hover{
+    background:var(--accent-dim);
+    transform:scale(1.05);
+}
+
+.lyrics-section{
+    flex:1;
+    padding:20px;
+    overflow-y:auto;
 }
 
 .lyrics-section h4{
@@ -835,7 +455,6 @@ body{
     font-weight:600;
     margin-bottom:16px;
     color:var(--accent);
-    text-shadow: 0 4px 16px rgba(0, 0, 0, 0.9), 0 2px 4px rgba(0, 0, 0, 0.8);
 }
 
 .lyrics{
@@ -843,14 +462,11 @@ body{
     line-height:1.8;
     color:var(--muted);
     white-space:pre-wrap;
-    text-shadow: 0 3px 12px rgba(0, 0, 0, 0.95), 0 2px 4px rgba(0, 0, 0, 0.8);
-    color: rgba(255, 255, 255, 0.9);
 }
 
 .lyrics.loading{
     text-align:center;
     font-style:italic;
-    color: rgba(255, 255, 255, 0.5);
 }
 
 /* Search View */
@@ -1025,7 +641,7 @@ body{
     background:rgba(255,255,255,.02);
 }
 
-::-webkit-scrollbar-thumb{
+.scrollbar-thumb{
     background:rgba(255,255,255,.12);
     border-radius:10px;
 }
@@ -1074,7 +690,6 @@ body{
 .minimized .toggle-right{
     left:0;
 }
-
 /* Album/Playlist View */
 .album-view, .playlist-view {
     animation: fadeIn 0.3s ease;
@@ -1209,8 +824,780 @@ body{
 .left-sidebar.minimized .logo {
     font-size: 20px;
 }
+/* ============================================
+   ENHANCED MINIMALIST DESIGN IMPROVEMENTS
+   ============================================ */
 
-.add-to-playlist-btn {
+/* Import beautiful fonts */
+@import url('https://fonts.googleapis.com/css2?family=Syne:wght@400;500;600;700;800&family=DM+Sans:wght@300;400;500;600&display=swap');
+
+/* Override body font */
+body {
+    font-family: 'DM Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+}
+
+/* Beautiful logo typography */
+.logo {
+    font-family: 'Syne', sans-serif;
+    font-weight: 800;
+    background: linear-gradient(135deg, #ffffff 0%, #a0a0a0 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    letter-spacing: -2px;
+}
+
+/* Glassmorphism for sidebars */
+.sidebar-top,
+.sidebar-library {
+    background: rgba(20, 20, 20, 0.6);
+    backdrop-filter: blur(20px);
+    border: 1px solid rgba(255, 255, 255, 0.06);
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+}
+
+.right-sidebar {
+    background: rgba(10, 10, 10, 0.8);
+    backdrop-filter: blur(20px);
+    border: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+/* Refined navigation buttons */
+.nav-btn {
+    font-weight: 500;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    position: relative;
+    overflow: hidden;
+}
+
+.nav-btn::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(135deg, rgba(255,255,255,0.1) 0%, rgba(255,255,255,0.05) 100%);
+    opacity: 0;
+    transition: opacity 0.3s ease;
+}
+
+.nav-btn:hover::before {
+    opacity: 1;
+}
+
+.nav-btn.active {
+    background: linear-gradient(135deg, rgba(255,255,255,0.12) 0%, rgba(255,255,255,0.06) 100%);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+}
+
+/* Elevated playlist items */
+.playlist-item {
+    background: rgba(40, 40, 40, 0.4);
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.04);
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.playlist-item:hover {
+    background: rgba(60, 60, 60, 0.5);
+    transform: translateX(4px);
+    border-color: rgba(255, 255, 255, 0.08);
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.3);
+}
+
+.playlist-item.active {
+    background: linear-gradient(135deg, #ffffff 0%, #e0e0e0 100%);
+    box-shadow: 0 8px 24px rgba(255, 255, 255, 0.15);
+}
+
+/* Main content with better gradient */
+.main-content {
+    background: linear-gradient(180deg, var(--gradient-color) 0%, rgba(10, 10, 10, 0.95) 25%, var(--bg) 50%);
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.04);
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.03);
+}
+
+/* Section headers with refined typography */
+.section-header h2 {
+    font-family: 'Syne', sans-serif;
+    font-weight: 700;
+    letter-spacing: -1px;
+    background: linear-gradient(135deg, #ffffff 0%, #c0c0c0 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+
+/* Enhanced song cards with hover effects */
+.song-card {
+    background: rgba(0, 0, 0, 0.2);
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.04);
+    transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.song-card:hover {
+    background: rgba(0, 0, 0, 0.4);
+    transform: translateY(-4px) scale(1.02);
+    border-color: rgba(255, 255, 255, 0.1);
+    box-shadow: 0 12px 40px rgba(0, 0, 0, 0.5);
+}
+
+.song-card img {
+    transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+}
+
+.song-card:hover img {
+    transform: scale(1.05);
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5);
+}
+
+/* Refined album cards */
+.album-card {
+    background: rgba(0, 0, 0, 0.2);
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.04);
+    transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.album-card:hover {
+    background: rgba(0, 0, 0, 0.4);
+    transform: translateY(-6px) scale(1.02);
+    border-color: rgba(255, 255, 255, 0.1);
+    box-shadow: 0 16px 48px rgba(0, 0, 0, 0.6);
+}
+
+.album-card img {
+    transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.4);
+}
+
+.album-card:hover img {
+    transform: scale(1.08);
+}
+
+/* Beautiful search input */
+.search-input {
+    background: rgba(0, 0, 0, 0.2);
+    backdrop-filter: blur(20px);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    font-family: 'DM Sans', sans-serif;
+    font-weight: 400;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2);
+}
+
+.search-input:focus {
+    background: rgba(0, 0, 0, 0.4);
+    border-color: rgba(255, 255, 255, 0.2);
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4), 0 0 0 4px rgba(255, 255, 255, 0.05);
+}
+
+.search-input::placeholder {
+    color: rgba(255, 255, 255, 0.3);
+}
+
+/* Enhanced create playlist button */
+.create-playlist-btn {
+    background: linear-gradient(135deg, #ffffff 0%, #e0e0e0 100%);
+    box-shadow: 0 4px 12px rgba(255, 255, 255, 0.1);
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.create-playlist-btn:hover {
+    box-shadow: 0 6px 20px rgba(255, 255, 255, 0.2);
+    transform: scale(1.08) rotate(90deg);
+}
+
+/* Refined play button */
+.control-btn.play,
+.play-all-btn {
+    background: linear-gradient(135deg, #ffffff 0%, #e8e8e8 100%);
+    box-shadow: 0 6px 20px rgba(255, 255, 255, 0.15);
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.control-btn.play:hover,
+.play-all-btn:hover {
+    box-shadow: 0 8px 28px rgba(255, 255, 255, 0.25);
+    transform: scale(1.08);
+}
+
+/* Enhanced toast notification */
+.toast {
+    background: rgba(10, 10, 10, 0.95);
+    backdrop-filter: blur(30px);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    box-shadow: 0 16px 48px rgba(0, 0, 0, 0.8);
+    animation: toastSlideIn 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+@keyframes toastSlideIn {
+    from {
+        transform: translateX(-50%) translateY(100px);
+        opacity: 0;
+    }
+    to {
+        transform: translateX(-50%) translateY(0);
+        opacity: 1;
+    }
+}
+
+/* Refined modal */
+.modal-content {
+    background: rgba(20, 20, 20, 0.95);
+    backdrop-filter: blur(30px);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    box-shadow: 0 24px 64px rgba(0, 0, 0, 0.8);
+    animation: modalZoomIn 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+@keyframes modalZoomIn {
+    from {
+        transform: scale(0.9);
+        opacity: 0;
+    }
+    to {
+        transform: scale(1);
+        opacity: 1;
+    }
+}
+
+.modal-content h3 {
+    font-family: 'Syne', sans-serif;
+    font-weight: 700;
+    letter-spacing: -1px;
+}
+
+.modal-content input {
+    background: rgba(40, 40, 40, 0.5);
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.06);
+    transition: all 0.3s ease;
+}
+
+.modal-content input:focus {
+    background: rgba(50, 50, 50, 0.6);
+    border-color: rgba(255, 255, 255, 0.15);
+    box-shadow: 0 0 0 4px rgba(255, 255, 255, 0.05);
+}
+
+/* Enhanced buttons */
+.modal-buttons .primary {
+    background: linear-gradient(135deg, #ffffff 0%, #e0e0e0 100%);
+    box-shadow: 0 4px 12px rgba(255, 255, 255, 0.1);
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.modal-buttons .primary:hover {
+    box-shadow: 0 6px 20px rgba(255, 255, 255, 0.2);
+}
+
+.modal-buttons .secondary {
+    background: rgba(40, 40, 40, 0.6);
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    transition: all 0.3s ease;
+}
+
+.modal-buttons .secondary:hover {
+    background: rgba(60, 60, 60, 0.6);
+    border-color: rgba(255, 255, 255, 0.12);
+}
+
+/* Album/Playlist view enhancements */
+.back-btn {
+    background: rgba(0, 0, 0, 0.2);
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.06);
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.back-btn:hover {
+    background: rgba(0, 0, 0, 0.4);
+    border-color: rgba(255, 255, 255, 0.12);
+    transform: translateX(-4px);
+}
+
+.album-cover,
+.playlist-icon-large {
+    box-shadow: 0 16px 48px rgba(0, 0, 0, 0.6);
+    transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.album-header:hover .album-cover,
+.playlist-header:hover .playlist-icon-large {
+    transform: scale(1.03);
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.7);
+}
+
+.album-info h1,
+.playlist-info-large h1 {
+    font-family: 'Syne', sans-serif;
+    letter-spacing: -2px;
+    background: linear-gradient(135deg, #ffffff 0%, #b0b0b0 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+
+.album-song-item {
+    background: rgba(0, 0, 0, 0.2);
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.04);
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.album-song-item:hover {
+    background: rgba(0, 0, 0, 0.4);
+    border-color: rgba(255, 255, 255, 0.08);
+    transform: translateX(8px);
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4);
+}
+
+/* Refined scrollbars */
+::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+}
+
+::-webkit-scrollbar-track {
+    background: rgba(255, 255, 255, 0.02);
+}
+
+::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, 0.15);
+    border-radius: 10px;
+    transition: background 0.3s ease;
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: rgba(255, 255, 255, 0.25);
+}
+
+/* Smooth scroll container */
+.scroll-container::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, 0.2);
+}
+
+/* Toggle sidebar buttons */
+.toggle-sidebar {
+    background: rgba(20, 20, 20, 0.8);
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.06);
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.toggle-sidebar:hover {
+    background: rgba(40, 40, 40, 0.9);
+    border-color: rgba(255, 255, 255, 0.12);
+}
+
+/* Subtle noise texture overlay */
+body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' /%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.03'/%3E%3C/svg%3E");
+    pointer-events: none;
+    z-index: 1000;
+    mix-blend-mode: overlay;
+}
+
+/* Staggered fade-in animations for song cards */
+.song-card,
+.album-card {
+    animation: fadeInUp 0.6s cubic-bezier(0.4, 0, 0.2, 1) backwards;
+}
+
+.song-card:nth-child(1) { animation-delay: 0.05s; }
+.song-card:nth-child(2) { animation-delay: 0.1s; }
+.song-card:nth-child(3) { animation-delay: 0.15s; }
+.song-card:nth-child(4) { animation-delay: 0.2s; }
+.song-card:nth-child(5) { animation-delay: 0.25s; }
+.song-card:nth-child(6) { animation-delay: 0.3s; }
+.song-card:nth-child(7) { animation-delay: 0.35s; }
+.song-card:nth-child(8) { animation-delay: 0.4s; }
+
+@keyframes fadeInUp {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* Enhanced video container */
+.video-container {
+    border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+}
+
+/* Now playing info refinement */
+.np-title {
+    font-family: 'Syne', sans-serif;
+    font-weight: 700;
+    letter-spacing: -0.5px;
+}
+
+/* Lyrics section enhancement */
+.lyrics-section h4 {
+    font-family: 'Syne', sans-serif;
+    font-weight: 600;
+    letter-spacing: -0.5px;
+}
+
+.lyrics {
+    font-weight: 300;
+    letter-spacing: 0.3px;
+}
+/* ============================================
+   VIDEO OVERLAY DESIGN
+   ============================================ */
+
+/* Make right sidebar a single video container */
+.right-sidebar {
+    position: relative;
+    overflow: hidden;
+}
+
+/* Video fills entire sidebar */
+.video-container {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 50%;
+    aspect-ratio: unset;
+    border-bottom: none;
+    z-index: 1;
+}
+
+.video-container::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(
+        180deg,
+        rgba(0, 0, 0, 0.3) 0%,
+        rgba(0, 0, 0, 0.5) 50%,
+        rgba(0, 0, 0, 0.8) 100%
+    );
+    pointer-events: none;
+    z-index: 2;
+}
+
+/* All content overlays the video */
+.now-playing-info,
+.playback-controls,
+.lyrics-section {
+    position: relative;
+    z-index: 3;
+}
+
+/* Now playing info at top with glassmorphism */
+.now-playing-info {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    padding: 24px;
+    background: linear-gradient(
+        180deg,
+        rgba(0, 0, 0, 0.8) 0%,
+        rgba(0, 0, 0, 0.4) 70%,
+        transparent 100%
+    );
+    backdrop-filter: blur(20px);
+}
+
+.np-title,
+.np-artist {
+    text-shadow: 0 2px 8px rgba(0, 0, 0, 0.8);
+}
+
+/* Playback controls at bottom */
+.playback-controls {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    padding: 20px;
+    background: linear-gradient(
+        0deg,
+        rgba(0, 0, 0, 0.9) 0%,
+        rgba(0, 0, 0, 0.6) 50%,
+        transparent 100%
+    );
+    backdrop-filter: blur(20px);
+}
+
+.control-btn {
+    background: rgba(255, 255, 255, 0.15);
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.control-btn:hover {
+    background: rgba(255, 255, 255, 0.25);
+}
+
+.control-btn.play {
+    background: rgba(255, 255, 255, 0.95);
+    border: none;
+}
+
+.control-btn.play:hover {
+    background: rgba(255, 255, 255, 1);
+}
+
+/* Lyrics overlay in center */
+.lyrics-section {
+    position: absolute;
+    top: 120px;
+    bottom: 120px;
+    left: 0;
+    right: 0;
+    padding: 24px;
+    overflow-y: auto;
+    background: linear-gradient(
+        180deg,
+        transparent 0%,
+        rgba(0, 0, 0, 0.3) 20%,
+        rgba(0, 0, 0, 0.3) 80%,
+        transparent 100%
+    );
+    backdrop-filter: blur(8px);
+}
+
+.lyrics-section h4 {
+    color: rgba(255, 255, 255, 0.9);
+    text-shadow: 0 2px 8px rgba(0, 0, 0, 0.8);
+    margin-bottom: 20px;
+}
+
+.lyrics {
+    text-shadow: 0 2px 8px rgba(0, 0, 0, 0.8);
+    color: rgba(255, 255, 255, 0.85);
+    font-size: 15px;
+    line-height: 2;
+    text-align: left;
+}
+
+.lyrics.loading {
+    color: rgba(255, 255, 255, 0.5);
+}
+
+/* Enhanced scrollbar for lyrics */
+.lyrics-section::-webkit-scrollbar {
+    width: 6px;
+}
+
+.lyrics-section::-webkit-scrollbar-track {
+    background: rgba(255, 255, 255, 0.05);
+}
+
+.lyrics-section::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, 0.3);
+    border-radius: 10px;
+}
+
+.lyrics-section::-webkit-scrollbar-thumb:hover {
+    background: rgba(255, 255, 255, 0.5);
+}
+
+/* Toggle button positioning */
+.right-sidebar .toggle-sidebar {
+    z-index: 10;
+}
+/* ============================================
+   REPOSITIONED TEXT TO CENTER OF SIDEBAR
+   ============================================ */
+
+/* Now playing info repositioned to center-top area */
+.now-playing-info {
+    position: absolute;
+    top: 30%;
+    left: 0;
+    right: 0;
+    transform: translateY(-50%);
+    padding: 24px;
+    background: linear-gradient(
+        180deg,
+        rgba(0, 0, 0, 0.7) 0%,
+        rgba(0, 0, 0, 0.5) 50%,
+        transparent 100%
+    );
+    backdrop-filter: blur(20px);
+}
+
+/* Lyrics repositioned to center area */
+.lyrics-section {
+    position: absolute;
+    top: 45%;
+    bottom: 20%;
+    left: 0;
+    right: 0;
+    padding: 24px;
+    overflow-y: auto;
+    background: linear-gradient(
+        180deg,
+        transparent 0%,
+        rgba(0, 0, 0, 0.4) 20%,
+        rgba(0, 0, 0, 0.4) 80%,
+        transparent 100%
+    );
+    backdrop-filter: blur(8px);
+}
+
+/* Playback controls stay at bottom */
+.playback-controls {
+    position: absolute;
+    bottom: 5%;
+    left: 0;
+    right: 0;
+    padding: 20px;
+    background: linear-gradient(
+        0deg,
+        rgba(0, 0, 0, 0.9) 0%,
+        rgba(0, 0, 0, 0.6) 50%,
+        transparent 100%
+    );
+    backdrop-filter: blur(20px);
+}
+/* ============================================
+   VIDEO AS FULL BACKGROUND WITH CENTERED TEXT
+   ============================================ */
+
+/* Video fills entire sidebar as background */
+.video-container {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 50%;
+    aspect-ratio: unset;
+    border-bottom: none;
+    z-index: 1;
+}
+
+/* Dark overlay on video for readability */
+.video-container::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(
+        180deg,
+        rgba(0, 0, 0, 0.4) 0%,
+        rgba(0, 0, 0, 0.3) 40%,
+        rgba(0, 0, 0, 0.5) 100%
+    );
+    pointer-events: none;
+    z-index: 2;
+}
+
+/* Ensure iframe covers the entire container */
+.video-container iframe {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+/* Now playing info centered in upper-middle */
+.now-playing-info {
+    position: absolute;
+    top: 35%;
+    left: 0;
+    right: 0;
+    transform: translateY(-50%);
+    padding: 32px 24px;
+    background: transparent;
+    backdrop-filter: none;
+    text-align: left;
+    z-index: 3;
+}
+
+.np-title {
+    font-size: 24px;
+    text-shadow: 0 4px 16px rgba(0, 0, 0, 0.9), 0 2px 4px rgba(0, 0, 0, 0.8);
+    margin-bottom: 8px;
+}
+
+.np-artist {
+    font-size: 16px;
+    text-shadow: 0 4px 16px rgba(0, 0, 0, 0.9), 0 2px 4px rgba(0, 0, 0, 0.8);
+}
+
+/* Lyrics centered in middle */
+.lyrics-section {
+    position: absolute;
+    top: 50%;
+    bottom: 25%;
+    left: 0;
+    right: 0;
+    padding: 24px;
+    overflow-y: auto;
+    background: transparent;
+    backdrop-filter: none;
+    z-index: 3;
+}
+
+.lyrics-section h4 {
+    color: rgba(255, 255, 255, 0.95);
+    text-shadow: 0 4px 16px rgba(0, 0, 0, 0.9), 0 2px 4px rgba(0, 0, 0, 0.8);
+    margin-bottom: 20px;
+    text-align: left;
+}
+
+.lyrics {
+    text-shadow: 0 3px 12px rgba(0, 0, 0, 0.95), 0 2px 4px rgba(0, 0, 0, 0.8);
+    color: rgba(255, 255, 255, 0.9);
+    font-size: 15px;
+    line-height: 2;
+    text-align: left;
+}
+
+/* Playback controls at bottom with dark background */
+.playback-controls {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    padding: 24px 20px;
+    background: linear-gradient(
+        0deg,
+        rgba(0, 0, 0, 0.85) 0%,
+        rgba(0, 0, 0, 0.5) 70%,
+        transparent 100%
+    );
+    backdrop-filter: blur(16px);
+    z-index: 3;
+}
+
+.control-btn {
+    background: rgba(255, 255, 255, 0.2);
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+}
+
+.control-btn:hover {
+    background: rgba(255, 255, 255, 0.3);
+}
+
+.control-btn.play {
+    background: rgba(255, 255, 255, 0.95);
+    border: none;
+}
+
+.control-btn.play:hover {
+    background: rgba(255, 255, 255, 1);
+}
+    .add-to-playlist-btn {
     margin-top: 16px;
     padding: 10px 20px;
     background: rgba(255,255,255,0.12);
@@ -1233,1676 +1620,6 @@ body{
     box-shadow: 0 8px 24px rgba(0,0,0,0.4);
     border-color: rgba(255,255,255,0.4);
 }
-
-@import url('https://fonts.googleapis.com/css2?family=Syne:wght@400;500;600;700;800&family=DM+Sans:wght@300;400;500;600&display=swap');
-
-body {
-    font-family: 'DM Sans', -apple-system, BlinkMacSystemFont, sans-serif;
-}
-
-.logo {
-    font-family: 'Syne', sans-serif;
-    font-weight: 800;
-    background: linear-gradient(135deg, #ffffff 0%, #a0a0a0 100%);
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    background-clip: text;
-    letter-spacing: -2px;
-}
-/* Add this to .main-content */
-.main-content {
-    flex: 1;
-    background: linear-gradient(180deg, var(--gradient-color) 0%, var(--bg) 20%);
-    border-radius: 12px;
-    overflow-y: auto;
-    padding: 32px;
-    transition: background .8s;
-    position: relative;
-    height: 100%; /* ADD THIS */
-    margin-left: 0; /* REMOVE margin-left if present */
-}
-/* Ensure sidebar z-index doesn't interfere with main content */
-.left-sidebar {
-    z-index: 2;
-    position: relative; /* Added to establish stacking context */
-}
-
-/* Make sure app-container spacing works properly */
-.app-container {
-    display: flex;
-    height: 100vh;
-    gap: 12px;
-    padding: 12px;
-    overflow: hidden; /* Prevent horizontal scroll */
-}
-/* Add this to the end of your CSS */
-.right-sidebar > * {
-    box-sizing: border-box;
-}
-
-/* Ensure the right sidebar content stays within bounds */
-.right-sidebar .video-container,
-.right-sidebar .now-playing-info,
-.right-sidebar .playback-controls,
-.right-sidebar .lyrics-section {
-    position: relative;
-    width: 100%;
-}
-/* ============================================
-   RIGHT SIDEBAR FIX (OVERLAY VERSION)
-   ============================================ */
-
-/* Make right sidebar a positioning context */
-.right-sidebar {
-    position: relative !important;
-    display: block !important;
-    overflow: hidden !important;
-}
-
-/* Video container as background layer */
-.video-container {
-    position: absolute !important;
-    top: 0 !important;
-    left: 0 !important;
-    right: 0 !important;
-    width: 100% !important;
-    height: 50% !important;
-    aspect-ratio: unset !important;
-    flex-shrink: 0 !important;
-    margin-top: 0 !important;
-    z-index: 1 !important;
-}
-
-.video-container::after {
-    content: '' !important;
-    position: absolute !important;
-    inset: 0 !important;
-    background: linear-gradient(
-        180deg,
-        rgba(0, 0, 0, 0.4) 0%,
-        rgba(0, 0, 0, 0.3) 40%,
-        rgba(0, 0, 0, 0.5) 100%
-    ) !important;
-    pointer-events: none !important;
-    z-index: 2 !important;
-}
-
-.now-playing-info {
-    position: absolute !important;
-    top: 70% !important; /* Position at 45% from top */
-    left: 0 !important;
-    right: 0 !important;
-    transform: translateY(-20%) !important; /* Changed from -50% to -20% */
-    padding: 20px !important;
-    z-index: 3 !important;
-    text-align: left !important;
-    background: transparent !important;
-    backdrop-filter: none !important;
-}
-
-.np-title, .np-artist {
-    text-shadow: 0 4px 16px rgba(0, 0, 0, 0.9), 0 2px 4px rgba(0, 0, 0, 0.8) !important;
-}
-
-.lyrics-section {
-    position: absolute !important;
-    top: 55% !important; /* Changed from 50% to 55% to make room for title/artist */
-    bottom: 0 !important;
-    left: 0 !important;
-    right: 0 !important;
-    padding: 20px !important;
-    overflow-y: auto !important;
-    z-index: 3 !important;
-    background: linear-gradient(
-        0deg,
-        rgba(0, 0, 0, 0.95) 0%,
-        rgba(0, 0, 0, 0.8) 20%,
-        transparent 100%
-    ) !important;
-    margin-top: 0 !important;
-}
-
-.lyrics-section h4, .lyrics {
-    text-shadow: 0 4px 16px rgba(0, 0, 0, 0.9), 0 2px 4px rgba(0, 0, 0, 0.8) !important;
-}
-
-/* Playback controls - bottom over video */
-.playback-controls {
-    position: absolute !important;
-    bottom: 5% !important;
-    left: 0 !important;
-    right: 0 !important;
-    padding: 16px 0 !important;
-    background: linear-gradient(
-        0deg,
-        rgba(0, 0, 0, 0.85) 0%,
-        rgba(0, 0, 0, 0.5) 70%,
-        transparent 100%
-    ) !important;
-    backdrop-filter: blur(16px) !important;
-    z-index: 3 !important;
-}
-
-/* Control buttons styling */
-.control-btn {
-    background: rgba(255, 255, 255, 0.2) !important;
-    backdrop-filter: blur(10px) !important;
-    border: 1px solid rgba(255, 255, 255, 0.3) !important;
-}
-
-.control-btn:hover {
-    background: rgba(255, 255, 255, 0.3) !important;
-}
-
-.control-btn.play {
-    background: rgba(255, 255, 255, 0.95) !important;
-    color: #000 !important;
-    border: none !important;
-}
-
-.control-btn.play:hover {
-    background: rgba(255, 255, 255, 1) !important;
-    transform: scale(1.05) !important;
-}
-
-/* Add to playlist button */
-.add-to-playlist-btn {
-    margin-top: 16px !important;
-    padding: 10px 20px !important;
-    background: rgba(255, 255, 255, 0.12) !important;
-    border: 1px solid rgba(255, 255, 255, 0.2) !important;
-    border-radius: 30px !important;
-    color: var(--text) !important;
-    font-size: 14px !important;
-    font-weight: 600 !important;
-    cursor: pointer !important;
-    display: flex !important;
-    align-items: center !important;
-    gap: 8px !important;
-    backdrop-filter: blur(10px) !important;
-    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
-}
-
-.add-to-playlist-btn:hover {
-    background: rgba(255, 255, 255, 0.25) !important;
-    transform: translateY(-2px) !important;
-    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4) !important;
-    border-color: rgba(255, 255, 255, 0.4) !important;
-}
-
-.add-to-playlist-btn {
-    margin-top: 16px !important;
-    margin-bottom: 8px !important; /* Add bottom margin */
-    padding: 10px 20px !important;
-    background: rgba(255, 255, 255, 0.12) !important;
-    border: 1px solid rgba(255, 255, 255, 0.2) !important;
-    border-radius: 30px !important;
-    color: var(--text) !important;
-    font-size: 14px !important;
-    font-weight: 600 !important;
-    cursor: pointer !important;
-    display: flex !important;
-    align-items: center !important;
-    gap: 8px !important;
-    backdrop-filter: blur(10px) !important;
-    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
-}
-
-.add-to-playlist-btn:hover {
-    background: rgba(255, 255, 255, 0.25) !important;
-    transform: translateY(-2px) !important;
-    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4) !important;
-    border-color: rgba(255, 255, 255, 0.4) !important;
-}
-
-/* Lyrics text styling */
-.lyrics {
-    font-size: 14px !important;
-    line-height: 1.8 !important;
-    color: var(--muted) !important;
-    white-space: pre-wrap !important;
-    text-shadow: 0 3px 12px rgba(0, 0, 0, 0.95), 0 2px 4px rgba(0, 0, 0, 0.8) !important;
-    color: rgba(255, 255, 255, 0.9) !important;
-}
-
-.lyrics.loading {
-    text-align: center !important;
-    font-style: italic !important;
-    color: rgba(255, 255, 255, 0.5) !important;
-}
-/* SYNC BUTTON STYLING */
-.sync-btn {
-    margin-top: 8px;
-}
-
-.sync-btn.synced {
-    background: rgba(16, 185, 129, 0.15) !important;
-    color: #10b981 !important;
-}
-
-.sync-btn.synced:hover {
-    background: rgba(16, 185, 129, 0.25) !important;
-}
-
-/* PROFILE OVERLAY */
-.profile-overlay {
-    position: absolute;
-    top: 12px;
-    left: 12px;
-    right: 12px;
-    background: linear-gradient(135deg, rgba(99, 102, 241, 0.15) 0%, rgba(99, 102, 241, 0.05) 100%);
-    backdrop-filter: blur(20px);
-    border-radius: 12px;
-    padding: 16px;
-    border: 1px solid rgba(99, 102, 241, 0.2);
-    z-index: 100;
-    opacity: 0;
-    transform: translateY(-10px);
-    visibility: hidden;
-    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-}
-
-.profile-overlay.show {
-    opacity: 1;
-    transform: translateY(0);
-    visibility: visible;
-}
-
-.profile-overlay-content {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    position: relative;
-}
-
-.profile-overlay-avatar {
-    width: 40px;
-    height: 40px;
-    border-radius: 50%;
-    background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
-    background-size: cover;
-    background-position: center;
-    border: 2px solid rgba(99, 102, 241, 0.3);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 18px;
-    color: white;
-    flex-shrink: 0;
-}
-
-.profile-overlay-name {
-    font-size: 14px;
-    font-weight: 700;
-    color: var(--text);
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    flex: 1;
-    min-width: 0;
-}
-
-.profile-overlay-status {
-    font-size: 12px;
-    color: var(--muted);
-    display: flex;
-    align-items: center;
-    gap: 6px;
-}
-
-.profile-overlay-close {
-    background: rgba(0, 0, 0, 0.3);
-    border: none;
-    color: var(--muted);
-    width: 24px;
-    height: 24px;
-    border-radius: 50%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    cursor: pointer;
-    font-size: 16px;
-    transition: all 0.2s;
-    flex-shrink: 0;
-}
-
-.profile-overlay-close:hover {
-    background: rgba(0, 0, 0, 0.5);
-    color: var(--text);
-}
-
-/* Make sidebar-top stretch when no profile is shown */
-.sidebar-top {
-    background: var(--sidebar-bg);
-    border-radius: 12px;
-    padding: 20px;
-    display: flex;
-    flex-direction: column;
-    gap: 16px;
-    border: none;
-    flex: 1; /* ADD THIS - makes it stretch */
-    min-height: 0; /* ADD THIS */
-}
-
-/* Adjust sidebar-library to account for flexible sizing */
-.sidebar-library {
-    background: var(--sidebar-bg);
-    border-radius: 12px;
-    padding: 20px;
-    flex: 1; /* Changed from flex: 1 to auto */
-    overflow-y: auto;
-    display: flex;
-    flex-direction: column;
-    gap: 12px;
-    min-height: 0; /* ADD THIS */
-}
-
-/* When sidebar is minimized */
-.left-sidebar.minimized .sync-btn span:first-child {
-    font-size: 24px;
-}
-
-.left-sidebar.minimized .sync-btn {
-    justify-content: center;
-    padding: 12px;
-}
-
-.left-sidebar.minimized .profile-overlay {
-    display: none;
-}
-/* Add this to your CSS for sync button states */
-.sync-btn:disabled {
-    opacity: 0.6;
-    cursor: not-allowed;
-}
-
-.sync-btn.searching {
-    animation: pulse-glow 2s infinite;
-}
-
-@keyframes pulse-glow {
-    0%, 100% { 
-        box-shadow: 0 0 0 0 rgba(99, 102, 241, 0.4);
-    }
-    50% { 
-        box-shadow: 0 0 0 4px rgba(99, 102, 241, 0);
-    }
-}
-
-/* ============================================
-   PROFILE EDITOR MODAL
-   ============================================ */
-
-.profile-editor-modal {
-    position: fixed;
-    inset: 0;
-    background: rgba(0, 0, 0, 0.9);
-    backdrop-filter: blur(20px);
-    z-index: 4000;
-    display: none;
-    align-items: center;
-    justify-content: center;
-    animation: fadeIn 0.3s ease;
-}
-
-.profile-editor-modal.active {
-    display: flex;
-}
-
-.profile-editor-content {
-    background: var(--panel);
-    border: 1px solid rgba(99, 102, 241, 0.3);
-    border-radius: 24px;
-    width: 95%;
-    max-width: 1200px;
-    max-height: 90vh;
-    overflow: hidden;
-    display: flex;
-    flex-direction: column;
-    box-shadow: 0 24px 80px rgba(0, 0, 0, 0.8);
-    animation: popupSlide 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
-}
-
-.profile-editor-header {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    padding: 24px 32px;
-    border-bottom: 1px solid var(--border);
-    background: rgba(0, 0, 0, 0.3);
-}
-
-.profile-editor-title {
-    font-size: 24px;
-    font-weight: 700;
-    background: linear-gradient(135deg, #ffffff 0%, #a5b4fc 100%);
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    background-clip: text;
-}
-
-.profile-editor-close {
-    background: rgba(0, 0, 0, 0.3);
-    border: none;
-    color: var(--muted);
-    width: 40px;
-    height: 40px;
-    border-radius: 50%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    cursor: pointer;
-    font-size: 24px;
-    transition: all 0.2s;
-}
-
-.profile-editor-close:hover {
-    background: rgba(0, 0, 0, 0.5);
-    color: var(--text);
-    transform: scale(1.1);
-}
-
-.profile-editor-main {
-    display: flex;
-    flex: 1;
-    overflow: hidden;
-}
-
-.profile-editor-left {
-    flex: 1;
-    padding: 32px;
-    overflow-y: auto;
-    border-right: 1px solid var(--border);
-}
-
-.profile-editor-right {
-    width: 400px;
-    padding: 32px;
-    overflow-y: auto;
-    background: rgba(0, 0, 0, 0.1);
-}
-
-/* Banner Section */
-.profile-banner-section {
-    margin-bottom: 32px;
-}
-
-.profile-banner {
-    width: 100%;
-    height: 200px;
-    background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
-    border-radius: 16px;
-    overflow: hidden;
-    position: relative;
-    cursor: pointer;
-    transition: all 0.3s;
-}
-
-.profile-banner:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 8px 32px rgba(99, 102, 241, 0.3);
-}
-
-.profile-banner img {
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
-}
-
-.banner-placeholder {
-    position: absolute;
-    inset: 0;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    color: rgba(255, 255, 255, 0.7);
-    font-size: 18px;
-    font-weight: 600;
-    background: rgba(0, 0, 0, 0.3);
-}
-
-.banner-upload-btn {
-    margin-top: 12px;
-    padding: 12px 24px;
-    background: rgba(99, 102, 241, 0.2);
-    border: 1px solid rgba(99, 102, 241, 0.4);
-    border-radius: 12px;
-    color: var(--text);
-    font-size: 14px;
-    font-weight: 600;
-    cursor: pointer;
-    transition: all 0.3s;
-}
-
-.banner-upload-btn:hover {
-    background: rgba(99, 102, 241, 0.3);
-    transform: scale(1.05);
-}
-
-/* Profile Picture Section */
-.profile-pic-wrapper {
-    display: flex;
-    align-items: center;
-    gap: 24px;
-    margin-bottom: 24px;
-}
-
-.profile-pic-preview {
-    width: 100px;
-    height: 100px;
-    border-radius: 50%;
-    background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
-    border: 4px solid rgba(99, 102, 241, 0.3);
-    position: relative;
-    overflow: hidden;
-    transition: all 0.3s;
-}
-
-.profile-pic-preview:hover {
-    transform: scale(1.05);
-    border-color: rgba(99, 102, 241, 0.5);
-}
-
-.profile-pic-preview img {
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
-}
-
-.profile-pic-placeholder {
-    width: 100%;
-    height: 100%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 48px;
-    font-weight: 700;
-    color: white;
-}
-
-.online-dot {
-    position: absolute;
-    bottom: 8px;
-    right: 8px;
-    width: 20px;
-    height: 20px;
-    border-radius: 50%;
-    background: #10b981;
-    border: 3px solid var(--panel);
-    box-shadow: 0 0 12px rgba(16, 185, 129, 0.5);
-}
-
-.profile-pic-upload-btn {
-    padding: 12px 24px;
-    background: rgba(255, 255, 255, 0.1);
-    border: 1px solid var(--border);
-    border-radius: 12px;
-    color: var(--text);
-    font-size: 14px;
-    font-weight: 600;
-    cursor: pointer;
-    transition: all 0.3s;
-}
-
-.profile-pic-upload-btn:hover {
-    background: rgba(255, 255, 255, 0.2);
-    transform: scale(1.05);
-}
-
-/* Form Elements */
-.form-group {
-    margin-bottom: 24px;
-}
-
-.form-group label {
-    display: block;
-    font-size: 14px;
-    font-weight: 600;
-    color: var(--muted);
-    margin-bottom: 8px;
-}
-
-.profile-input {
-    width: 100%;
-    padding: 14px 16px;
-    background: var(--soft);
-    border: 1px solid var(--border);
-    border-radius: 12px;
-    color: var(--text);
-    font-size: 16px;
-    transition: all 0.2s;
-}
-
-.profile-input:focus {
-    outline: none;
-    border-color: var(--profile-accent);
-    background: var(--hover);
-}
-
-.profile-textarea {
-    width: 100%;
-    padding: 16px;
-    background: var(--soft);
-    border: 1px solid var(--border);
-    border-radius: 12px;
-    color: var(--text);
-    font-size: 14px;
-    resize: vertical;
-    min-height: 100px;
-    transition: all 0.2s;
-}
-
-.profile-textarea:focus {
-    outline: none;
-    border-color: var(--profile-accent);
-    background: var(--hover);
-}
-
-/* Languages */
-.languages-input-container {
-    background: var(--soft);
-    border: 1px solid var(--border);
-    border-radius: 12px;
-    padding: 16px;
-}
-
-.languages-tags {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 8px;
-    margin-bottom: 16px;
-}
-
-.language-tag {
-    background: rgba(99, 102, 241, 0.2);
-    color: #a5b4fc;
-    padding: 8px 16px;
-    border-radius: 20px;
-    font-size: 14px;
-    font-weight: 600;
-    display: flex;
-    align-items: center;
-    gap: 8px;
-}
-
-.remove-language {
-    cursor: pointer;
-    font-size: 18px;
-    color: var(--muted);
-    transition: color 0.2s;
-}
-
-.remove-language:hover {
-    color: var(--text);
-}
-
-.language-input-wrapper {
-    display: flex;
-    gap: 12px;
-}
-
-.language-input-wrapper .profile-input {
-    flex: 1;
-    margin: 0;
-}
-
-.add-language-btn {
-    padding: 12px 24px;
-    background: rgba(99, 102, 241, 0.3);
-    border: none;
-    border-radius: 12px;
-    color: var(--text);
-    font-weight: 600;
-    cursor: pointer;
-    transition: all 0.3s;
-}
-
-.add-language-btn:hover {
-    background: rgba(99, 102, 241, 0.4);
-    transform: scale(1.05);
-}
-
-/* Featured Playlists */
-.featured-playlists-section {
-    background: var(--soft);
-    border-radius: 16px;
-    padding: 24px;
-    margin-bottom: 24px;
-}
-
-.featured-playlists-section .section-header {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    margin-bottom: 16px;
-}
-
-.featured-playlists-section h3 {
-    font-size: 18px;
-    font-weight: 700;
-    color: var(--text);
-}
-
-.add-playlist-btn {
-    padding: 8px 16px;
-    background: rgba(99, 102, 241, 0.2);
-    border: 1px solid rgba(99, 102, 241, 0.4);
-    border-radius: 12px;
-    color: var(--text);
-    font-size: 12px;
-    font-weight: 600;
-    cursor: pointer;
-    transition: all 0.3s;
-}
-
-.add-playlist-btn:hover {
-    background: rgba(99, 102, 241, 0.3);
-}
-
-.playlists-scroll-container {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 12px;
-    max-height: 200px;
-    overflow-y: auto;
-    padding: 8px;
-}
-
-.featured-playlist-card {
-    background: rgba(0, 0, 0, 0.3);
-    border-radius: 12px;
-    padding: 16px;
-    width: calc(50% - 6px);
-    cursor: pointer;
-    transition: all 0.3s;
-    position: relative;
-}
-
-.featured-playlist-card:hover {
-    background: rgba(0, 0, 0, 0.5);
-    transform: translateY(-2px);
-}
-
-.playlist-card-header {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    margin-bottom: 8px;
-}
-
-.playlist-emoji {
-    font-size: 24px;
-}
-
-.remove-playlist-btn {
-    background: rgba(239, 68, 68, 0.2);
-    border: none;
-    color: #ef4444;
-    width: 24px;
-    height: 24px;
-    border-radius: 50%;
-    cursor: pointer;
-    font-size: 16px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-}
-
-.remove-playlist-btn:hover {
-    background: rgba(239, 68, 68, 0.3);
-}
-
-.playlist-card-name {
-    font-size: 14px;
-    font-weight: 600;
-    margin-bottom: 4px;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-}
-
-.playlist-card-count {
-    font-size: 12px;
-    color: var(--muted);
-}
-
-.empty-playlists {
-    padding: 40px;
-    text-align: center;
-    color: var(--muted);
-    font-size: 14px;
-    background: rgba(0, 0, 0, 0.2);
-    border-radius: 12px;
-}
-
-/* Add Playlist Modal */
-.add-playlist-modal {
-    position: fixed;
-    inset: 0;
-    background: rgba(0, 0, 0, 0.9);
-    z-index: 5000;
-    display: none;
-    align-items: center;
-    justify-content: center;
-}
-
-.add-playlist-modal.active {
-    display: flex;
-}
-
-.add-playlist-content {
-    background: var(--panel);
-    border: 1px solid var(--border);
-    border-radius: 16px;
-    width: 400px;
-    max-height: 80vh;
-    overflow: hidden;
-}
-
-.add-playlist-header {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    padding: 20px;
-    border-bottom: 1px solid var(--border);
-}
-
-.add-playlist-header h3 {
-    font-size: 20px;
-    font-weight: 700;
-}
-
-.close-modal-btn {
-    background: none;
-    border: none;
-    color: var(--muted);
-    font-size: 24px;
-    cursor: pointer;
-    padding: 0;
-    width: 32px;
-    height: 32px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-}
-
-.close-modal-btn:hover {
-    color: var(--text);
-}
-
-.add-playlist-list {
-    padding: 20px;
-    overflow-y: auto;
-    max-height: 60vh;
-}
-
-.available-playlist-item {
-    padding: 16px;
-    background: rgba(0, 0, 0, 0.2);
-    border-radius: 12px;
-    margin-bottom: 12px;
-    cursor: pointer;
-    transition: all 0.3s;
-    display: flex;
-    align-items: center;
-    gap: 12px;
-}
-
-.available-playlist-item:hover {
-    background: rgba(0, 0, 0, 0.4);
-    transform: translateX(4px);
-}
-
-.available-playlist-emoji {
-    font-size: 24px;
-}
-
-.available-playlist-info {
-    flex: 1;
-    min-width: 0;
-}
-
-.available-playlist-name {
-    font-size: 14px;
-    font-weight: 600;
-    margin-bottom: 4px;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-}
-
-.available-playlist-count {
-    font-size: 12px;
-    color: var(--muted);
-}
-
-/* Save Button */
-.save-section {
-    margin-top: 32px;
-}
-
-.save-profile-btn {
-    width: 100%;
-    padding: 16px 32px;
-    background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
-    border: none;
-    border-radius: 16px;
-    color: white;
-    font-size: 16px;
-    font-weight: 700;
-    cursor: pointer;
-    transition: all 0.3s;
-}
-
-.save-profile-btn:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 8px 32px rgba(99, 102, 241, 0.4);
-}
-
-.save-info {
-    margin-top: 12px;
-    text-align: center;
-    color: var(--muted);
-    font-size: 12px;
-}
-
-/* Scrollbar for all scrollable elements */
-.profile-editor-left::-webkit-scrollbar,
-.profile-editor-right::-webkit-scrollbar,
-.playlists-scroll-container::-webkit-scrollbar,
-.add-playlist-list::-webkit-scrollbar {
-    width: 8px;
-}
-
-.profile-editor-left::-webkit-scrollbar-track,
-.profile-editor-right::-webkit-scrollbar-track,
-.playlists-scroll-container::-webkit-scrollbar-track,
-.add-playlist-list::-webkit-scrollbar-track {
-    background: rgba(255, 255, 255, 0.05);
-    border-radius: 4px;
-}
-
-.profile-editor-left::-webkit-scrollbar-thumb,
-.profile-editor-right::-webkit-scrollbar-thumb,
-.playlists-scroll-container::-webkit-scrollbar-thumb,
-.add-playlist-list::-webkit-scrollbar-thumb {
-    background: rgba(99, 102, 241, 0.4);
-    border-radius: 4px;
-}
-
-.profile-editor-left::-webkit-scrollbar-thumb:hover,
-.profile-editor-right::-webkit-scrollbar-thumb:hover,
-.playlists-scroll-container::-webkit-scrollbar-thumb:hover,
-.add-playlist-list::-webkit-scrollbar-thumb:hover {
-    background: rgba(99, 102, 241, 0.6);
-}
-
-/* ============================================
-   PROFILE EDITOR FORM ELEMENTS STYLING
-   ============================================ */
-
-/* Custom Select/Dropdown Styling */
-.profile-select {
-    width: 100%;
-    padding: 14px 16px;
-    background: var(--soft);
-    border: 1px solid var(--border);
-    border-radius: 12px;
-    color: var(--text);
-    font-size: 14px;
-    font-family: 'DM Sans', sans-serif;
-    cursor: pointer;
-    appearance: none;
-    -webkit-appearance: none;
-    -moz-appearance: none;
-    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%23b3b3b3' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");
-    background-repeat: no-repeat;
-    background-position: right 16px center;
-    background-size: 16px;
-    padding-right: 40px;
-    transition: all 0.2s;
-}
-
-.profile-select:hover {
-    background-color: var(--hover);
-    border-color: rgba(99, 102, 241, 0.4);
-}
-
-.profile-select:focus {
-    outline: none;
-    border-color: var(--profile-accent);
-    background-color: var(--hover);
-    box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.2);
-}
-
-.profile-select:disabled {
-    opacity: 0.5;
-    cursor: not-allowed;
-}
-
-/* Pronouns Container */
-.pronouns-container {
-    display: flex;
-    gap: 12px;
-    align-items: center;
-}
-
-.pronouns-container .profile-select {
-    flex: 1;
-}
-
-/* Badges Controls */
-.badges-controls {
-    display: flex;
-    gap: 12px;
-    align-items: center;
-    margin-top: 12px;
-}
-
-.badges-controls .profile-select {
-    flex: 1;
-    margin: 0;
-}
-
-/* Add Button Styling */
-.add-badge-btn,
-.add-language-btn,
-.add-playlist-btn,
-.add-to-featured-btn,
-.banner-upload-btn,
-.profile-pic-upload-btn {
-    background: linear-gradient(135deg, rgba(99, 102, 241, 0.3) 0%, rgba(99, 102, 241, 0.2) 100%);
-    border: 1px solid rgba(99, 102, 241, 0.4);
-    color: var(--text);
-    font-weight: 600;
-    font-size: 14px;
-    padding: 12px 24px;
-    border-radius: 12px;
-    cursor: pointer;
-    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 8px;
-    backdrop-filter: blur(10px);
-    position: relative;
-    overflow: hidden;
-}
-
-/* Specific button sizes */
-.add-badge-btn,
-.add-to-featured-btn {
-    padding: 10px 16px;
-    font-size: 13px;
-}
-
-.add-playlist-btn {
-    padding: 8px 16px;
-    font-size: 12px;
-}
-
-.add-language-btn {
-    padding: 12px 20px;
-    min-width: 60px;
-}
-
-/* Button Hover Effects */
-.add-badge-btn:hover,
-.add-language-btn:hover,
-.add-playlist-btn:hover,
-.add-to-featured-btn:hover,
-.banner-upload-btn:hover,
-.profile-pic-upload-btn:hover {
-    background: linear-gradient(135deg, rgba(99, 102, 241, 0.4) 0%, rgba(99, 102, 241, 0.3) 100%);
-    border-color: rgba(99, 102, 241, 0.6);
-    transform: translateY(-2px);
-    box-shadow: 0 8px 24px rgba(99, 102, 241, 0.3);
-}
-
-/* Button Active (Click) Effect */
-.add-badge-btn:active,
-.add-language-btn:active,
-.add-playlist-btn:active,
-.add-to-featured-btn:active,
-.banner-upload-btn:active,
-.profile-pic-upload-btn:active {
-    transform: translateY(0);
-    box-shadow: 0 4px 12px rgba(99, 102, 241, 0.2);
-}
-
-/* Button Focus State */
-.add-badge-btn:focus,
-.add-language-btn:focus,
-.add-playlist-btn:focus,
-.add-to-featured-btn:focus,
-.banner-upload-btn:focus,
-.profile-pic-upload-btn:focus {
-    outline: none;
-    box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.3);
-}
-
-/* Button Ripple Effect */
-.add-badge-btn::after,
-.add-language-btn::after,
-.add-playlist-btn::after,
-.add-to-featured-btn::after,
-.banner-upload-btn::after,
-.profile-pic-upload-btn::after {
-    content: '';
-    position: absolute;
-    top: 50%;
-    left: 50%;
-    width: 5px;
-    height: 5px;
-    background: rgba(255, 255, 255, 0.5);
-    opacity: 0;
-    border-radius: 100%;
-    transform: scale(1, 1) translate(-50%, -50%);
-    transform-origin: 50% 50%;
-}
-
-.add-badge-btn:focus:not(:active)::after,
-.add-language-btn:focus:not(:active)::after,
-.add-playlist-btn:focus:not(:active)::after,
-.add-to-featured-btn:focus:not(:active)::after,
-.banner-upload-btn:focus:not(:active)::after,
-.profile-pic-upload-btn:focus:not(:active)::after {
-    animation: ripple 1s ease-out;
-}
-
-@keyframes ripple {
-    0% {
-        transform: scale(0, 0);
-        opacity: 0.5;
-    }
-    100% {
-        transform: scale(40, 40);
-        opacity: 0;
-    }
-}
-
-/* Button Icons */
-.add-badge-btn::before,
-.add-language-btn::before,
-.add-playlist-btn::before,
-.add-to-featured-btn::before {
-    content: '+';
-    font-size: 18px;
-    font-weight: 700;
-}
-
-.banner-upload-btn::before {
-    content: '';
-    font-size: 16px;
-}
-
-.profile-pic-upload-btn::before {
-    content: '📸';
-    font-size: 16px;
-}
-
-/* Remove Button Styling */
-.remove-playlist-btn,
-.remove-language,
-.remove-badge,
-.banner-remove-btn {
-    background: rgba(239, 68, 68, 0.2);
-    border: 1px solid rgba(239, 68, 68, 0.3);
-    color: #ef4444;
-    border-radius: 8px;
-    cursor: pointer;
-    transition: all 0.2s;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 14px;
-    font-weight: 600;
-}
-
-/* Specific remove button sizes */
-.remove-playlist-btn {
-    width: 24px;
-    height: 24px;
-    border-radius: 50%;
-    font-size: 16px;
-}
-
-.remove-language,
-.remove-badge {
-    width: 20px;
-    height: 20px;
-    border-radius: 50%;
-    margin-left: 4px;
-    font-size: 12px;
-    opacity: 0.7;
-}
-
-.banner-remove-btn {
-    padding: 12px 24px;
-    font-size: 14px;
-    margin-left: 12px;
-}
-
-/* Remove Button Hover Effects */
-.remove-playlist-btn:hover,
-.remove-language:hover,
-.remove-badge:hover,
-.banner-remove-btn:hover {
-    background: rgba(239, 68, 68, 0.3);
-    border-color: rgba(239, 68, 68, 0.5);
-    transform: scale(1.1);
-}
-
-.remove-language:hover,
-.remove-badge:hover {
-    opacity: 1;
-}
-
-/* Remove Button Active Effect */
-.remove-playlist-btn:active,
-.remove-language:active,
-.remove-badge:active,
-.banner-remove-btn:active {
-    transform: scale(1);
-}
-
-/* Language Tags with Remove Button */
-.language-tag {
-    display: inline-flex;
-    align-items: center;
-    background: rgba(99, 102, 241, 0.2);
-    color: #a5b4fc;
-    padding: 8px 12px;
-    border-radius: 20px;
-    font-size: 13px;
-    font-weight: 600;
-    gap: 6px;
-    transition: all 0.2s;
-}
-
-.language-tag:hover {
-    background: rgba(99, 102, 241, 0.25);
-    transform: translateY(-1px);
-}
-
-/* Badge Tags with Remove Button */
-.badge-tag {
-    display: inline-flex;
-    align-items: center;
-    background: rgba(99, 102, 241, 0.2);
-    color: #a5b4fc;
-    padding: 8px 12px;
-    border-radius: 20px;
-    font-size: 14px;
-    font-weight: 600;
-    gap: 6px;
-    margin: 4px;
-    transition: all 0.2s;
-}
-
-.badge-tag:hover {
-    background: rgba(99, 102, 241, 0.25);
-    transform: translateY(-1px);
-    box-shadow: 0 4px 12px rgba(99, 102, 241, 0.2);
-}
-
-/* Form Group Layout */
-.form-group {
-    margin-bottom: 24px;
-}
-
-.form-group label {
-    display: block;
-    font-size: 14px;
-    font-weight: 600;
-    color: var(--muted);
-    margin-bottom: 8px;
-}
-
-/* Profile Header Section Layout */
-.profile-header-section {
-    display: flex;
-    gap: 24px;
-    margin-bottom: 24px;
-}
-
-.profile-pic-wrapper {
-    display: flex;
-    align-items: center;
-    gap: 24px;
-}
-
-.profile-name-section {
-    flex: 1;
-}
-
-/* Banner Controls Layout */
-.banner-controls {
-    display: flex;
-    gap: 12px;
-    margin-top: 12px;
-}
-
-/* Preview Section Styling */
-.preview-section {
-    background: rgba(0, 0, 0, 0.2);
-    border-radius: 16px;
-    padding: 20px;
-    margin-top: 24px;
-}
-
-.preview-section h4 {
-    font-size: 16px;
-    font-weight: 600;
-    color: var(--text);
-    margin-bottom: 16px;
-}
-
-.profile-preview {
-    background: var(--soft);
-    border-radius: 12px;
-    overflow: hidden;
-    border: 1px solid var(--border);
-}
-
-.preview-banner {
-    height: 80px;
-    background-size: cover;
-    background-position: center;
-    position: relative;
-}
-
-.preview-banner-placeholder {
-    position: absolute;
-    inset: 0;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    color: rgba(255, 255, 255, 0.7);
-    font-size: 14px;
-    font-weight: 600;
-    background: rgba(99, 102, 241, 0.3);
-}
-
-.preview-profile-info {
-    padding: 20px;
-    position: relative;
-}
-
-.preview-avatar {
-    width: 60px;
-    height: 60px;
-    border-radius: 50%;
-    border: 3px solid var(--panel);
-    position: absolute;
-    top: -30px;
-    left: 20px;
-    background-size: cover;
-    background-position: center;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 24px;
-    font-weight: 700;
-    color: white;
-}
-
-.preview-online-dot {
-    position: absolute;
-    bottom: 4px;
-    right: 4px;
-    width: 12px;
-    height: 12px;
-    border-radius: 50%;
-    background: #10b981;
-    border: 2px solid var(--panel);
-}
-
-.preview-name-section {
-    margin-left: 70px;
-}
-
-.preview-name-row {
-    display: flex;
-    align-items: center;
-    flex-wrap: wrap;
-    gap: 8px;
-    margin-bottom: 8px;
-}
-
-.preview-name {
-    font-size: 18px;
-    font-weight: 700;
-    color: var(--text);
-}
-
-.preview-pronouns {
-    font-size: 12px;
-    color: var(--muted);
-    background: rgba(255, 255, 255, 0.1);
-    padding: 2px 8px;
-    border-radius: 10px;
-}
-
-.preview-badge {
-    font-size: 14px;
-}
-
-.preview-description {
-    font-size: 14px;
-    color: var(--muted);
-    line-height: 1.5;
-    margin-bottom: 8px;
-}
-
-.preview-languages {
-    font-size: 13px;
-    color: var(--muted);
-}
-
-.preview-language {
-    background: rgba(99, 102, 241, 0.1);
-    color: #a5b4fc;
-    padding: 2px 8px;
-    border-radius: 10px;
-    font-size: 12px;
-    margin: 0 4px;
-}
-
-.preview-featured-playlists {
-    padding: 16px;
-    border-top: 1px solid var(--border);
-}
-
-.preview-featured-playlists h4 {
-    font-size: 14px;
-    font-weight: 600;
-    margin-bottom: 12px;
-}
-
-.preview-playlists-scroll {
-    display: flex;
-    gap: 12px;
-    overflow-x: auto;
-    padding-bottom: 8px;
-}
-
-.preview-playlist-card {
-    min-width: 120px;
-    background: rgba(0, 0, 0, 0.2);
-    border-radius: 8px;
-    padding: 12px;
-}
-
-.preview-playlist-emoji {
-    font-size: 24px;
-    display: block;
-    margin-bottom: 8px;
-}
-
-.preview-playlist-name {
-    font-size: 12px;
-    font-weight: 600;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-}
-
-.preview-playlist-count {
-    font-size: 11px;
-    color: var(--muted);
-}
-
-/* Save Section Styling */
-.save-section {
-    margin-top: 32px;
-}
-
-.save-profile-btn {
-    width: 100%;
-    padding: 16px 32px;
-    background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
-    border: none;
-    border-radius: 16px;
-    color: white;
-    font-size: 16px;
-    font-weight: 700;
-    cursor: pointer;
-    transition: all 0.3s;
-    position: relative;
-    overflow: hidden;
-}
-
-.save-profile-btn:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 8px 32px rgba(99, 102, 241, 0.4);
-}
-
-.save-profile-btn:active {
-    transform: translateY(0);
-}
-
-.save-profile-btn.saving {
-    background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%);
-}
-
-.save-profile-btn.saving::before {
-    content: '';
-    position: absolute;
-    left: 16px;
-    top: 50%;
-    transform: translateY(-50%);
-    width: 20px;
-    height: 20px;
-    border: 2px solid rgba(255, 255, 255, 0.3);
-    border-top-color: white;
-    border-radius: 50%;
-    animation: spin 1s linear infinite;
-}
-
-@keyframes spin {
-    to { transform: translateY(-50%) rotate(360deg); }
-}
-
-/* Responsive Adjustments */
-@media (max-width: 1024px) {
-    .profile-editor-main {
-        flex-direction: column;
-    }
-    
-    .profile-editor-right {
-        width: 100%;
-        border-top: 1px solid var(--border);
-        border-left: none;
-    }
-    
-    .profile-header-section {
-        flex-direction: column;
-    }
-    
-    .pronouns-container {
-        flex-direction: column;
-        align-items: stretch;
-    }
-}
-
-/* Custom Scrollbar for Profile Editor */
-.profile-editor-left::-webkit-scrollbar-thumb,
-.profile-editor-right::-webkit-scrollbar-thumb,
-.playlists-scroll-container::-webkit-scrollbar-thumb {
-    background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
-}
-
-/* Focus states for better accessibility */
-.profile-input:focus,
-.profile-textarea:focus,
-.profile-select:focus {
-    outline: none;
-    border-color: var(--profile-accent);
-    box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.2);
-}
-
-/* Loading states */
-.add-badge-btn.loading,
-.add-language-btn.loading,
-.add-playlist-btn.loading {
-    opacity: 0.7;
-    cursor: not-allowed;
-}
-
-.add-badge-btn.loading::before,
-.add-language-btn.loading::before,
-.add-playlist-btn.loading::before {
-    animation: spin 1s linear infinite;
-}
-
-/* Disabled states */
-button:disabled {
-    opacity: 0.5;
-    cursor: not-allowed;
-    transform: none !important;
-    box-shadow: none !important;
-}
-/* Sync Status Indicator */
-.sync-indicator {
-    display: inline-block;
-    width: 8px;
-    height: 8px;
-    border-radius: 50%;
-    margin-left: 8px;
-    background: #ef4444; /* Red for not synced */
-}
-
-.sync-indicator.synced {
-    background: #10b981; /* Green for synced */
-    box-shadow: 0 0 0 2px rgba(16, 185, 129, 0.2);
-    animation: pulse 2s infinite;
-}
-
-/* Edit Profile Button States */
-#editProfileBtn.hidden {
-    display: none !important;
-}
-
-#editProfileBtn.visible {
-    display: flex !important;
-}
-
-/* Pulse animation for sync button */
-@keyframes pulse-glow {
-    0%, 100% { 
-        box-shadow: 0 0 0 0 rgba(99, 102, 241, 0.7);
-    }
-    50% { 
-        box-shadow: 0 0 0 10px rgba(99, 102, 241, 0);
-    }
-}
-
-/* Highlight sync button when edit profile is blocked */
-.sync-btn.highlight {
-    animation: pulse-glow 1s ease-in-out infinite !important;
-    background: linear-gradient(135deg, rgba(99, 102, 241, 0.4) 0%, rgba(99, 102, 241, 0.3) 100%) !important;
-}
 </style>
 </head>
 <body>
@@ -2910,8 +1627,8 @@ button:disabled {
 <div class="app-container">
     <!-- LEFT SIDEBAR -->
     <aside class="left-sidebar" id="leftSidebar">
-
         <div class="sidebar-top">
+            <!-- <div class="logo">INDY MUSIC✦</div> -->
             <div class="nav-buttons">
                 <button class="nav-btn active" id="homeBtn" onclick="showHome()">
                     <span>⌂</span> Home
@@ -2919,28 +1636,11 @@ button:disabled {
                 <button class="nav-btn" id="searchBtn" onclick="showSearch()">
                     <span>⌕</span> Search
                 </button>
-<button class="nav-btn sync-btn" id="syncBtn" onclick="syncIndy()">
-    <span>🔗</span> Sync
-</button>
-<!-- In the nav-buttons section -->
-<button class="nav-btn" id="editProfileBtn" onclick="openProfileEditor()" style="display: none;">
-    <span>👤</span> Edit Profile
-</button>
+                <button class="nav-btn" id="searchBtn" onclick="linkIndy()">
+                    <span>🔗</span> Link
+                </button>
             </div>
         </div>
-
-            <!-- ADD THIS PROFILE OVERLAY (hidden by default) -->
-    <div class="profile-overlay" id="profileOverlay">
-        <div class="profile-overlay-content">
-            <div class="profile-overlay-avatar" id="profileOverlayAvatar">✦</div>
-            <div class="profile-overlay-name" id="profileOverlayName">Guest</div>
-            <div class="profile-overlay-status">
-                <span class="status-dot" id="overlayStatusDot"></span>
-                <span id="overlayStatusText">Synced</span>
-            </div>
-            <button class="profile-overlay-close" onclick="hideProfileOverlay()">×</button>
-        </div>
-    </div>
         
         <div class="sidebar-library">
             <div class="library-header">
@@ -2958,6 +1658,8 @@ button:disabled {
             
             <div id="playlistsList"></div>
         </div>
+        
+        <button class="toggle-sidebar toggle-left" onclick="toggleLeftSidebar()">›</button>
     </aside>
 
     <!-- MAIN CONTENT -->
@@ -2980,7 +1682,7 @@ button:disabled {
 
             <div class="section">
                 <div class="section-header">
-                    <h2>✦ Recommended Mixes</h2>
+                    <h2>✦Recommended Mixes</h2>
                 </div>
                 <div class="scroll-container" id="mixesScroll"></div>
             </div>
@@ -2995,50 +1697,29 @@ button:disabled {
         </div>
     </main>
 
-<!-- RIGHT SIDEBAR -->
-<aside class="right-sidebar" id="rightSidebar">
-    <div class="video-container">
-        <iframe id="player" allow="autoplay; encrypted-media"></iframe>
-        
-        <div class="now-playing-info">
-            <div class="np-title" id="npTitle">Start playing a song</div>
-            <div class="np-artist" id="npArtist"></div>
-            
-            <button id="addToPlaylistBtn" class="add-to-playlist-btn" style="display:none;">
-                <span style="font-size:18px;">+</span> Add to Playlist
-            </button>
+    <!-- RIGHT SIDEBAR -->
+    <aside class="right-sidebar" id="rightSidebar">
+        <div class="video-container">
+            <iframe id="player" allow="autoplay; encrypted-media"></iframe>
         </div>
-    </div>
+        
+<div class="now-playing-info">
+    <div class="np-title" id="npTitle">Start playing a song</div>
+    <div class="np-artist" id="npArtist"></div>
     
-    <div class="lyrics-section">
-        <h4>Lyrics</h4>
-        <div class="lyrics loading" id="lyrics">Play a song to view lyrics...</div>
-    </div>
-</aside>
+    <!-- NEW: Add to Playlist button (hidden by default) -->
+    <button id="addToPlaylistBtn" class="add-to-playlist-btn" style="display:none;">
+        <span style="font-size:18px;">+</span> Add to Playlist
+    </button>
 </div>
-
-<!-- Account Search Popup -->
-<div class="account-search-popup" id="accountSearchPopup">
-    <div class="search-popup-content">
-        <!-- Searching State -->
-        <div id="searchingState">
-            <div class="search-star">✦</div>
-            <div class="search-text">Searching for user</div>
-            <div class="search-subtext">Looking through the INDY network...</div>
-            <div class="search-dots">...</div>
+        
+        <div class="lyrics-section">
+            <h4>Lyrics</h4>
+            <div class="lyrics loading" id="lyrics">Play a song to view lyrics...</div>
         </div>
         
-        <!-- Profile Confirmation State -->
-        <div class="profile-confirm-content" id="confirmState">
-            <div class="found-profile-avatar" id="foundAvatar">✦</div>
-            <div class="found-profile-name" id="foundName">John Doe</div>
-            <div class="found-profile-question">Is this you?</div>
-            <div class="confirm-actions">
-                <button class="confirm-btn no" onclick="cancelLink()">No</button>
-                <button class="confirm-btn yes" onclick="confirmLink()">Yes, that's me!</button>
-            </div>
-        </div>
-    </div>
+        <button class="toggle-sidebar toggle-right" onclick="toggleRightSidebar()">‹</button>
+    </aside>
 </div>
 
 <!-- Toast Notification -->
@@ -3047,15 +1728,6 @@ button:disabled {
     <div class="toast-info">
         <div class="toast-title" id="toastTitle"></div>
         <div class="toast-subtitle" id="toastSubtitle">Now Playing</div>
-    </div>
-</div>
-
-<!-- Sync Notification -->
-<div class="sync-notification" id="syncNotification">
-    <div class="sync-notification-icon">✓</div>
-    <div class="sync-notification-content">
-        <div class="sync-notification-title" id="syncNotifTitle">Synced!</div>
-        <div class="sync-notification-message" id="syncNotifMessage">Your music is up to date</div>
     </div>
 </div>
 
@@ -3079,6 +1751,7 @@ function getNextKey() {
     return API_KEY;
 }
 
+// At the very top of <script> (or in a separate early script tag)
 if (!window.YT) {
     const tag = document.createElement('script');
     tag.src = "https://www.youtube.com/iframe_api";
@@ -3115,7 +1788,8 @@ function load(key, def) {
     }
 }
 
-const CACHE_TTL = 24 * 60 * 60 * 1000;
+// Add near the top (after load/save functions)
+const CACHE_TTL = 24 * 60 * 60 * 1000; // 24 hours
 
 function cachedFetch(url, cacheKey, maxAge = CACHE_TTL) {
     const cached = load(cacheKey, null);
@@ -3147,9 +1821,9 @@ let currentPlaylist = null;
 let currentSongs = [];
 let currentIndex = -1;
 let ytPlayer = null;
-let searchTimeout = null;
+let searchTimeout = null;  // ← Add this line
+
 let lastPlayedVideoId = null;
-let currentPlayingSong = null;
 
 // Initialize
 renderRecent();
@@ -3158,13 +1832,32 @@ renderAlbums();
 renderMixes();
 updateLikedCount();
 
+// Load YouTube API
+if (!window.YT) {
+    const tag = document.createElement('script');
+    tag.src = "https://www.youtube.com/iframe_api";
+    const firstScriptTag = document.getElementsByTagName('script')[0];
+    firstScriptTag.parentNode.insertBefore(tag, firstScriptTag);
+}
+
+window.onYouTubeIframeAPIReady = function() {
+    console.log('YouTube IFrame API is fully loaded');
+    playerReady = true;
+    
+    // If we were waiting for a song → start it now
+    if (pendingVideo) {
+        initPlayer(pendingVideo);
+        pendingVideo = null;
+    }
+};
+
 let playerReady = false;
 let pendingVideo = null;
 
 function initPlayer(videoId) {
     if (!window.YT || !window.YT.Player) {
         console.log('API not ready yet — will try again soon');
-        pendingVideo = videoId;
+        pendingVideo = videoId;           // remember which video to play
         return;
     }
 
@@ -3179,12 +1872,13 @@ function initPlayer(videoId) {
                 enablejsapi: 1,
                 rel: 0,
                 modestbranding: 1,
-                origin: window.location.origin
+                origin: window.location.origin   // ← very helpful for local/dev
             },
             events: {
                 onReady: (e) => {
                     console.log('Player is ready — should start playing');
                     playerReady = true;
+                    // Optional: e.target.playVideo();
                 },
                 onStateChange: onPlayerStateChange,
                 onError: (e) => {
@@ -3197,8 +1891,6 @@ function initPlayer(videoId) {
         ytPlayer.loadVideoById(videoId);
     }
 }
-
-
 
 function onPlayerStateChange(event) {
     if (event.data === window.YT.PlayerState.ENDED) {
@@ -3248,10 +1940,12 @@ function showHome() {
     if (homeBtn) homeBtn.classList.add('active');
     if (searchBtn) searchBtn.classList.remove('active');
     
+    // Re-render content
     renderRecent();
     renderAlbums();
     renderMixes();
     
+    // Re-attach search listener
     document.getElementById('searchInput').oninput = async (e) => {
         clearTimeout(searchTimeout);
         const q = e.target.value.trim();
@@ -3275,7 +1969,6 @@ function showHome() {
         }, 300);
     };
 }
-
 function showSearch() {
     document.getElementById('homeView').style.display = 'none';
     document.getElementById('searchView').classList.add('active');
@@ -3285,14 +1978,15 @@ function showSearch() {
     const searchInput = document.getElementById('searchInput');
     searchInput.focus();
     
-    searchInput.oninput = (e) => {
-        clearTimeout(searchTimeout);
-        const q = e.target.value.trim();
+    // Re-attach the search event listener
+searchInput.oninput = (e) => {
+    clearTimeout(searchTimeout);
+    const q = e.target.value.trim();
 
-        if (q.length < 3) {
-            document.getElementById('searchResults').innerHTML = '';
-            return;
-        }
+    if (q.length < 3) {                // ← add this
+        document.getElementById('searchResults').innerHTML = '';
+        return;
+    }
         
         searchTimeout = setTimeout(async () => {
             try {
@@ -3321,6 +2015,7 @@ function renderSearchResults(videos, playlists) {
     const container = document.getElementById('searchResults');
     container.innerHTML = '';
     
+    // Albums section
     if (playlists.items && playlists.items.length > 0) {
         const albumSection = document.createElement('div');
         albumSection.className = 'section';
@@ -3345,6 +2040,7 @@ function renderSearchResults(videos, playlists) {
         container.appendChild(albumSection);
     }
     
+    // Songs section
     if (videos.items && videos.items.length > 0) {
         const songSection = document.createElement('div');
         songSection.className = 'section';
@@ -3397,6 +2093,7 @@ async function playPlaylist(playlistId, isAlbum = false) {
             currentPlaylist = null;
             
             if (isAlbum) {
+                // Fetch playlist details to get the actual album name
                 const playlistResponse = await fetch(`https://www.googleapis.com/youtube/v3/playlists?part=snippet&id=${playlistId}&key=${getNextKey()}`);
                 const playlistData = await playlistResponse.json();
                 const albumName = playlistData.items?.[0]?.snippet?.title || data.items[0].snippet.channelTitle;
@@ -3447,14 +2144,15 @@ function showAlbumView(songs, albumName) {
         songsList.appendChild(div);
     });
 }
-
 function playSong(song, fromPlaylist = null) {
+    // Prevent playing the exact same video again immediately
     if (lastPlayedVideoId === song.id) {
         console.log("Already playing this exact video — skipping duplicate call");
         return;
     }
     lastPlayedVideoId = song.id;
 
+    // ── 1. Update playback context & index ─────────────────────────────────
     if (fromPlaylist) {
         currentPlaylist = fromPlaylist;
         currentSongs = playlists[fromPlaylist].songs;
@@ -3465,6 +2163,7 @@ function playSong(song, fromPlaylist = null) {
         if (idx !== -1) currentIndex = idx;
     }
 
+    // ── 2. Update UI ───────────────────────────────────────────────────────
     document.getElementById('npTitle').textContent = song.title || "Unknown Title";
     document.getElementById('npArtist').textContent = song.artist || "Unknown Artist";
 
@@ -3473,10 +2172,11 @@ function playSong(song, fromPlaylist = null) {
     fetchLyrics(song.title, song.artist);
     showToast(song);
 
+    // ── 3. Build clean embed parameters ────────────────────────────────────
     const params = new URLSearchParams({
         autoplay: 1,
         enablejsapi: 1,
-        origin: window.location.origin,
+        origin: window.location.origin,           // Critical for postMessage / security
         rel: 0,
         modestbranding: 1,
         showinfo: 0,
@@ -3487,6 +2187,7 @@ function playSong(song, fromPlaylist = null) {
 
     const embedUrl = `https://www.youtube.com/embed/${song.id}?${params.toString()}`;
 
+    // ── 4. Try to use the real YouTube Player API first ─────────────────────
     if (window.ytPlayer && typeof window.ytPlayer.loadVideoById === 'function') {
         try {
             window.ytPlayer.loadVideoById({
@@ -3496,27 +2197,19 @@ function playSong(song, fromPlaylist = null) {
             console.log(`Playing "${song.title}" via ytPlayer.loadVideoById`);
         } catch (err) {
             console.error("loadVideoById failed:", err);
+            // Fallback to src
             document.getElementById('player').src = embedUrl;
             console.log(`Fallback: set iframe src directly`);
         }
     } else {
+        // API not ready or not initialized → direct src change
         document.getElementById('player').src = embedUrl;
         console.log(`Playing "${song.title}" via direct iframe src (API not ready)`);
     }
 
+    // Optional: give focus to iframe (helps autoplay policies in some browsers)
     const playerEl = document.getElementById('player');
     if (playerEl) playerEl.focus?.();
-    
-    currentPlayingSong = { ...song };
-    const btn = document.getElementById('addToPlaylistBtn');
-    if (btn) {
-        btn.style.display = 'flex';
-    }
-    
-    const rightSidebar = document.getElementById('rightSidebar');
-    if (rightSidebar && rightSidebar.classList.contains('minimized')) {
-        rightSidebar.classList.remove('minimized');
-    }
 }
 
 function skipToNext() {
@@ -3537,6 +2230,7 @@ function togglePlay() {
     // Will be implemented with YouTube API
 }
 
+// Toast notification
 function showToast(song) {
     const toast = document.getElementById('toast');
     document.getElementById('toastImg').src = song.art;
@@ -3548,6 +2242,7 @@ function showToast(song) {
     }, 5000);
 }
 
+// Recent songs
 function addToRecent(song) {
     recent = recent.filter(s => s.id !== song.id);
     recent.unshift(song);
@@ -3557,7 +2252,7 @@ function addToRecent(song) {
 }
 
 function renderRecent() {
-    const recentDiv = document.getElementById('recentGrid');
+    const recentDiv = document.getElementById('recentGrid');  // ← use correct ID!
     if (!recentDiv) return;
 
     recentDiv.innerHTML = '';
@@ -3578,16 +2273,18 @@ function renderRecent() {
             </div>
         `;
         div.onclick = () => playSong(song);
-        recentDiv.appendChild(div);
+        recentDiv.appendChild(div);   // ← fixed: recentDiv, not grid
     });
 }
 
+// Albums (from recent)
 async function renderAlbums() {
     const container = document.getElementById('albumsScroll');
     if (!container) return;
     
     container.innerHTML = '<div style="padding:20px;color:var(--muted);">Loading albums...</div>';
     
+    // Get unique artists from recent songs
     const uniqueArtists = [...new Set(recent.map(s => s.artist))].slice(0, 3);
     
     if (uniqueArtists.length === 0) {
@@ -3596,12 +2293,13 @@ async function renderAlbums() {
     }
     
     try {
-        const albumPromises = uniqueArtists.map(artist =>
-            cachedFetch(
-                `https://www.googleapis.com/youtube/v3/search?part=snippet&type=playlist&maxResults=4&q=${encodeURIComponent(artist + ' album')}&key=${getNextKey()}`,
-                `album-cache-${artist.replace(/\W/g,'_')}`
-            )
-        );
+// In renderAlbums()
+const albumPromises = uniqueArtists.map(artist =>
+    cachedFetch(
+        `https://www.googleapis.com/youtube/v3/search?...q=${encodeURIComponent(artist + ' album')}...`,
+        `album-cache-${artist.replace(/\W/g,'_')}`
+    )
+);
         
         const results = await Promise.all(albumPromises);
         const albums = results.flatMap(data => data.items || []).slice(0, 6);
@@ -3630,6 +2328,7 @@ async function renderAlbums() {
     }
 }
 
+// Mixes (recommended - using recent songs)
 function renderMixes() {
     const container = document.getElementById('mixesScroll');
     if (!container) return;
@@ -3706,8 +2405,9 @@ async function openMix(seedSong) {
     });
 }
 
-async function generateMix(seedSong) {
+    async function generateMix(seedSong) {
     const query = `${seedSong.artist} official audio`;
+
     
     const res = await fetch(
         `https://www.googleapis.com/youtube/v3/search?part=snippet&type=video&videoCategoryId=10&maxResults=15&q=${encodeURIComponent(query)}&key=${getNextKey()}`
@@ -3724,6 +2424,8 @@ async function generateMix(seedSong) {
         .filter(song => song.id);
 }
 
+
+// Playlists
 function renderPlaylists() {
     const container = document.getElementById('playlistsList');
     container.innerHTML = '';
@@ -3842,6 +2544,7 @@ function updateLikedCount() {
     document.getElementById('likedCount').textContent = `${liked.length} songs`;
 }
 
+// Gradient color extraction
 function updateGradient(imageUrl) {
     const img = new Image();
     img.crossOrigin = "Anonymous";
@@ -3859,6 +2562,7 @@ function updateGradient(imageUrl) {
     };
 }
 
+// Lyrics
 async function fetchLyrics(title, artist) {
     const lyricsDiv = document.getElementById('lyrics');
     lyricsDiv.className = 'lyrics loading';
@@ -3884,6 +2588,7 @@ async function fetchLyrics(title, artist) {
     }
 }
 
+// Modal functions
 function openCreateModal() {
     document.getElementById('createModal').classList.add('active');
     document.getElementById('playlistNameInput').focus();
@@ -3912,15 +2617,20 @@ function createPlaylist() {
     closeCreateModal();
 }
 
+// Utilities
 function escapeHtml(text) {
     const div = document.createElement('div');
     div.textContent = text;
     return div.innerHTML;
 }
 
+// Playlist Management Functions
+
+// Add current song to a playlist
 function addToPlaylist(song, playlistName) {
     if (!playlists[playlistName]) return;
     
+    // Check if song already exists
     const exists = playlists[playlistName].songs.some(s => s.id === song.id);
     if (exists) {
         showNotification('Song already in playlist');
@@ -3933,6 +2643,7 @@ function addToPlaylist(song, playlistName) {
     showNotification(`Added to ${playlistName}`);
 }
 
+// Show add to playlist menu
 function showAddToPlaylistMenu(song) {
     const playlistNames = Object.keys(playlists);
     
@@ -3971,6 +2682,7 @@ function closeAddMenu() {
     if (menu) menu.remove();
 }
 
+// Delete playlist
 function deletePlaylist(name) {
     if (confirm(`Delete playlist "${name}"?`)) {
         delete playlists[name];
@@ -3981,6 +2693,7 @@ function deletePlaylist(name) {
     }
 }
 
+// Edit playlist
 function editPlaylist(name) {
     const modal = document.createElement('div');
     modal.className = 'modal active';
@@ -4027,6 +2740,7 @@ function savePlaylistEdit(oldName) {
     closeEditModal();
     showNotification('Playlist updated');
     
+    // If we're currently viewing this playlist, refresh the view
     if (currentPlaylist === oldName) {
         viewPlaylist(newName);
     } else {
@@ -4034,6 +2748,7 @@ function savePlaylistEdit(oldName) {
     }
 }
 
+// Remove song from playlist
 function removeSongFromPlaylist(playlistName, songId) {
     if (!playlists[playlistName]) return;
     
@@ -4044,6 +2759,7 @@ function removeSongFromPlaylist(playlistName, songId) {
     showNotification('Song removed');
 }
 
+// Simple notification system
 function showNotification(message) {
     const notif = document.createElement('div');
     notif.style.cssText = `
@@ -4068,6 +2784,7 @@ function showNotification(message) {
     }, 2000);
 }
 
+// Add CSS animations
 const style = document.createElement('style');
 style.textContent = `
     @keyframes slideIn {
@@ -4080,14 +2797,47 @@ style.textContent = `
     }
 `;
 document.head.appendChild(style);
+</script>
 
+<script>
+// Auto-minimize right sidebar on page load until a song is played
+(function() {
+    // Minimize right sidebar on page load
+    const rightSidebar = document.getElementById('rightSidebar');
+    if (rightSidebar) {
+        rightSidebar.classList.add('minimized');
+    }
+
+    // Override the playSong function to auto-open sidebar when playing
+    const originalPlaySong = window.playSong;
+    window.playSong = function(song, fromPlaylist) {
+        // Call the original playSong function
+        originalPlaySong.call(this, song, fromPlaylist);
+        
+        // Automatically open the right sidebar when a song starts playing
+        const rightSidebar = document.getElementById('rightSidebar');
+        if (rightSidebar && rightSidebar.classList.contains('minimized')) {
+            rightSidebar.classList.remove('minimized');
+        }
+    };
+})();
+
+// ====================
+// IMPROVED: Smart search + direct URL paste + title fetch (1 quota unit)
+// Paste at the END of your main <script>
+// ====================
+
+// ── 1. Extract video ID from almost any YouTube URL ────────────────────────
 function extractYouTubeVideoId(input) {
     if (!input) return null;
 
+    // Clean up input slightly
     input = input.trim();
 
+    // Direct video ID (11 chars alphanumeric/-/_)
     if (/^[a-zA-Z0-9_-]{11}$/.test(input)) return input;
 
+    // Common URL patterns
     const patterns = [
         /(?:youtube(?:-nocookie)?\.com\/(?:[^\/\n\s]+\/\S+\/|(?:v|e(?:mbed)?)\/|\S*?[?&]v=))([a-zA-Z0-9_-]{11})/i,
         /youtu\.be\/([a-zA-Z0-9_-]{11})/i,
@@ -4104,6 +2854,7 @@ function extractYouTubeVideoId(input) {
     return null;
 }
 
+// ── 2. Fetch real title + channel (artist) ──────────────────────────────────
 async function fetchVideoDetails(videoId, song) {
     if (!videoId) return;
 
@@ -4119,17 +2870,20 @@ async function fetchVideoDetails(videoId, song) {
             const realTitle  = item.snippet.title;
             const realArtist = item.snippet.channelTitle;
 
+            // Update global song reference if possible
             if (song) {
                 song.title  = realTitle;
                 song.artist = realArtist;
             }
 
+            // Update UI immediately
             const npTitle  = document.getElementById('npTitle');
             const npArtist = document.getElementById('npArtist');
 
             if (npTitle)  npTitle.textContent  = realTitle  || "Unknown Title";
             if (npArtist) npArtist.textContent = realArtist || "Unknown Artist";
 
+            // Optional: update toast if still visible (a bit hacky but nice)
             const toastTitle = document.getElementById('toastTitle');
             if (toastTitle && toastTitle.textContent.includes("Loading")) {
                 toastTitle.textContent = realTitle;
@@ -4139,15 +2893,19 @@ async function fetchVideoDetails(videoId, song) {
         }
     } catch (err) {
         console.warn("Could not fetch video details:", err);
+        // Fallback: keep "YouTube" or whatever was set
     }
 }
 
+// ── 3. Override search input to handle BOTH normal search + pasted URLs ─────
 function enhanceSearchInput() {
     const searchInput = document.getElementById('searchInput');
     if (!searchInput || searchInput.dataset.enhanced) return;
 
+    // Mark as already enhanced to avoid double-binding
     searchInput.dataset.enhanced = 'true';
 
+    // Replace the oninput handler with our smart version
     searchInput.oninput = (e) => {
         clearTimeout(searchTimeout);
         const value = e.target.value.trim();
@@ -4158,10 +2916,12 @@ function enhanceSearchInput() {
         }
 
         searchTimeout = setTimeout(async () => {
+            // Step 1: Check if it's a YouTube URL or direct ID
             const videoId = extractYouTubeVideoId(value);
 
             if (videoId) {
-                e.target.value = '';
+                // ── Direct play mode ──
+                e.target.value = ''; // clear input after success
 
                 const song = {
                     id: videoId,
@@ -4172,9 +2932,12 @@ function enhanceSearchInput() {
 
                 playSong(song);
                 showNotification("Playing pasted YouTube video...");
+
+                // Fetch real metadata in background (cheap 1-unit call)
                 fetchVideoDetails(videoId, song);
 
             } else if (value.length >= 3) {
+                // ── Normal keyword search ──
                 try {
                     const [videos, playlists] = await Promise.all([
                         fetch(`https://www.googleapis.com/youtube/v3/search?part=snippet&type=video&videoCategoryId=10&maxResults=10&q=${encodeURIComponent(value)}&key=${getNextKey()}`).then(r => r.json()),
@@ -4187,12 +2950,14 @@ function enhanceSearchInput() {
                     showNotification("Search failed – check console");
                 }
             }
-        }, 500);
+        }, 500); // slightly longer debounce for better UX when typing URLs
     };
 
+    // Also support Enter key explicitly (in case browser doesn't trigger oninput)
     searchInput.addEventListener('keypress', (e) => {
         if (e.key === 'Enter') {
             clearTimeout(searchTimeout);
+            // Trigger the same logic immediately
             const value = searchInput.value.trim();
             const videoId = extractYouTubeVideoId(value);
 
@@ -4208,14 +2973,16 @@ function enhanceSearchInput() {
                 showNotification("Playing pasted video!");
                 fetchVideoDetails(videoId, song);
             }
+            // Normal search already handled by oninput debounce
         }
     });
 }
 
+// ── 4. Hook into showSearch() and showHome() to apply enhancement ───────────
 const originalShowSearch = window.showSearch;
 window.showSearch = function() {
     originalShowSearch();
-    setTimeout(enhanceSearchInput, 150);
+    setTimeout(enhanceSearchInput, 150); // wait for DOM
 };
 
 const originalShowHome = window.showHome;
@@ -4228,8 +2995,117 @@ window.showHome = function() {
     }, 150);
 };
 
+// Optional: If you want to force it on initial load (if search is default view)
 setTimeout(enhanceSearchInput, 800);
 
+function linkIndy() {
+  alert("Link your tunes account to INDY or INDY+ coming soon!");
+}
+</script>
+
+<script>
+// TUNΞS Data-Saving Update Popup (brief version)
+// Paste before </body>
+
+(function() {
+    const UPDATE_KEY = "tunes_datasaving_update_v1";
+
+    if (localStorage.getItem(UPDATE_KEY) === "true") return;
+
+    const modal = document.createElement("div");
+    modal.style.cssText = `
+        position:fixed; inset:0; background:rgba(0,0,0,0.85); backdrop-filter:blur(10px);
+        z-index:9999; display:flex; align-items:center; justify-content:center; opacity:0;
+        transition:opacity 0.4s ease;
+    `;
+
+    const content = document.createElement("div");
+    content.style.cssText = `
+        background:rgba(30,30,40,0.95); border:1px solid rgba(255,255,255,0.12);
+        border-radius:16px; max-width:420px; width:90%; padding:28px 24px; text-align:center;
+        box-shadow:0 20px 60px rgba(0,0,0,0.7); transform:scale(0.92);
+        transition:all 0.4s cubic-bezier(0.34,1.56,0.64,1);
+    `;
+
+    content.innerHTML = `
+        <div style="font-size:48px; margin-bottom:12px;">✦</div>
+        <h2 style="font-family:'Syne',sans-serif; font-weight:800; font-size:26px; margin-bottom:16px; letter-spacing:-1px;">
+            Data-Saving Update
+        </h2>
+        <p style="font-size:15px; color:#ddd; line-height:1.6; margin-bottom:20px;">
+            INDY MUSIC now lasts way longer each day — less quota burn, more music.
+        </p>
+        <ul style="text-align:left; max-width:360px; margin:0 auto 24px; padding-left:20px; font-size:14px; color:#ccc; line-height:1.7; list-style-type:'→ ';">
+            <li>Cached album/mix recommendations (0 quota after first load)</li>
+            <li>Smarter search (min 3 chars + longer debounce)</li>
+            <li>Paste YouTube URLs → instant play (0 quota to start)</li>
+            <li>Pasted video metadata fetch = only 1 unit</li>
+            <li>Used all of the daily quota? Dont worry, it'll reset in a few hours!</li>
+        </ul>
+        <button id="acceptUpdateBtn" style="
+            background:linear-gradient(135deg,#ffffff,#e0e0e0); color:#000; border:none;
+            padding:12px 44px; font-size:16px; font-weight:700; border-radius:50px;
+            cursor:pointer; box-shadow:0 6px 20px rgba(255,255,255,0.15);
+            transition:all 0.3s ease;
+        ">
+            Cool!
+        </button>
+    `;
+
+    modal.appendChild(content);
+    document.body.appendChild(modal);
+
+    setTimeout(() => {
+        modal.style.opacity = "1";
+        content.style.transform = "scale(1)";
+    }, 50);
+
+    document.getElementById("acceptUpdateBtn").onclick = () => {
+        localStorage.setItem(UPDATE_KEY, "true");
+        modal.style.opacity = "0";
+        content.style.transform = "scale(0.92)";
+        setTimeout(() => modal.remove(), 400);
+    };
+
+    modal.onclick = (e) => {
+        if (e.target === modal) {
+            localStorage.setItem(UPDATE_KEY, "true");
+            modal.style.opacity = "0";
+            content.style.transform = "scale(0.92)";
+            setTimeout(() => modal.remove(), 400);
+        }
+    };
+})();
+    // ======================
+// ADD TO PLAYLIST FROM RIGHT SIDEBAR 🔥
+// ======================
+
+let currentPlayingSong = null; // We'll store the currently playing song here
+
+// Override playSong to also save current song + show button
+const originalPlaySong = window.playSong;
+window.playSong = function(song, fromPlaylist) {
+    originalPlaySong.call(this, song, fromPlaylist);
+    
+    // Save current song so we can add it later
+    currentPlayingSong = { ...song }; // copy it
+    
+    // Show the button
+    const btn = document.getElementById('addToPlaylistBtn');
+    if (btn) {
+        btn.style.display = 'flex';
+    }
+};
+
+// When song ends or new one starts, we can hide if needed (optional)
+function onPlayerStateChange(event) {
+    if (event.data === window.YT.PlayerState.ENDED) {
+        skipToNext();
+        // Optionally hide button if no more songs, but we keep it visible
+    }
+}
+
+// Click handler for the new button
 document.addEventListener('click', (e) => {
     if (e.target.id === 'addToPlaylistBtn' || e.target.closest('#addToPlaylistBtn')) {
         if (!currentPlayingSong) {
@@ -4239,1845 +3115,6 @@ document.addEventListener('click', (e) => {
         showAddToPlaylistMenu(currentPlayingSong);
     }
 });
-
-(function() {
-    const rightSidebar = document.getElementById('rightSidebar');
-    if (rightSidebar) {
-        rightSidebar.classList.add('minimized');
-    }
-
-    const originalPlaySong = window.playSong;
-    window.playSong = function(song, fromPlaylist) {
-        originalPlaySong.call(this, song, fromPlaylist);
-        
-        const rightSidebar = document.getElementById('rightSidebar');
-        if (rightSidebar && rightSidebar.classList.contains('minimized')) {
-            rightSidebar.classList.remove('minimized');
-        }
-    };
-})();
-
-// ============================================
-// UPDATED SYNC FUNCTION - WITH COOL POPUPS
-// ============================================
-
-function syncIndy() {
-    const indyProfile = JSON.parse(localStorage.getItem('userProfile')) || { name: '', picture: '' };
-    const isLinked = localStorage.getItem('indyMusicLinked') === 'true';
-    
-    // If already linked, just show success and ensure edit button is visible
-    if (isLinked) {
-        showSyncNotification('✓', 'Already Synced', `You're connected as ${indyProfile.name || 'Guest'}`);
-        
-        // Force update UI to show edit button
-        updateSyncUI();
-        return;
-    }
-    
-    // Check if user has an INDY profile
-    if (!indyProfile.name || indyProfile.name.trim() === '') {
-        showSyncNotification('⚠️', 'No INDY Profile', 'Set up your profile in INDY Sunrise AI first');
-        return;
-    }
-    
-    // Show the cool searching popup
-    const popup = document.getElementById('accountSearchPopup');
-    const searchingState = document.getElementById('searchingState');
-    const confirmState = document.getElementById('confirmState');
-    
-    searchingState.style.display = 'block';
-    confirmState.classList.remove('active');
-    popup.classList.add('active');
-    
-    // Random wait time between 3-10 seconds
-    const waitTime = Math.floor(Math.random() * 7000) + 3000;
-    
-    setTimeout(() => {
-        searchingState.style.display = 'none';
-        
-        const foundAvatar = document.getElementById('foundAvatar');
-        const foundName = document.getElementById('foundName');
-        
-        if (indyProfile.picture && indyProfile.picture.trim()) {
-            foundAvatar.style.backgroundImage = `url(${indyProfile.picture})`;
-            foundAvatar.textContent = '';
-        } else {
-            foundAvatar.style.backgroundImage = 'linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%)';
-            foundAvatar.textContent = indyProfile.name.charAt(0).toUpperCase();
-        }
-        
-        foundName.textContent = indyProfile.name;
-        
-        confirmState.classList.add('active');
-    }, waitTime);
-}
-
-function cancelLink() {
-    const popup = document.getElementById('accountSearchPopup');
-    popup.classList.remove('active');
-    
-    setTimeout(() => {
-        document.getElementById('searchingState').style.display = 'block';
-        document.getElementById('confirmState').classList.remove('active');
-    }, 300);
-    
-    // Make sure edit profile button is hidden
-    const editProfileBtn = document.getElementById('editProfileBtn');
-    if (editProfileBtn) {
-        editProfileBtn.style.display = 'none';
-        editProfileBtn.classList.add('hidden');
-        editProfileBtn.classList.remove('visible');
-    }
-    
-    showSyncNotification('⚠️', 'Sync Cancelled', 'Your account was not linked');
-}
-
-// Keep the existing confirmLink function
-function confirmLink() {
-    const popup = document.getElementById('accountSearchPopup');
-    popup.classList.remove('active');
-    const indyProfile = JSON.parse(localStorage.getItem('userProfile')) || { name: '', picture: '' };
-    
-    // Save link status
-    localStorage.setItem('indyMusicLinked', 'true');
-    localStorage.setItem('indyMusicLinkTime', Date.now());
-    localStorage.setItem('indyMusicAppConnected', 'true');
-    
-    // Update UI - force update
-    updateSyncUI();
-    
-    // Show success notification
-    showSyncNotification('✓', 'Account Linked!', `Welcome back, ${indyProfile.name}`);
-    
-    setTimeout(() => {
-        document.getElementById('searchingState').style.display = 'block';
-        document.getElementById('confirmState').classList.remove('active');
-    }, 300);
-}
-
-// Update sync UI function
-// Update sync UI function
-function updateSyncUI() {
-    const isLinked = localStorage.getItem('indyMusicLinked') === 'true';
-    const syncBtn = document.getElementById('syncBtn');
-    const editProfileBtn = document.getElementById('editProfileBtn');
-    
-    if (isLinked) {
-        syncBtn.classList.add('synced');
-        syncBtn.innerHTML = '<span>✓</span> Synced';
-        
-        // Show edit profile button
-        if (editProfileBtn) {
-            editProfileBtn.style.display = 'flex';
-            editProfileBtn.classList.add('visible');
-            editProfileBtn.classList.remove('hidden');
-        }
-    } else {
-        syncBtn.classList.remove('synced');
-        syncBtn.innerHTML = '<span>🔗</span> Sync';
-        
-        // Hide edit profile button
-        if (editProfileBtn) {
-            editProfileBtn.style.display = 'none';
-            editProfileBtn.classList.add('hidden');
-            editProfileBtn.classList.remove('visible');
-        }
-    }
-}
-
-// Auto-update sync UI on page load
-document.addEventListener('DOMContentLoaded', () => {
-    updateSyncUI();
-    
-    // Check for profile changes every 2 seconds
-    setInterval(() => {
-        const currentProfile = JSON.parse(localStorage.getItem('userProfile')) || { name: '', picture: '' };
-        const lastProfileCheck = localStorage.getItem('lastProfileCheck');
-        const currentProfileString = JSON.stringify(currentProfile);
-        
-        if (lastProfileCheck !== currentProfileString) {
-            updateSyncUI();
-            localStorage.setItem('lastProfileCheck', currentProfileString);
-        }
-    }, 2000);
-});
-
-// Make sure popup closes when clicking outside
-document.getElementById('accountSearchPopup')?.addEventListener('click', (e) => {
-    if (e.target.id === 'accountSearchPopup') {
-        cancelLink();
-    }
-});
-
-// Add ESC key to close popup
-document.addEventListener('keydown', (e) => {
-    if (e.key === 'Escape' && document.getElementById('accountSearchPopup').classList.contains('active')) {
-        cancelLink();
-    }
-});
-
-// Add this for a better user experience - disable sync button while searching
-document.getElementById('accountSearchPopup').addEventListener('animationstart', (e) => {
-    if (e.animationName === 'fadeIn') {
-        const syncBtn = document.getElementById('syncBtn');
-        syncBtn.disabled = true;
-        syncBtn.innerHTML = '<span>⏳</span> Searching...';
-    }
-});
-
-document.getElementById('accountSearchPopup').addEventListener('animationend', (e) => {
-    if (e.animationName === 'fadeIn') {
-        const syncBtn = document.getElementById('syncBtn');
-        syncBtn.disabled = false;
-        syncBtn.innerHTML = '<span>🔗</span> Sync';
-    }
-});
-
-// ============================================
-// CONSOLIDATED PROFILE EDITOR - ALL IN ONE
-// ============================================
-
-// Define available badges (customizable)
-const AVAILABLE_BADGES = [
-    '🎹', '🎵', '🎤', '🎸', '🥁', '🎷', '🎺', '🎻', '🎧', '📻',
-    '🌟', '✨', '⚡', '🔥', '💫', '⭐', '🏆', '👑', '💎', '🔮',
-    '💻', '🎨', '📸', '🎮', '📚', '✏️', '🎭', '🎬', '🎪', '🎟️'
-];
-
-// Available pronouns
-const AVAILABLE_PRONOUNS = [
-    'he/him', 'she/her', 'they/them', 'he/they', 'she/they',
-    'any/all', 'ask me', 'other'
-];
-
-// Global variables for profile editor
-let currentProfileData = null;
-let currentIndyProfile = null;
-let isSaving = false;
-
-
-// Helper function to check sync status
-function checkSyncStatus() {
-    const isLinked = localStorage.getItem('indyMusicLinked') === 'true';
-    const syncTime = localStorage.getItem('indyMusicLinkTime');
-    const oneWeek = 7 * 24 * 60 * 60 * 1000; // One week in milliseconds
-    
-    // Check if sync is older than one week (optional)
-    if (isLinked && syncTime) {
-        const timeSinceSync = Date.now() - parseInt(syncTime);
-        if (timeSinceSync > oneWeek) {
-            showSyncNotification('⚠️', 'Sync Expired', 'Please re-sync your account');
-            localStorage.setItem('indyMusicLinked', 'false');
-            updateSyncUI();
-            return false;
-        }
-    }
-    
-    return isLinked;
-}
-
-function openProfileEditor() {
-    // Check if user is synced
-    const isLinked = localStorage.getItem('indyMusicLinked') === 'true';
-    if (!isLinked) {
-        showSyncNotification('⚠️', 'Not Synced', 'Sync your INDY account first');
-        
-        // Highlight the sync button to guide the user
-        const syncBtn = document.getElementById('syncBtn');
-        if (syncBtn) {
-            syncBtn.style.animation = 'pulse-glow 1s 3';
-            setTimeout(() => {
-                syncBtn.style.animation = '';
-            }, 3000);
-        }
-        return;
-    }
-
-        if (!checkSyncStatus()) {
-        showSyncNotification('⚠️', 'Not Synced', 'Sync your INDY account first');
-        
-        // Highlight the sync button
-        const syncBtn = document.getElementById('syncBtn');
-        if (syncBtn) {
-            syncBtn.style.animation = 'pulse-glow 1s 3';
-            setTimeout(() => {
-                syncBtn.style.animation = '';
-            }, 3000);
-        }
-        return;
-    }
-
-    // Load existing profile data
-    currentIndyProfile = JSON.parse(localStorage.getItem('userProfile')) || { 
-        name: 'Guest', 
-        picture: '',
-        description: '',
-        languages: [],
-        banner: '',
-        featuredPlaylists: [],
-        pronouns: '',
-        badges: []
-    };
-    
-    // Load additional profile data if it exists
-    currentProfileData = JSON.parse(localStorage.getItem('indyProfileData')) || {
-        description: currentIndyProfile.description || 'Music lover',
-        languages: currentIndyProfile.languages || ['English'],
-        banner: currentIndyProfile.banner || '',
-        featuredPlaylists: currentIndyProfile.featuredPlaylists || [],
-        pronouns: currentIndyProfile.pronouns || '',
-        badges: currentIndyProfile.badges || ['🎵']
-    };
-
-        // Check sessionStorage for banner (fallback)
-    if (!currentProfileData.banner) {
-        const sessionBanner = sessionStorage.getItem('profileBanner');
-        if (sessionBanner) {
-            currentProfileData.banner = sessionBanner;
-            currentIndyProfile.banner = sessionBanner;
-            console.log('Loaded banner from sessionStorage');
-        }
-    }
-    
-    console.log('Loading profile data:', {
-        name: currentIndyProfile.name,
-        hasBanner: !!currentProfileData.banner,
-        bannerLength: currentProfileData.banner ? currentProfileData.banner.length : 0
-    });
-    
-    // Merge data to keep both in sync
-    currentIndyProfile.description = currentProfileData.description;
-    currentIndyProfile.languages = currentProfileData.languages;
-    currentIndyProfile.banner = currentProfileData.banner;
-    currentIndyProfile.featuredPlaylists = currentProfileData.featuredPlaylists;
-    currentIndyProfile.pronouns = currentProfileData.pronouns;
-    currentIndyProfile.badges = currentProfileData.badges;
-    
-    // Create modal overlay
-    const modal = document.createElement('div');
-    modal.className = 'profile-editor-modal active';
-    modal.id = 'profileEditorModal';
-    
-    // Create banner HTML
-    const bannerHTML = currentProfileData.banner ? 
-        `<img src="${currentProfileData.banner}" alt="Banner" id="bannerImage">
-         <div class="banner-overlay">Click to change</div>` : 
-        '<div class="banner-placeholder">🎵 Click to add banner</div>' + 
-        '<div class="banner-overlay">Add Banner</div>';
-    
-    // Create profile picture HTML
-    const profilePicHTML = currentIndyProfile.picture ? 
-        `<img src="${currentIndyProfile.picture}" alt="Profile">
-         <div class="profile-pic-overlay">Change Photo</div>
-         <span class="online-dot"></span>` : 
-        '<div class="profile-pic-placeholder">' + (currentIndyProfile.name?.charAt(0) || 'G') + '</div>' +
-        '<div class="profile-pic-overlay">Add Photo</div>' +
-        '<span class="online-dot"></span>';
-    
-    // Create featured playlists HTML
-    const featuredPlaylistsHTML = currentProfileData.featuredPlaylists.length > 0 ? 
-        `<div class="playlists-scroll-container" id="playlistsScrollContainer">
-            ${currentProfileData.featuredPlaylists.map((playlist, index) => `
-                <div class="featured-playlist-card" data-index="${index}" draggable="true">
-                    <div class="playlist-card-header">
-                        <span class="playlist-emoji">${playlist.emoji || '🎵'}</span>
-                        <button class="remove-playlist-btn" onclick="removeFeaturedPlaylist(${index})">×</button>
-                    </div>
-                    <div class="playlist-card-name">${escapeHtml(playlist.name)}</div>
-                    <div class="playlist-card-count">${playlist.songs?.length || 0} songs</div>
-                </div>
-            `).join('')}
-        </div>` :
-        '<div class="empty-playlists">No playlists added yet. Click "Add Playlist" to feature some!</div>';
-    
-    modal.innerHTML = `
-        <div class="profile-editor-content">
-            <!-- Header -->
-            <div class="profile-editor-header">
-                <div class="profile-editor-title">Edit Profile</div>
-                <button class="profile-editor-close" id="profileEditorClose">×</button>
-            </div>
-            
-            <!-- Main Content -->
-            <div class="profile-editor-main">
-                <!-- Left Column -->
-                <div class="profile-editor-left">
-                    <!-- Banner Section -->
-                    <div class="profile-banner-section">
-                        <div class="profile-banner-container">
-                            <div class="profile-banner" id="profileBannerPreview">
-                                ${bannerHTML}
-                            </div>
-                        </div>
-                        <input type="file" id="bannerUpload" accept="image/*" style="display: none;">
-                        <div class="banner-controls">
-                            <button class="banner-upload-btn" id="bannerUploadBtn">
-                                ${currentProfileData.banner ? '📷 Change Banner' : '📷 Add Banner'}
-                            </button>
-                            ${currentProfileData.banner ? 
-                                '<button class="banner-remove-btn" id="bannerRemoveBtn">🗑️ Remove</button>' : 
-                                ''
-                            }
-                        </div>
-                    </div>
-                    
-                    <!-- Profile Info Section -->
-                    <div class="profile-info-main">
-                        <!-- Profile Picture & Name -->
-                        <div class="profile-header-section">
-                            <div class="profile-pic-wrapper">
-                                <div class="profile-pic-preview" id="profilePicPreview">
-                                    ${profilePicHTML}
-                                </div>
-                                <input type="file" id="profilePicUpload" accept="image/*" style="display: none;">
-                                <button class="profile-pic-upload-btn" id="profilePicUploadBtn">Change</button>
-                            </div>
-                            
-                            <div class="profile-name-section">
-                                <div class="form-group">
-                                    <label>Display Name</label>
-                                    <input type="text" id="profileNameInput" class="profile-input" 
-                                           value="${currentIndyProfile.name || 'Guest'}" 
-                                           placeholder="Your display name">
-                                </div>
-                                
-                                <div class="form-group">
-                                    <label>Pronouns</label>
-                                    <div class="pronouns-container">
-                                        <select id="pronounsSelect" class="profile-select">
-                                            <option value="">Select pronouns...</option>
-                                            ${AVAILABLE_PRONOUNS.map(pronoun => `
-                                                <option value="${pronoun}" ${currentProfileData.pronouns === pronoun ? 'selected' : ''}>
-                                                    ${pronoun}
-                                                </option>
-                                            `).join('')}
-                                            <option value="custom" ${!AVAILABLE_PRONOUNS.includes(currentProfileData.pronouns) && currentProfileData.pronouns ? 'selected' : ''}>
-                                                Custom
-                                            </option>
-                                        </select>
-                                        <input type="text" id="customPronounsInput" 
-                                               class="profile-input" 
-                                               style="${AVAILABLE_PRONOUNS.includes(currentProfileData.pronouns) || !currentProfileData.pronouns ? 'display: none;' : ''}"
-                                               value="${!AVAILABLE_PRONOUNS.includes(currentProfileData.pronouns) ? currentProfileData.pronouns : ''}" 
-                                               placeholder="Enter custom pronouns">
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                        
-                        <!-- Badges Section -->
-                        <div class="form-group">
-                            <label>Badges</label>
-                            <div class="badges-section">
-                                <div class="badges-display" id="badgesDisplay">
-                                    ${currentProfileData.badges.map(badge => `
-                                        <span class="badge-tag" data-badge="${badge}">
-                                            ${badge}
-                                            <span class="remove-badge" data-badge="${badge}">×</span>
-                                        </span>
-                                    `).join('')}
-                                </div>
-                                <div class="badges-controls">
-                                    <select id="badgeSelect" class="profile-select">
-                                        <option value="">Add a badge...</option>
-                                        ${AVAILABLE_BADGES.filter(badge => !currentProfileData.badges.includes(badge))
-                                            .map(badge => `<option value="${badge}">${badge}</option>`)
-                                            .join('')}
-                                    </select>
-                                    <button class="add-badge-btn" id="addBadgeBtn">+ Add</button>
-                                </div>
-                                <div class="badges-hint">
-                                    <small>Select badges that represent you!</small>
-                                </div>
-                            </div>
-                        </div>
-                        
-                        <!-- Description -->
-                        <div class="form-group">
-                            <label>Description</label>
-                            <textarea id="profileDescriptionInput" class="profile-textarea" 
-                                      placeholder="Tell us about your music taste...">${currentProfileData.description || ''}</textarea>
-                        </div>
-                        
-                        <!-- Languages -->
-                        <div class="form-group">
-                            <label>Languages</label>
-                            <div class="languages-input-container">
-                                <div class="languages-tags" id="languagesTags">
-                                    ${currentProfileData.languages.map(lang => `
-                                        <span class="language-tag">
-                                            ${lang}
-                                            <span class="remove-language" data-language="${lang}">×</span>
-                                        </span>
-                                    `).join('')}
-                                </div>
-                                <div class="language-input-wrapper">
-                                    <input type="text" id="languageInput" class="profile-input" placeholder="Add language (press Enter)">
-                                    <button class="add-language-btn" id="addLanguageBtn">+</button>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-                
-                <!-- Right Column -->
-                <div class="profile-editor-right">
-                    <!-- Featured Playlists -->
-                    <div class="featured-playlists-section">
-                        <div class="section-header">
-                            <h3>Featured Playlists</h3>
-                            <button class="add-playlist-btn" id="addPlaylistBtn">Add Playlist</button>
-                        </div>
-                        
-                        <div class="featured-playlists-container" id="featuredPlaylistsContainer">
-                            ${featuredPlaylistsHTML}
-                        </div>
-                        
-                        <div class="playlists-info">
-                            <small>Drag playlists to reorder them</small>
-                        </div>
-                    </div>
-                    
-                    <!-- Preview Section -->
-                    <div class="preview-section">
-                        <h4>Profile Preview</h4>
-                        <div class="profile-preview" id="profilePreview">
-                            <!-- Preview will be updated dynamically -->
-                        </div>
-                    </div>
-                    
-                    <!-- Save Button -->
-                    <div class="save-section">
-                        <button class="save-profile-btn" id="saveProfileBtn">
-                            💾 Save All Changes
-                        </button>
-                        <div class="save-info">
-                            <small>All changes are saved locally to your browser</small>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-        
-        <!-- Add Playlist Modal -->
-        <div class="add-playlist-modal" id="addPlaylistModal">
-            <div class="add-playlist-content">
-                <div class="add-playlist-header">
-                    <h3>Add Playlist to Profile</h3>
-                    <button class="close-modal-btn" id="closeAddPlaylistBtn">×</button>
-                </div>
-                <div class="add-playlist-list" id="addPlaylistList">
-                    <!-- Playlists will be populated dynamically -->
-                </div>
-            </div>
-        </div>
-    `;
-    
-    document.body.appendChild(modal);
-    
-    // Initialize all functionality
-    initializeProfileEditor();
-}
-
-// ============================================
-// INITIALIZATION & EVENT HANDLERS
-// ============================================
-
-function initializeProfileEditor() {
-    // Add styles
-    addProfileEditorStyles();
-    
-    // Set up event listeners
-    setupEventListeners();
-    
-    // Update preview
-    updateProfilePreview();
-}
-
-function addProfileEditorStyles() {
-    const styles = `
-        /* Interactive button states */
-        .profile-pic-upload-btn:active,
-        .banner-upload-btn:active,
-        .add-language-btn:active,
-        .add-badge-btn:active {
-            transform: scale(0.95);
-        }
-        
-        /* Focus states for inputs */
-        .profile-input:focus,
-        .profile-textarea:focus,
-        .profile-select:focus {
-            box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.2);
-        }
-        
-        /* Loading states */
-        .save-profile-btn:disabled {
-            opacity: 0.6;
-            cursor: not-allowed;
-        }
-        
-        .save-profile-btn.saving {
-            position: relative;
-            padding-left: 48px;
-        }
-        
-        .save-profile-btn.saving::before {
-            content: '';
-            position: absolute;
-            left: 16px;
-            top: 50%;
-            transform: translateY(-50%);
-            width: 20px;
-            height: 20px;
-            border: 2px solid rgba(255, 255, 255, 0.3);
-            border-top-color: white;
-            border-radius: 50%;
-            animation: spin 1s linear infinite;
-        }
-        
-        @keyframes spin {
-            to { transform: translateY(-50%) rotate(360deg); }
-        }
-        
-        /* Error states */
-        .profile-input.error,
-        .profile-textarea.error {
-            border-color: #ef4444 !important;
-        }
-        
-        .error-message {
-            color: #ef4444;
-            font-size: 12px;
-            margin-top: 4px;
-        }
-        
-        /* Success feedback */
-        .success-message {
-            color: #10b981;
-            font-size: 14px;
-            text-align: center;
-            padding: 8px;
-            background: rgba(16, 185, 129, 0.1);
-            border-radius: 8px;
-            margin-top: 12px;
-        }
-        
-        /* Badge selection feedback */
-        .badge-tag.selected {
-            background: rgba(99, 102, 241, 0.5) !important;
-            box-shadow: 0 0 0 2px rgba(99, 102, 241, 0.5);
-        }
-        
-        /* Language tag hover */
-        .language-tag:hover {
-            transform: scale(1.05);
-        }
-        
-        /* Profile picture preview hover */
-        .profile-pic-preview:hover .profile-pic-overlay {
-            opacity: 1;
-        }
-        
-        .profile-pic-overlay {
-            position: absolute;
-            inset: 0;
-            background: rgba(0, 0, 0, 0.7);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            opacity: 0;
-            transition: opacity 0.3s;
-            color: white;
-            font-size: 14px;
-            font-weight: 600;
-        }
-        
-        /* Banner hover effect */
-        .profile-banner:hover .banner-overlay {
-            opacity: 1;
-        }
-        
-        .banner-overlay {
-            position: absolute;
-            inset: 0;
-            background: rgba(0, 0, 0, 0.7);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            opacity: 0;
-            transition: opacity 0.3s;
-            color: white;
-            font-size: 16px;
-            font-weight: 600;
-        }
-        
-        /* Add button for playlist modal */
-        .add-to-featured-btn {
-            background: rgba(99, 102, 241, 0.3);
-            border: none;
-            border-radius: 8px;
-            color: var(--text);
-            padding: 8px 16px;
-            font-size: 12px;
-            font-weight: 600;
-            cursor: pointer;
-            transition: all 0.2s;
-        }
-        
-        .add-to-featured-btn:hover {
-            background: rgba(99, 102, 241, 0.5);
-            transform: scale(1.05);
-        }
-        
-        .available-playlist-item {
-            display: flex;
-            align-items: center;
-            gap: 12px;
-            padding: 16px;
-            background: rgba(0, 0, 0, 0.2);
-            border-radius: 12px;
-            margin-bottom: 12px;
-            cursor: pointer;
-            transition: all 0.3s;
-        }
-        
-        .available-playlist-item:hover {
-            background: rgba(0, 0, 0, 0.4);
-            transform: translateX(4px);
-        }
-        
-        .available-playlist-item .available-playlist-info {
-            flex: 1;
-            min-width: 0;
-        }
-    `;
-    
-    const styleSheet = document.createElement('style');
-    styleSheet.textContent = styles;
-    styleSheet.setAttribute('data-profile-editor', 'true');
-    document.head.appendChild(styleSheet);
-}
-
-function setupEventListeners() {
-    // Close button
-    document.getElementById('profileEditorClose')?.addEventListener('click', () => {
-            closeProfileEditor();
-    });
-    
-// Event delegation for banner controls (since they get recreated)
-document.addEventListener('click', function(e) {
-    // Banner upload button
-    if (e.target.id === 'bannerUploadBtn' || e.target.closest('#bannerUploadBtn')) {
-        const bannerUpload = document.getElementById('bannerUpload');
-        if (bannerUpload) bannerUpload.click();
-    }
-    
-    // Banner remove button
-    if (e.target.id === 'bannerRemoveBtn' || e.target.closest('#bannerRemoveBtn')) {
-        removeBanner();
-    }
-});
-
-// Modal background click
-document.getElementById('profileEditorModal')?.addEventListener('click', (e) => {
-    if (e.target.id === 'profileEditorModal') {
-        if (window.profileChangesSaved !== true) {
-                closeProfileEditor();
-        } else {
-            closeProfileEditor();
-        }
-    }
-});
-
-// ESC key
-document.addEventListener('keydown', (e) => {
-    if (e.key === 'Escape') {
-        const modal = document.getElementById('profileEditorModal');
-        if (modal && modal.classList.contains('active')) {
-            if (window.profileChangesSaved !== true) {
-                    closeProfileEditor();
-            } else {
-                closeProfileEditor();
-            }
-        }
-        
-        const playlistModal = document.getElementById('addPlaylistModal');
-        if (playlistModal && playlistModal.classList.contains('active')) {
-            hideAddPlaylistModal();
-        }
-    }
-});
-    
-    // File uploads
-    const bannerUpload = document.getElementById('bannerUpload');
-    const bannerUploadBtn = document.getElementById('bannerUploadBtn');
-    const bannerRemoveBtn = document.getElementById('bannerRemoveBtn');
-    const bannerPreview = document.getElementById('profileBannerPreview');
-    
-    if (bannerUploadBtn) bannerUploadBtn.addEventListener('click', () => bannerUpload.click());
-    if (bannerPreview) bannerPreview.addEventListener('click', () => bannerUpload.click());
-    
-    bannerUpload?.addEventListener('change', handleBannerUpload);
-    bannerRemoveBtn?.addEventListener('click', removeBanner);
-    
-    // Profile picture upload
-    const profilePicUpload = document.getElementById('profilePicUpload');
-    const profilePicUploadBtn = document.getElementById('profilePicUploadBtn');
-    const profilePicPreview = document.getElementById('profilePicPreview');
-    
-    if (profilePicUploadBtn) profilePicUploadBtn.addEventListener('click', () => profilePicUpload.click());
-    if (profilePicPreview) profilePicPreview.addEventListener('click', () => profilePicUpload.click());
-    
-    profilePicUpload?.addEventListener('change', handleProfilePicUpload);
-    
-    // Profile inputs
-    document.getElementById('profileNameInput')?.addEventListener('input', updateProfilePreview);
-    document.getElementById('profileDescriptionInput')?.addEventListener('input', updateProfilePreview);
-    document.getElementById('pronounsSelect')?.addEventListener('change', handlePronounsChange);
-    document.getElementById('customPronounsInput')?.addEventListener('input', updateProfilePreview);
-    
-    // Languages
-    document.getElementById('addLanguageBtn')?.addEventListener('click', addLanguage);
-    document.getElementById('languageInput')?.addEventListener('keypress', (e) => {
-        if (e.key === 'Enter') {
-            e.preventDefault();
-            addLanguage();
-        }
-    });
-    
-    // Badges
-    document.getElementById('addBadgeBtn')?.addEventListener('click', addBadge);
-    document.getElementById('badgeSelect')?.addEventListener('change', (e) => {
-        if (e.target.value) {
-            addBadgeFromSelect(e.target.value);
-            e.target.value = '';
-        }
-    });
-    
-    // Save button
-    document.getElementById('saveProfileBtn')?.addEventListener('click', saveProfileChanges);
-    
-    // Add playlist button
-    document.getElementById('addPlaylistBtn')?.addEventListener('click', showAddPlaylistModal);
-    
-    // Close add playlist modal
-    document.getElementById('closeAddPlaylistBtn')?.addEventListener('click', hideAddPlaylistModal);
-    
-    // Add playlist modal background click
-    document.getElementById('addPlaylistModal')?.addEventListener('click', (e) => {
-        if (e.target.id === 'addPlaylistModal') {
-            hideAddPlaylistModal();
-        }
-    });
-}
-
-// ============================================
-// CORE FUNCTIONS
-// ============================================
-
-function updateBannerControls(hasBanner) {
-    const bannerControls = document.querySelector('.banner-controls');
-    if (!bannerControls) return;
-    
-    // Update the HTML based on whether there's a banner
-    if (hasBanner) {
-        bannerControls.innerHTML = `
-            <button class="banner-upload-btn" id="bannerUploadBtn">📷 Change Banner</button>
-            <button class="banner-upload-btn" id="bannerRemoveBtn">🗑️ Remove</button>
-        `;
-    } else {
-        bannerControls.innerHTML = `
-            <button class="banner-upload-btn" id="bannerUploadBtn">📷 Add Banner</button>
-        `;
-    }
-    
-    // Re-attach event listeners
-    reattachBannerEventListeners();
-}
-
-function handleBannerUpload(e) {
-    const file = e.target.files[0];
-    if (!file) return;
-    
-    if (!file.type.startsWith('image/')) {
-        showSyncNotification('⚠️', 'Invalid File', 'Please select an image file (JPG, PNG, etc.)');
-        return;
-    }
-    
-    // Reduce size limit and compress
-    if (file.size > 2 * 1024 * 1024) { // Reduced to 2MB
-        showSyncNotification('⚠️', 'File Too Large', 'Please select an image smaller than 2MB');
-        return;
-    }
-    
-    const reader = new FileReader();
-    reader.onload = function(e) {
-        const imageData = e.target.result;
-        
-        // Create an image to compress it
-        const img = new Image();
-        img.onload = function() {
-            // Create canvas to resize/compress
-            const canvas = document.createElement('canvas');
-            const ctx = canvas.getContext('2d');
-            
-            // Max dimensions for banner
-            const maxWidth = 1200;
-            const maxHeight = 400;
-            
-            let width = img.width;
-            let height = img.height;
-            
-            // Calculate new dimensions
-            if (width > height) {
-                if (width > maxWidth) {
-                    height = Math.round((height * maxWidth) / width);
-                    width = maxWidth;
-                }
-            } else {
-                if (height > maxHeight) {
-                    width = Math.round((width * maxHeight) / height);
-                    height = maxHeight;
-                }
-            }
-            
-            // Set canvas dimensions
-            canvas.width = width;
-            canvas.height = height;
-            
-            // Draw and compress image
-            ctx.drawImage(img, 0, 0, width, height);
-            
-            // Get compressed base64 (quality 0.7 for good compression)
-            const compressedData = canvas.toDataURL('image/jpeg', 0.7);
-            
-            console.log('Banner size before compression:', imageData.length, 'bytes');
-            console.log('Banner size after compression:', compressedData.length, 'bytes');
-            
-            // Update preview
-            const bannerPreview = document.getElementById('profileBannerPreview');
-            if (bannerPreview) {
-                bannerPreview.innerHTML = `
-                    <img src="${compressedData}" alt="Banner" id="bannerImage">
-                    <div class="banner-overlay">Click to change</div>
-                `;
-                bannerPreview.style.backgroundImage = `url('${compressedData}')`;
-            }
-            
-            // Save compressed data
-            currentProfileData.banner = compressedData;
-            currentIndyProfile.banner = compressedData;
-            
-            // Update controls
-            updateBannerControls(true);
-            
-            // Clear file input and update preview
-            e.target.value = '';
-            updateProfilePreview();
-            
-            // TEST: Immediately save to localStorage
-            try {
-                localStorage.setItem('testBanner', compressedData);
-                console.log('Test save successful:', compressedData.length, 'bytes saved');
-            } catch (err) {
-                console.error('Failed to save banner to localStorage:', err);
-                showSyncNotification('⚠️', 'Storage Error', 'Banner too large to save');
-                // Clear banner if can't save
-                currentProfileData.banner = '';
-                currentIndyProfile.banner = '';
-                updateBannerControls(false);
-            }
-            
-            showSyncNotification('✓', 'Banner Updated', 'Your banner has been uploaded');
-        };
-        
-        img.onerror = function() {
-            showSyncNotification('⚠️', 'Image Error', 'Could not process image');
-        };
-        
-        img.src = imageData;
-    };
-    
-    reader.onerror = function() {
-        showSyncNotification('⚠️', 'Upload Failed', 'Could not read the image file');
-    };
-    
-    reader.readAsDataURL(file);
-}
-
-function handleProfilePicUpload(e) {
-    const file = e.target.files[0];
-    if (!file) return;
-    
-    if (!file.type.startsWith('image/')) {
-        showSyncNotification('⚠️', 'Invalid File', 'Please select an image file');
-        return;
-    }
-    
-    const reader = new FileReader();
-    reader.onload = function(e) {
-        const imageData = e.target.result;
-        
-        // Update preview
-        const picPreview = document.getElementById('profilePicPreview');
-        if (picPreview) {
-            picPreview.innerHTML = `
-                <img src="${imageData}" alt="Profile">
-                <span class="online-dot"></span>
-                <div class="profile-pic-overlay">Change Photo</div>
-            `;
-        }
-        
-        // Save to data
-        currentIndyProfile.picture = imageData;
-        
-        // Clear file input and update preview
-        e.target.value = '';
-        updateProfilePreview();
-        
-        showSyncNotification('✓', 'Profile Picture Updated', 'Your profile picture has been updated');
-    };
-    reader.readAsDataURL(file);
-}
-
-function removeBanner() {
-    if (!confirm('Remove banner image?')) return;
-    
-    // Clear from data
-    currentProfileData.banner = '';
-    currentIndyProfile.banner = '';
-    
-    // Update preview
-    const bannerPreview = document.getElementById('profileBannerPreview');
-    if (bannerPreview) {
-        bannerPreview.innerHTML = `
-            <div class="banner-placeholder">🎵 Click to add banner</div>
-            <div class="banner-overlay">Add Banner</div>
-        `;
-        bannerPreview.style.backgroundImage = '';
-    }
-    
-    // Update controls - FIXED: Use helper function
-    updateBannerControls(false);
-    
-    updateProfilePreview();
-    showSyncNotification('✓', 'Banner Removed', 'Your banner has been removed');
-}
-
-function handlePronounsChange() {
-    const select = document.getElementById('pronounsSelect');
-    const customInput = document.getElementById('customPronounsInput');
-    
-    if (select.value === 'custom') {
-        customInput.style.display = 'block';
-        customInput.focus();
-        currentProfileData.pronouns = customInput.value || '';
-    } else {
-        customInput.style.display = 'none';
-        currentProfileData.pronouns = select.value;
-    }
-    
-    currentIndyProfile.pronouns = currentProfileData.pronouns;
-    updateProfilePreview();
-}
-
-function addLanguage() {
-    const input = document.getElementById('languageInput');
-    if (!input) return;
-    
-    const lang = input.value.trim();
-    
-    if (lang && !currentProfileData.languages.includes(lang)) {
-        currentProfileData.languages.push(lang);
-        currentIndyProfile.languages = currentProfileData.languages;
-        
-        updateLanguagesDisplay();
-        input.value = '';
-        updateProfilePreview();
-        
-        showSyncNotification('✓', 'Language Added', `Added "${lang}" to languages`);
-    } else if (currentProfileData.languages.includes(lang)) {
-        showSyncNotification('⚠️', 'Duplicate', 'Language already added');
-    }
-}
-
-function updateLanguagesDisplay() {
-    const tagsContainer = document.getElementById('languagesTags');
-    if (tagsContainer) {
-        tagsContainer.innerHTML = currentProfileData.languages.map(lang => `
-            <span class="language-tag">
-                ${lang}
-                <span class="remove-language" data-language="${lang}">×</span>
-            </span>
-        `).join('');
-        
-        // Re-add event listeners for remove buttons
-        tagsContainer.querySelectorAll('.remove-language').forEach(btn => {
-            btn.addEventListener('click', (e) => {
-                e.stopPropagation();
-                const lang = btn.dataset.language;
-                removeLanguage(lang);
-            });
-        });
-    }
-}
-
-function removeLanguage(lang) {
-    if (!confirm(`Remove "${lang}" from languages?`)) return;
-    
-    currentProfileData.languages = currentProfileData.languages.filter(l => l !== lang);
-    currentIndyProfile.languages = currentProfileData.languages;
-    
-    updateLanguagesDisplay();
-    updateProfilePreview();
-    showSyncNotification('✓', 'Language Removed', `Removed "${lang}" from languages`);
-}
-
-function addBadge() {
-    const select = document.getElementById('badgeSelect');
-    if (!select) return;
-    
-    const badge = select.value;
-    if (badge) {
-        addBadgeFromSelect(badge);
-        select.value = '';
-    }
-}
-
-function addBadgeFromSelect(badge) {
-    if (!currentProfileData.badges.includes(badge)) {
-        currentProfileData.badges.push(badge);
-        currentIndyProfile.badges = currentProfileData.badges;
-        
-        updateBadgesDisplay();
-        updateBadgeSelect();
-        updateProfilePreview();
-        
-        showSyncNotification('✓', 'Badge Added', `Added ${badge} badge`);
-    }
-}
-
-function removeBadge(badge) {
-    if (!confirm(`Remove ${badge} badge?`)) return;
-    
-    currentProfileData.badges = currentProfileData.badges.filter(b => b !== badge);
-    currentIndyProfile.badges = currentProfileData.badges;
-    
-    updateBadgesDisplay();
-    updateBadgeSelect();
-    updateProfilePreview();
-    showSyncNotification('✓', 'Badge Removed', `Removed ${badge} badge`);
-}
-
-function updateBadgesDisplay() {
-    const display = document.getElementById('badgesDisplay');
-    if (display) {
-        display.innerHTML = currentProfileData.badges.map(badge => `
-            <span class="badge-tag" data-badge="${badge}">
-                ${badge}
-                <span class="remove-badge" data-badge="${badge}">×</span>
-            </span>
-        `).join('');
-        
-        // Re-add event listeners for remove buttons
-        display.querySelectorAll('.remove-badge').forEach(btn => {
-            btn.addEventListener('click', (e) => {
-                e.stopPropagation();
-                const badge = btn.dataset.badge;
-                removeBadge(badge);
-            });
-        });
-    }
-}
-
-function updateBadgeSelect() {
-    const select = document.getElementById('badgeSelect');
-    if (select) {
-        const currentValue = select.value;
-        const availableBadges = AVAILABLE_BADGES.filter(badge => !currentProfileData.badges.includes(badge));
-        
-        select.innerHTML = '<option value="">Add a badge...</option>' +
-            availableBadges.map(badge => `<option value="${badge}">${badge}</option>`).join('');
-        
-        select.disabled = availableBadges.length === 0;
-        if (availableBadges.length === 0) {
-            select.innerHTML = '<option value="">All badges added!</option>';
-        }
-        
-        select.value = currentValue;
-    }
-}
-
-function updateProfilePreview() {
-    const preview = document.getElementById('profilePreview');
-    if (!preview) return;
-    
-    const name = currentIndyProfile.name || 'Guest';
-    const pronouns = currentProfileData.pronouns || '';
-    const description = currentProfileData.description || 'No description yet';
-    const languages = currentProfileData.languages || [];
-    
-    preview.innerHTML = `
-        <div class="preview-banner" style="${currentProfileData.banner ? `background-image: url('${currentProfileData.banner}')` : 'background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%)'}">
-            ${!currentProfileData.banner ? '<div class="preview-banner-placeholder">🎵 Banner Preview</div>' : ''}
-        </div>
-        <div class="preview-profile-info">
-            <div class="preview-avatar" style="${currentIndyProfile.picture ? `background-image: url('${currentIndyProfile.picture}')` : 'background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%)'}">
-                ${!currentIndyProfile.picture ? (name.charAt(0).toUpperCase() || 'G') : ''}
-                <span class="preview-online-dot"></span>
-            </div>
-            <div class="preview-name-section">
-                <div class="preview-name-row">
-                    <h3 class="preview-name">${escapeHtml(name)}</h3>
-                    ${pronouns ? `<span class="preview-pronouns">${pronouns}</span>` : ''}
-                    ${currentProfileData.badges.map(badge => `<span class="preview-badge">${badge}</span>`).join('')}
-                </div>
-                <p class="preview-description">${escapeHtml(description)}</p>
-                <div class="preview-languages">
-                    <strong>Languages:</strong> 
-                    ${languages.length > 0 ? 
-                        languages.map(lang => `<span class="preview-language">${lang}</span>`).join(' ') : 
-                        'None added'}
-                </div>
-            </div>
-        </div>
-        ${currentProfileData.featuredPlaylists.length > 0 ? `
-            <div class="preview-featured-playlists">
-                <h4>Featured Playlists</h4>
-                <div class="preview-playlists-scroll">
-                    ${currentProfileData.featuredPlaylists.slice(0, 3).map(playlist => `
-                        <div class="preview-playlist-card">
-                            <span class="preview-playlist-emoji">${playlist.emoji || '🎵'}</span>
-                            <div class="preview-playlist-name">${escapeHtml(playlist.name)}</div>
-                            <div class="preview-playlist-count">${playlist.songs?.length || 0} songs</div>
-                        </div>
-                    `).join('')}
-                </div>
-            </div>
-        ` : ''}
-    `;
-}
-
-function showAddPlaylistModal() {
-    const modal = document.getElementById('addPlaylistModal');
-    const playlistList = document.getElementById('addPlaylistList');
-    
-    if (!modal || !playlistList) return;
-    
-    // Get all user playlists
-    const playlists = load("playlists", {});
-    const featuredNames = currentProfileData.featuredPlaylists.map(p => p.name);
-    
-    playlistList.innerHTML = '';
-    
-    const availablePlaylists = Object.keys(playlists).filter(name => !featuredNames.includes(name));
-    
-    if (availablePlaylists.length === 0) {
-        playlistList.innerHTML = `
-            <div style="padding:40px;text-align:center;color:var(--muted);">
-                No playlists available to feature!<br>
-                <small>Create a playlist first in your library.</small>
-            </div>
-        `;
-    } else {
-        availablePlaylists.forEach(name => {
-            const playlist = playlists[name];
-            const div = document.createElement('div');
-            div.className = 'available-playlist-item';
-            div.innerHTML = `
-                <span class="available-playlist-emoji">${playlist.emoji || '🎵'}</span>
-                <div class="available-playlist-info">
-                    <div class="available-playlist-name">${escapeHtml(name)}</div>
-                    <div class="available-playlist-count">${playlist.songs.length} songs</div>
-                </div>
-                <button class="add-to-featured-btn" data-name="${escapeHtml(name)}">+ Add</button>
-            `;
-            
-            div.addEventListener('click', (e) => {
-                if (!e.target.classList.contains('add-to-featured-btn')) {
-                    addToFeatured(name);
-                }
-            });
-            
-            div.querySelector('.add-to-featured-btn').addEventListener('click', (e) => {
-                e.stopPropagation();
-                addToFeatured(name);
-            });
-            
-            playlistList.appendChild(div);
-        });
-    }
-    
-    modal.classList.add('active');
-}
-
-function hideAddPlaylistModal() {
-    const modal = document.getElementById('addPlaylistModal');
-    if (modal) modal.classList.remove('active');
-}
-
-function addToFeatured(name) {
-    const playlists = load("playlists", {});
-    const playlist = playlists[name];
-    
-    if (!playlist) return;
-    
-    if (!currentProfileData.featuredPlaylists.some(p => p.name === name)) {
-        currentProfileData.featuredPlaylists.push({
-            name: name,
-            emoji: playlist.emoji || '🎵',
-            songs: playlist.songs || []
-        });
-        currentIndyProfile.featuredPlaylists = currentProfileData.featuredPlaylists;
-        
-        updateFeaturedPlaylistsDisplay();
-        initializePlaylistDragDrop();
-        hideAddPlaylistModal();
-        updateProfilePreview();
-        
-        showSyncNotification('✓', 'Playlist Added', `"${name}" added to featured playlists`);
-    }
-}
-
-function removeFeaturedPlaylist(index) {
-    if (!confirm('Remove this playlist from featured?')) return;
-    
-    const playlistName = currentProfileData.featuredPlaylists[index].name;
-    currentProfileData.featuredPlaylists.splice(index, 1);
-    currentIndyProfile.featuredPlaylists = currentProfileData.featuredPlaylists;
-    
-    updateFeaturedPlaylistsDisplay();
-    initializePlaylistDragDrop();
-    updateProfilePreview();
-    
-    showSyncNotification('✓', 'Playlist Removed', `"${playlistName}" removed from featured`);
-}
-
-function updateFeaturedPlaylistsDisplay() {
-    const container = document.getElementById('featuredPlaylistsContainer');
-    if (!container) return;
-    
-    if (currentProfileData.featuredPlaylists.length > 0) {
-        container.innerHTML = `
-            <div class="playlists-scroll-container" id="playlistsScrollContainer">
-                ${currentProfileData.featuredPlaylists.map((playlist, index) => `
-                    <div class="featured-playlist-card" data-index="${index}" draggable="true">
-                        <div class="playlist-card-header">
-                            <span class="playlist-emoji">${playlist.emoji || '🎵'}</span>
-                            <button class="remove-playlist-btn" data-index="${index}">×</button>
-                        </div>
-                        <div class="playlist-card-name">${escapeHtml(playlist.name)}</div>
-                        <div class="playlist-card-count">${playlist.songs?.length || 0} songs</div>
-                    </div>
-                `).join('')}
-            </div>`;
-        
-        // Re-add event listeners for remove buttons
-        container.querySelectorAll('.remove-playlist-btn').forEach(btn => {
-            btn.addEventListener('click', (e) => {
-                e.stopPropagation();
-                const index = parseInt(btn.dataset.index);
-                removeFeaturedPlaylist(index);
-            });
-        });
-        
-        initializePlaylistDragDrop();
-    } else {
-        container.innerHTML = `
-            <div class="empty-playlists">
-                No playlists added yet.<br>
-                <small>Click "Add Playlist" to feature your playlists!</small>
-            </div>`;
-    }
-}
-
-function initializePlaylistDragDrop() {
-    const container = document.getElementById('playlistsScrollContainer');
-    if (!container) return;
-    
-    let draggedItem = null;
-    
-    container.querySelectorAll('.featured-playlist-card').forEach(item => {
-        item.addEventListener('dragstart', function(e) {
-            draggedItem = this;
-            setTimeout(() => this.style.opacity = '0.4', 0);
-            e.dataTransfer.effectAllowed = 'move';
-        });
-        
-        item.addEventListener('dragend', function() {
-            setTimeout(() => {
-                this.style.opacity = '1';
-                this.style.background = '';
-            }, 0);
-            draggedItem = null;
-        });
-        
-        item.addEventListener('dragover', function(e) {
-            e.preventDefault();
-            e.dataTransfer.dropEffect = 'move';
-        });
-        
-        item.addEventListener('dragenter', function(e) {
-            e.preventDefault();
-            if (draggedItem !== this) {
-                this.style.background = 'rgba(99, 102, 241, 0.1)';
-            }
-        });
-        
-        item.addEventListener('dragleave', function() {
-            this.style.background = '';
-        });
-        
-        item.addEventListener('drop', function(e) {
-            e.preventDefault();
-            this.style.background = '';
-            
-            if (draggedItem !== this) {
-                const fromIndex = parseInt(draggedItem.dataset.index);
-                const toIndex = parseInt(this.dataset.index);
-                
-                // Swap in array
-                const [item] = currentProfileData.featuredPlaylists.splice(fromIndex, 1);
-                currentProfileData.featuredPlaylists.splice(toIndex, 0, item);
-                currentIndyProfile.featuredPlaylists = currentProfileData.featuredPlaylists;
-                
-                // Update UI
-                updateFeaturedPlaylistsDisplay();
-                updateProfilePreview();
-            }
-        });
-    });
-}
-async function saveProfileChanges() {
-    if (isSaving) return;
-    
-    // Get updated values from inputs FIRST
-    const nameInput = document.getElementById('profileNameInput');
-    const descInput = document.getElementById('profileDescriptionInput');
-    const pronounsSelect = document.getElementById('pronounsSelect');
-    const customPronounsInput = document.getElementById('customPronounsInput');
-    
-    if (!nameInput || !descInput) return;
-    
-    // CRITICAL: Update ALL data fields from inputs BEFORE saving
-    currentIndyProfile.name = nameInput.value.trim() || 'Guest';
-    currentProfileData.description = descInput.value.trim();
-    currentIndyProfile.description = currentProfileData.description;
-    
-    // Handle pronouns
-    if (pronounsSelect) {
-        currentProfileData.pronouns = pronounsSelect.value === 'custom' ? 
-                                      (customPronounsInput ? customPronounsInput.value.trim() : '') : 
-                                      pronounsSelect.value;
-        currentIndyProfile.pronouns = currentProfileData.pronouns;
-    }
-    
-    // ===== MOVE THE VALIDATION CHECK DOWN HERE =====
-    // Validate name (NOW after we've updated it from the input)
-    if (!currentIndyProfile.name || currentIndyProfile.name.length < 2) {
-        showSyncNotification('⚠️', 'Invalid Name', 'Display name must be at least 2 characters');
-        return;
-    }
-    
-    // Show saving state
-    const saveButton = document.getElementById('saveProfileBtn');
-    if (saveButton) {
-        isSaving = true;
-        saveButton.disabled = true;
-        saveButton.textContent = 'Saving...';
-        saveButton.classList.add('saving');
-    }
-    
-    
-    try {
-        console.log('Saving profile data:', {
-            name: currentIndyProfile.name,
-            hasBanner: !!currentProfileData.banner,
-            bannerLength: currentProfileData.banner ? currentProfileData.banner.length : 0,
-            hasPicture: !!currentIndyProfile.picture,
-            pictureLength: currentIndyProfile.picture ? currentIndyProfile.picture.length : 0,
-            languages: currentProfileData.languages.length,
-            badges: currentProfileData.badges.length,
-            featuredPlaylists: currentProfileData.featuredPlaylists.length
-        });
-        
-        // Try to save to localStorage
-        try {
-            // Save to localStorage - BOTH objects
-            localStorage.setItem('userProfile', JSON.stringify(currentIndyProfile));
-            localStorage.setItem('indyProfileData', JSON.stringify(currentProfileData));
-            
-            console.log('Save successful!');
-            
-            // Also update the sync status if profile is linked
-            if (localStorage.getItem('indyMusicLinked') === 'true') {
-                localStorage.setItem('indyMusicLastSync', Date.now());
-            }
-        } catch (storageError) {
-            console.error('Storage error:', storageError);
-            
-            // If banner is too large, try saving without it
-            if (storageError.name === 'QuotaExceededError') {
-                console.log('Storage full, trying without banner...');
-                
-                // Save banner separately or remove it
-                const bannerData = currentProfileData.banner;
-                currentProfileData.banner = '';
-                currentIndyProfile.banner = '';
-                
-                localStorage.setItem('userProfile', JSON.stringify(currentIndyProfile));
-                localStorage.setItem('indyProfileData', JSON.stringify(currentProfileData));
-                
-                // Try to save banner to sessionStorage as fallback
-                if (bannerData) {
-                    try {
-                        sessionStorage.setItem('profileBanner', bannerData);
-                        console.log('Banner saved to sessionStorage');
-                    } catch (e) {
-                        console.error('Could not save banner anywhere:', e);
-                    }
-                }
-                
-                showSyncNotification('⚠️', 'Storage Full', 'Saved profile without banner (too large)');
-            } else {
-                throw storageError;
-            }
-        }
-        
-        // Verify save worked
-        const savedProfile = JSON.parse(localStorage.getItem('userProfile') || '{}');
-        const savedData = JSON.parse(localStorage.getItem('indyProfileData') || '{}');
-        
-        console.log('Saved to localStorage:', {
-            savedName: savedProfile.name,
-            savedHasBanner: !!savedData.banner,
-            savedBannerLength: savedData.banner ? savedData.banner.length : 0,
-            savedHasPicture: !!savedProfile.picture,
-            savedPictureLength: savedProfile.picture ? savedProfile.picture.length : 0
-        });
-        
-        // Update main profile display
-        updateMainProfileDisplay();
-        
-        // Show success
-        showSyncNotification('✓', 'Profile Updated', 'All changes have been saved');
-        
-        // IMPORTANT: Set a flag that changes have been saved
-        window.profileChangesSaved = true;
-        
-        // Close editor after delay (no confirmation needed)
-        setTimeout(() => {
-            closeProfileEditor();
-        }, 1500);
-        
-    } catch (error) {
-        console.error('Error saving profile:', error);
-        showSyncNotification('⚠️', 'Save Failed', 'Could not save profile changes');
-    } finally {
-        // Restore button state
-        isSaving = false;
-        if (saveButton) {
-            saveButton.disabled = false;
-            saveButton.textContent = '💾 Save All Changes';
-            saveButton.classList.remove('saving');
-        }
-    }
-}
-
-function updateMainProfileDisplay() {
-    // Update main profile header
-    const profileName = document.querySelector('.profile-name-large');
-    const profileAvatar = document.querySelector('.profile-avatar-large');
-    const overlayName = document.getElementById('profileOverlayName');
-    const overlayAvatar = document.getElementById('profileOverlayAvatar');
-    
-    if (profileName) {
-        profileName.textContent = currentIndyProfile.name || 'Guest';
-    }
-    
-    if (profileAvatar) {
-        if (currentIndyProfile.picture) {
-            profileAvatar.style.backgroundImage = `url('${currentIndyProfile.picture}')`;
-            profileAvatar.textContent = '';
-        } else {
-            profileAvatar.style.backgroundImage = 'linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%)';
-            profileAvatar.textContent = currentIndyProfile.name.charAt(0).toUpperCase() || 'G';
-        }
-    }
-    
-    if (overlayName) {
-        overlayName.textContent = currentIndyProfile.name || 'Guest';
-    }
-    
-    if (overlayAvatar) {
-        if (currentIndyProfile.picture) {
-            overlayAvatar.style.backgroundImage = `url('${currentIndyProfile.picture}')`;
-            overlayAvatar.textContent = '';
-        } else {
-            overlayAvatar.style.backgroundImage = 'linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%)';
-            overlayAvatar.textContent = currentIndyProfile.name.charAt(0).toUpperCase() || 'G';
-        }
-    }
-}
-
-function closeProfileEditor() {
-    // Check if we have saved changes
-    if (window.profileChangesSaved !== true) {
-            removeModal();
-        return;
-    }
-    
-    removeModal();
-}
-
-function removeModal() {
-    const modal = document.getElementById('profileEditorModal');
-    if (modal) {
-        modal.remove();
-    }
-    
-    const addPlaylistModal = document.getElementById('addPlaylistModal');
-    if (addPlaylistModal) {
-        addPlaylistModal.remove();
-    }
-    
-    // Remove the added styles
-    const style = document.querySelector('style[data-profile-editor]');
-    if (style) style.remove();
-    
-    // Reset the saved flag
-    window.profileChangesSaved = false;
-}
-
-// Test function to verify localStorage is working
-function testProfileSave() {
-    console.log('=== Testing Profile Save ===');
-    console.log('userProfile in localStorage:', JSON.parse(localStorage.getItem('userProfile') || '{}'));
-    console.log('indyProfileData in localStorage:', JSON.parse(localStorage.getItem('indyProfileData') || '{}'));
-    console.log('indyMusicLinked:', localStorage.getItem('indyMusicLinked'));
-    console.log('=== End Test ===');
-}
-
-console.log('Banner data check before saving:', {
-    currentProfileDataBanner: currentProfileData.banner ? 'Has data' : 'Empty',
-    currentIndyProfileBanner: currentIndyProfile.banner ? 'Has data' : 'Empty',
-    bannerLength: currentProfileData.banner ? currentProfileData.banner.length : 0
-});
-
-function reattachBannerEventListeners() {
-    const bannerUpload = document.getElementById('bannerUpload');
-    const bannerUploadBtn = document.getElementById('bannerUploadBtn');
-    const bannerRemoveBtn = document.getElementById('bannerRemoveBtn');
-    
-    if (bannerUploadBtn) {
-        bannerUploadBtn.addEventListener('click', () => {
-            if (bannerUpload) bannerUpload.click();
-        });
-    }
-    
-    if (bannerRemoveBtn) {
-        bannerRemoveBtn.addEventListener('click', removeBanner);
-    }
-}
-
-// In addLanguage function:
-function addLanguage() {
-    const input = document.getElementById('languageInput');
-    const btn = document.getElementById('addLanguageBtn');
-    
-    if (!input || !btn) return;
-    
-    const lang = input.value.trim();
-    
-    if (lang && !currentProfileData.languages.includes(lang)) {
-        // Show loading state
-        btn.classList.add('loading');
-        btn.disabled = true;
-        
-        setTimeout(() => {
-            currentProfileData.languages.push(lang);
-            currentIndyProfile.languages = currentProfileData.languages;
-            
-            updateLanguagesDisplay();
-            input.value = '';
-            updateProfilePreview();
-            
-            // Remove loading state
-            btn.classList.remove('loading');
-            btn.disabled = false;
-            
-            showSyncNotification('✓', 'Language Added', `Added "${lang}" to languages`);
-        }, 300); // Small delay for UX
-    }
-}
-
-// In addBadge function:
-function addBadge() {
-    const select = document.getElementById('badgeSelect');
-    const btn = document.getElementById('addBadgeBtn');
-    
-    if (!select || !btn) return;
-    
-    const badge = select.value;
-    if (badge) {
-        // Show loading state
-        btn.classList.add('loading');
-        btn.disabled = true;
-        
-        setTimeout(() => {
-            addBadgeFromSelect(badge);
-            select.value = '';
-            
-            // Remove loading state
-            btn.classList.remove('loading');
-            btn.disabled = false;
-        }, 300);
-    }
-}
-
-// Auto-update sync UI on page load
-document.addEventListener('DOMContentLoaded', () => {
-    updateSyncUI();
-    
-    // Check for profile changes every 2 seconds
-    setInterval(() => {
-        const currentProfile = JSON.parse(localStorage.getItem('userProfile')) || { name: '', picture: '' };
-        const lastProfileCheck = localStorage.getItem('lastProfileCheck');
-        const currentProfileString = JSON.stringify(currentProfile);
-        
-        if (lastProfileCheck !== currentProfileString) {
-            updateSyncUI();
-            localStorage.setItem('lastProfileCheck', currentProfileString);
-        }
-        
-        // Also check sync status periodically
-        const isLinked = localStorage.getItem('indyMusicLinked') === 'true';
-        const editProfileBtn = document.getElementById('editProfileBtn');
-        
-        if (editProfileBtn) {
-            if (isLinked) {
-                editProfileBtn.style.display = 'flex';
-                editProfileBtn.classList.add('visible');
-                editProfileBtn.classList.remove('hidden');
-            } else {
-                editProfileBtn.style.display = 'none';
-                editProfileBtn.classList.add('hidden');
-                editProfileBtn.classList.remove('visible');
-            }
-        }
-    }, 2000);
-});
-
-// ============================================
-// UNIVERSAL SYNC DEBUG & FIX FUNCTION
-// Paste this at the END of both scripts (before the closing </script> tag)
-// ============================================
-
-(function initCrossAppSync() {
-    console.log('🔗 INDY Sync Manager Initializing...');
-    console.log('Domain:', window.location.origin);
-    console.log('Path:', window.location.pathname);
-    
-    // 1. Debug function - check what's in storage
-    function debugStorage() {
-        console.log('🔍 STORAGE DEBUG ============');
-        console.log('All localStorage keys:');
-        
-        for (let i = 0; i < localStorage.length; i++) {
-            const key = localStorage.key(i);
-            const value = localStorage.getItem(key);
-            console.log(`  ${key}:`, value.length > 100 ? value.substring(0, 100) + '...' : value);
-        }
-        console.log('=============================');
-    }
-    
-    // 2. Force check and fix sync between apps
-    function checkAndFixSync() {
-        console.log('🔄 Checking sync status...');
-        
-        // Check if profile exists from either app
-        const userProfile = JSON.parse(localStorage.getItem('userProfile') || '{}');
-        const isMusicLinked = localStorage.getItem('indyMusicLinked') === 'true';
-        
-        console.log('User Profile found:', userProfile.name || 'No name');
-        console.log('Music Linked:', isMusicLinked);
-        
-        // If we're in INDY Sunrise and have a profile, make sure Music can see it
-        if (window.location.pathname.includes('indysunrise') && userProfile.name) {
-            console.log('✅ INDY Sunrise detected with profile');
-            
-            // Ensure profile is properly saved
-            localStorage.setItem('userProfile', JSON.stringify(userProfile));
-            
-            // Create a signal for Music app
-            localStorage.setItem('lastProfileUpdate', Date.now());
-            
-            console.log('📡 Profile broadcast from INDY Sunrise');
-        }
-        
-        // If we're in INDY Music and profile exists, auto-link
-        if (window.location.pathname.includes('indymusic')) {
-            console.log('🎵 INDY Music detected');
-            
-            if (userProfile.name && !isMusicLinked) {
-                console.log('🔗 Auto-linking Music to INDY profile...');
-                localStorage.setItem('indyMusicLinked', 'true');
-                localStorage.setItem('indyMusicLinkTime', Date.now());
-                localStorage.setItem('indyMusicAppConnected', 'true');
-                
-                // Update UI if function exists
-                if (typeof updateSyncUI === 'function') {
-                    updateSyncUI();
-                }
-                
-                console.log('✅ Auto-linked to INDY profile');
-            }
-            
-            // Show edit profile button if linked
-            const editBtn = document.getElementById('editProfileBtn');
-            if (editBtn && isMusicLinked) {
-                editBtn.style.display = 'flex';
-                console.log('👤 Showing edit profile button');
-            }
-        }
-    }
-    
-    // 3. Listen for storage changes (other tabs)
-    window.addEventListener('storage', function(event) {
-        console.log('📦 Storage event:', event.key, 'changed');
-        
-        if (event.key === 'userProfile' || event.key === 'lastProfileUpdate') {
-            console.log('🔄 Profile update detected from other tab');
-            
-            // If in Music, re-check sync
-            if (window.location.pathname.includes('indymusic')) {
-                setTimeout(checkAndFixSync, 500);
-            }
-        }
-    });
-    
-    // 4. Auto-fix on page load
-    setTimeout(() => {
-        debugStorage();
-        checkAndFixSync();
-    }, 1000);
-    
-    // 5. Add helper functions to window for manual debugging
-    window.debugStorage = debugStorage;
-    window.fixSync = checkAndFixSync;
-    window.clearSync = function() {
-        localStorage.removeItem('indyMusicLinked');
-        localStorage.removeItem('indyMusicLinkTime');
-        console.log('🧹 Cleared sync data');
-        debugStorage();
-    };
-    
-    console.log('✅ INDY Sync Manager Ready');
-})();
-
-// Call this after saving to verify
-testProfileSave();
 </script>
 
 </body>
