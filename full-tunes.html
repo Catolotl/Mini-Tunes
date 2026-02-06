@@ -3115,6 +3115,172 @@ document.addEventListener('click', (e) => {
         showAddToPlaylistMenu(currentPlayingSong);
     }
 });
+
+    function addAlbumLibraryButtonAndLogic() {
+
+    // ── 1. CSS (only added once) ────────────────────────────────────────
+    if (!document.getElementById('album-lib-btn-style')) {
+        const style = document.createElement('style');
+        style.id = 'album-lib-btn-style';
+        style.textContent = `
+            .add-album-to-lib-btn {
+                margin: 16px 0 0 0;
+                padding: 10px 24px;
+                background: linear-gradient(135deg, rgba(255,255,255,0.18), rgba(255,255,255,0.08));
+                border: 1px solid rgba(255,255,255,0.25);
+                border-radius: 999px;
+                color: white;
+                font-size: 14px;
+                font-weight: 600;
+                cursor: pointer;
+                display: inline-flex;
+                align-items: center;
+                gap: 8px;
+                backdrop-filter: blur(10px);
+                transition: all 0.28s cubic-bezier(0.4,0,0.2,1);
+            }
+            .add-album-to-lib-btn:hover {
+                background: rgba(255,255,255,0.28);
+                transform: translateY(-1px);
+                box-shadow: 0 8px 24px rgba(0,0,0,0.35);
+                border-color: rgba(255,255,255,0.4);
+            }
+            .add-album-to-lib-btn.added {
+                background: rgba(100,255,140,0.22);
+                border-color: rgba(100,255,140,0.5);
+                color: #d0ffd0;
+                pointer-events: none;
+            }
+            .add-album-to-lib-btn.added::after {
+                content: "✓ Added";
+                margin-left: 8px;
+                font-weight: 500;
+            }
+        `;
+        document.head.appendChild(style);
+    }
+
+    // ── 2. Add button into album view (runs every time album is shown) ───
+    const albumInfo = document.querySelector('.album-info');
+    if (!albumInfo) return; // not in album view
+
+    // Prevent duplicate buttons
+    if (document.querySelector('.add-album-to-lib-btn')) return;
+
+    const btn = document.createElement('button');
+    btn.className = 'add-album-to-lib-btn';
+    btn.innerHTML = `<span style="font-size:18px;">+</span> Add to library`;
+
+    // Try to get album name from h1 (most reliable)
+    const albumNameEl = albumInfo.querySelector('h1');
+    const albumName = albumNameEl?.textContent?.trim() || "Unnamed Album";
+
+    // Check if already saved
+    const savedAlbums = JSON.parse(localStorage.getItem('indy_saved_albums') || '{}');
+    if (savedAlbums[albumName]) {
+        btn.classList.add('added');
+        btn.textContent = 'Added to library';
+    }
+
+    btn.onclick = () => {
+        if (savedAlbums[albumName]) {
+            showNotification("Album already in library");
+            return;
+        }
+
+        if (!window.currentSongs || window.currentSongs.length === 0) {
+            showNotification("No songs loaded – cannot save");
+            return;
+        }
+
+        // Prepare clean, minimal data structure
+        const albumData = {
+            name: albumName,
+            songs: window.currentSongs.map(s => ({
+                id:   s.id,
+                title: s.title || "Unknown",
+                artist: s.artist || "Unknown",
+                art:   s.art || `https://img.youtube.com/vi/${s.id}/mqdefault.jpg`
+            })),
+            added: Date.now(),
+            cover: window.currentSongs[0]?.art || ""
+        };
+
+        savedAlbums[albumName] = albumData;
+        localStorage.setItem('indy_saved_albums', JSON.stringify(savedAlbums));
+
+        btn.classList.add('added');
+        showNotification(`"${albumName}" added to library`);
+
+        // Refresh sidebar
+        renderSavedAlbumsInLibrary();
+    };
+
+    // Insert after Play All button (or at end of album-info)
+    const playBtn = albumInfo.querySelector('.play-all-btn');
+    if (playBtn) {
+        playBtn.insertAdjacentElement('afterend', btn);
+    } else {
+        albumInfo.appendChild(btn);
+    }
+}
+
+// ── Helper: show saved albums in sidebar ────────────────────────────────
+function renderSavedAlbumsInLibrary() {
+    const container = document.getElementById('playlistsList');
+    if (!container) return;
+
+    // Remove old saved album items (if any)
+    document.querySelectorAll('.saved-album-item').forEach(el => el.remove());
+
+    const saved = JSON.parse(localStorage.getItem('indy_saved_albums') || '{}');
+    Object.values(saved)
+        .sort((a,b) => b.added - a.added) // newest first
+        .forEach(album => {
+            const div = document.createElement('div');
+            div.className = 'playlist-item saved-album-item';
+            div.innerHTML = `
+                <span class="playlist-icon">💿</span>
+                <div class="playlist-info">
+                    <div class="playlist-name">${escapeHtml(album.name)}</div>
+                    <div class="playlist-count">${album.songs.length} songs · Album</div>
+                </div>
+            `;
+            div.onclick = () => {
+                window.currentSongs = album.songs.map(s => ({
+                    id: s.id,
+                    title: s.title,
+                    artist: s.artist,
+                    art: s.art
+                }));
+                window.currentPlaylist = null; // not a normal playlist
+                showAlbumView(window.currentSongs, album.name);
+            };
+            container.appendChild(div);
+        });
+}
+
+// ── Run when album view appears ─────────────────────────────────────────
+const originalShowAlbumView = window.showAlbumView || function(){};
+window.showAlbumView = function(songs, albumName) {
+    originalShowAlbumView(songs, albumName);
+    setTimeout(addAlbumLibraryButtonAndLogic, 80); // DOM settle time
+};
+
+// Also run once on load (in case we refresh while in album view)
+setTimeout(() => {
+    if (document.querySelector('.album-view')) {
+        addAlbumLibraryButtonAndLogic();
+    }
+    renderSavedAlbumsInLibrary();
+}, 400);
+
+// Optional: call this after playlists are rendered on startup
+const originalRenderPlaylists = window.renderPlaylists || function(){};
+window.renderPlaylists = function() {
+    originalRenderPlaylists();
+    renderSavedAlbumsInLibrary();
+};
 </script>
 
 </body>
