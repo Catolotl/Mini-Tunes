@@ -542,7 +542,14 @@ window.onYouTubeIframeAPIReady = function() {
 
 function onPlayerStateChange(event) {
     if (event.data === window.YT.PlayerState.ENDED) {
-        skipToNext();
+        // Song ended, check repeat mode and queue
+        if (repeatMode === 'one') {
+            // Replay current song
+            playSong(currentPlayingSong);
+        } else {
+            // Try to play next
+            skipToNext();
+        }
     }
 }
 
@@ -768,18 +775,34 @@ async function playSong(song, fromPlaylist = null) {
         console.log("Already playing this exact video — skipping duplicate call");
         return;
     }
+    
     lastPlayedVideoId = song.id;
     currentPlayingSong = { ...song };
 
-    // Update playback context
-    if (fromPlaylist) {
+    // Update playback context - IMPORTANT: Check if we're playing from queue
+    if (fromPlaylist && fromPlaylist !== 'queue') {
         currentPlaylist = fromPlaylist;
         currentSongs = playlists[fromPlaylist]?.songs || [];
         currentIndex = currentSongs.findIndex(s => s.id === song.id);
         if (currentIndex === -1) currentIndex = 0;
+    } else if (fromPlaylist === 'queue') {
+        // Playing from queue, keep current queue state
+        currentPlaylist = null;
+        currentSongs = [...queue];
     } else {
-        const idx = currentSongs.findIndex(s => s.id === song.id);
-        if (idx !== -1) currentIndex = idx;
+        // Not from playlist, check if we're in queue mode
+        const queueIdx = queue.findIndex(s => s.id === song.id);
+        if (queueIdx !== -1) {
+            // This song is in queue, set queue as current source
+            queueIndex = queueIdx;
+            currentSongs = [...queue];
+            currentIndex = queueIdx;
+            currentPlaylist = null;
+        } else {
+            // Just playing a single song
+            const idx = currentSongs.findIndex(s => s.id === song.id);
+            if (idx !== -1) currentIndex = idx;
+        }
     }
 
     // Hide video error overlay if showing
@@ -814,14 +837,8 @@ async function playSong(song, fromPlaylist = null) {
         rightSidebar.classList.remove('minimized');
     }
 
-    // Update queue if using queue
-    if (queue.length > 0) {
-        const queueIdx = queue.findIndex(s => s.id === song.id);
-        if (queueIdx !== -1) {
-            queueIndex = queueIdx;
-            renderQueue();
-        }
-    }
+    // Update queue display
+    renderQueue();
 
     // Load video
     const params = new URLSearchParams({
@@ -855,8 +872,6 @@ async function playSong(song, fromPlaylist = null) {
         }
     }
 
-        // ADD THIS AT THE END OF THE FUNCTION (right before the closing })
-    
     // Fetch lyrics for the new song
     setTimeout(() => {
         if (song && song.id) {
@@ -874,7 +889,7 @@ async function playSong(song, fromPlaylist = null) {
                 }, 500);
             }
         }
-    }, 1000); // Small delay to let the player initialize
+    }, 1000);
 }
 
 function skipToNext() {
@@ -884,6 +899,20 @@ function skipToNext() {
         return;
     }
     
+    // Check if we're playing from queue
+    if (queue.length > 0 && currentPlayingSong && queue.some(s => s.id === currentPlayingSong.id)) {
+        // We're in queue mode
+        if (moveToNextInQueue()) {
+            return;
+        } else if (repeatMode === 'all' && queue.length > 0) {
+            // Loop back to start of queue
+            queueIndex = 0;
+            playFromQueue(0);
+            return;
+        }
+    }
+    
+    // Not in queue mode, handle playlist or single song
     if (shuffleMode && currentSongs.length > 1) {
         // Pick random song (not current)
         let newIndex;
@@ -906,6 +935,13 @@ function skipToNext() {
 }
 
 function skipToPrevious() {
+    // Check if we're playing from queue
+    if (queue.length > 0 && currentPlayingSong && queue.some(s => s.id === currentPlayingSong.id)) {
+        moveToPreviousInQueue();
+        return;
+    }
+    
+    // Not in queue mode
     if (currentIndex > 0) {
         currentIndex--;
         playSong(currentSongs[currentIndex]);
@@ -2230,7 +2266,7 @@ function setupFullscreenLyrics() {
 }
 
 // ═══════════════════════════════════════
-// QUEUE SYSTEM
+// IMPROVED QUEUE SYSTEM
 // ═══════════════════════════════════════
 
 function addToQueue(song) {
@@ -2246,15 +2282,41 @@ function addToQueue(song) {
     save('queue', queue);
     showNotification(`Added "${song.title}" to queue`);
     renderQueue();
+    
+    // If nothing is playing, start playing from queue
+    if (!currentPlayingSong && queue.length === 1) {
+        playFromQueue(0);
+    }
 }
 
 function removeFromQueue(index) {
+    // Check if we're removing the currently playing song from queue
+    const wasPlayingCurrent = (index === queueIndex && currentPlayingSong);
+    
     queue.splice(index, 1);
-    if (queueIndex >= queue.length && queue.length > 0) {
-        queueIndex = queue.length - 1;
+    
+    // Adjust queueIndex if needed
+    if (index < queueIndex) {
+        queueIndex--;
+    } else if (index === queueIndex) {
+        // If we removed the current song, move to next or stop
+        if (queue.length > 0) {
+            if (queueIndex >= queue.length) queueIndex = queue.length - 1;
+        } else {
+            queueIndex = 0;
+        }
     }
+    
     save('queue', queue);
     renderQueue();
+    
+    // If we removed the currently playing song, play the next one
+    if (wasPlayingCurrent && queue.length > 0) {
+        playFromQueue(queueIndex);
+    } else if (queue.length === 0) {
+        // Queue empty, but keep playing current song if any
+        showNotification("Queue cleared");
+    }
 }
 
 function clearQueue() {
@@ -2266,11 +2328,15 @@ function clearQueue() {
         save('queue', queue);
         renderQueue();
         showNotification("Queue cleared");
+        // Keep playing current song
     }
 }
 
 function shuffleQueue() {
     if (queue.length < 2) return;
+    
+    // Save current playing song
+    const currentSong = queue[queueIndex];
     
     // Fisher-Yates shuffle
     for (let i = queue.length - 1; i > 0; i--) {
@@ -2278,7 +2344,13 @@ function shuffleQueue() {
         [queue[i], queue[j]] = [queue[j], queue[i]];
     }
     
-    queueIndex = 0;
+    // Find new index of current song
+    if (currentSong) {
+        queueIndex = queue.findIndex(s => s.id === currentSong.id);
+    } else {
+        queueIndex = 0;
+    }
+    
     save('queue', queue);
     renderQueue();
     showNotification("Queue shuffled 🔀");
@@ -2288,9 +2360,38 @@ function playFromQueue(index) {
     if (index < 0 || index >= queue.length) return;
     
     queueIndex = index;
-    currentSongs = [...queue];
+    currentSongs = [...queue]; // Set current songs to queue
     currentIndex = index;
+    currentPlaylist = null; // Clear playlist context
+    
     playSong(queue[index]);
+}
+
+function moveToNextInQueue() {
+    if (queue.length === 0) return false;
+    
+    // Check if we have more songs in queue
+    if (queueIndex < queue.length - 1) {
+        // Play next song in queue
+        queueIndex++;
+        playFromQueue(queueIndex);
+        return true;
+    } else {
+        // End of queue reached
+        showNotification("End of queue");
+        return false;
+    }
+}
+
+function moveToPreviousInQueue() {
+    if (queue.length === 0) return false;
+    
+    if (queueIndex > 0) {
+        queueIndex--;
+        playFromQueue(queueIndex);
+        return true;
+    }
+    return false;
 }
 
 function renderQueue() {
@@ -2311,9 +2412,9 @@ function renderQueue() {
     container.innerHTML = '';
     queue.forEach((song, i) => {
         const div = document.createElement('div');
-        div.className = 'queue-item' + (i === queueIndex ? ' playing' : '');
+        div.className = 'queue-item' + (i === queueIndex && currentPlayingSong ? ' playing' : '');
         div.innerHTML = `
-            <img src="${song.art || ''}" alt="">
+            <img src="${song.art || ''}" alt="" loading="lazy">
             <div class="queue-item-info">
                 <div class="queue-item-title">${escapeHtml(song.title)}</div>
                 <div class="queue-item-artist">${escapeHtml(song.artist)}</div>
@@ -3204,4 +3305,10 @@ async function fetchLyricsFallback(song) {
         console.error("Fallback lyrics fetch error:", error);
         return null;
     }
+}
+// Check if current song is from queue
+function isPlayingFromQueue() {
+    return queue.length > 0 && 
+           currentPlayingSong && 
+           queue.some(s => s.id === currentPlayingSong.id);
 }
