@@ -44,7 +44,7 @@ body{
 
 /* LEFT SIDEBAR */
 .left-sidebar{
-    width:300px;
+    width:400px;
     display:flex;
     flex-direction:column;
     gap:12px;
@@ -125,34 +125,13 @@ body{
 
 .library-header h3{
     font-size:14px;
-    color:var(--muted);
-    text-transform:uppercase;
-    letter-spacing:1px;
-}
+    color: #fff;
 
-.create-playlist-btn{
-    background:var(--accent);
-    border:none;
-    color:#000;
-    width:32px;
-    height:32px;
-    border-radius:50%;
-    font-size:20px;
-    cursor:pointer;
-    display:flex;
-    align-items:center;
-    justify-content:center;
-    transition:all .2s;
-}
-
-.create-playlist-btn:hover{
-    background:var(--accent-dim);
-    transform:scale(1.05);
 }
 
 .playlist-item{
     padding:12px;
-    background:var(--soft);
+    background:transparent;
     border-radius:8px;
     cursor:pointer;
     transition:all .2s;
@@ -254,7 +233,7 @@ body{
 }
 
 .song-card{
-    background:rgba(0,0,0,.3);
+    background:rgba(255, 255, 255, 0.3);
     border-radius:8px;
     padding:16px;
     cursor:pointer;
@@ -265,8 +244,7 @@ body{
 }
 
 .song-card:hover{
-    background:rgba(0,0,0,.5);
-    transform:translateY(-2px);
+    background:rgba(255, 255, 255, 0.5);
 }
 
 .song-card img{
@@ -899,22 +877,26 @@ body {
 
 .playlist-item:hover {
     background: rgba(60, 60, 60, 0.5);
-    transform: translateX(4px);
     border-color: rgba(255, 255, 255, 0.08);
-    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.3);
 }
 
 .playlist-item.active {
     background: linear-gradient(135deg, #ffffff 0%, #e0e0e0 100%);
-    box-shadow: 0 8px 24px rgba(255, 255, 255, 0.15);
 }
 
 /* Main content with better gradient */
 .main-content {
-    background: linear-gradient(180deg, var(--gradient-color) 0%, rgba(10, 10, 10, 0.95) 25%, var(--bg) 50%);
-    backdrop-filter: blur(10px);
-    border: 1px solid rgba(255, 255, 255, 0.04);
-    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.03);
+    flex: 1;
+    background: linear-gradient(180deg, var(--gradient-color) 0%, var(--bg) 20%);
+    border-radius: 12px;
+    overflow-y: auto;
+    padding: 0; /* Remove padding here */
+    transition: background .8s;
+}
+
+/* Add spacing for content inside main, but not at the very top */
+#homeView, #searchView {
+    padding: 24px 32px; /* Adjust as needed */
 }
 
 /* Section headers with refined typography */
@@ -930,17 +912,15 @@ body {
 
 /* Enhanced song cards with hover effects */
 .song-card {
-    background: rgba(0, 0, 0, 0.2);
+    background: rgba(255, 255, 255, 0.2);
     backdrop-filter: blur(10px);
     border: 1px solid rgba(255, 255, 255, 0.04);
     transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .song-card:hover {
-    background: rgba(0, 0, 0, 0.4);
-    transform: translateY(-4px) scale(1.02);
+    background: rgba(255, 255, 255, 0.168);
     border-color: rgba(255, 255, 255, 0.1);
-    box-shadow: 0 12px 40px rgba(0, 0, 0, 0.5);
 }
 
 .song-card img {
@@ -948,10 +928,6 @@ body {
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
 }
 
-.song-card:hover img {
-    transform: scale(1.05);
-    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5);
-}
 
 /* Refined album cards */
 .album-card {
@@ -1640,7 +1616,7 @@ body::before {
 }
 
 .filter-chip {
-    padding: 10px 20px;
+    padding: 7px 10px;
     background: rgba(255, 255, 255, 0.08);
     backdrop-filter: blur(10px);
     border: 1px solid rgba(255, 255, 255, 0.12);
@@ -1658,14 +1634,12 @@ body::before {
 .filter-chip:hover {
     background: rgba(255, 255, 255, 0.15);
     border-color: rgba(255, 255, 255, 0.2);
-    transform: translateY(-2px);
 }
 
 .filter-chip.active {
     background: linear-gradient(135deg, #ffffff 0%, #e0e0e0 100%);
     color: #000;
     border-color: transparent;
-    box-shadow: 0 4px 16px rgba(255, 255, 255, 0.2);
 }
 
 .filter-chip .count {
@@ -2276,11 +2250,11 @@ body::before {
 
 /* More spacious song cards in search */
 .song-card {
-    background: rgba(0, 0, 0, 0.2);
+    background: rgba(255, 255, 255, 0.048);
     backdrop-filter: blur(10px);
     border: 1px solid rgba(255, 255, 255, 0.04);
     border-radius: 12px;
-    padding: 14px 16px; /* Increased padding */
+    padding: 1px 1px; /* Increased padding */
     cursor: pointer;
     transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
     display: flex;
@@ -2394,7 +2368,7 @@ body::before {
 }
 
 .filter-chip {
-    padding: 12px 22px; /* Increased padding */
+    padding: 7px 10px; /* Increased padding */
     background: rgba(255, 255, 255, 0.06);
     backdrop-filter: blur(10px);
     border: 1px solid rgba(255, 255, 255, 0.1);
@@ -2422,9 +2396,8 @@ body::before {
 
 .playlist-item {
     padding: 14px; /* Increased from 12px */
-    background: rgba(40, 40, 40, 0.4);
-    backdrop-filter: blur(10px);
-    border: 1px solid rgba(255, 255, 255, 0.04);
+    background: transparent;
+    border: none;
     border-radius: 10px;
     cursor: pointer;
     transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
@@ -2675,12 +2648,6 @@ body::before {
 /* ──────────────────────────────────────────
    HOVER STATES - MORE SUBTLE
    ────────────────────────────────────────── */
-
-.song-card:hover,
-.album-card:hover,
-.library-album-card:hover {
-    transform: translateY(-3px) scale(1.01); /* Reduced from larger transforms */
-}
 
 /* ──────────────────────────────────────────
    RESPONSIVE ADJUSTMENTS
@@ -3099,7 +3066,6 @@ img {
 
 .song-card:hover .play-overlay {
     opacity: 1;
-    transform: translateY(0);
 }
 
 /* ──────────────────────────────────────────
@@ -3416,31 +3382,719 @@ img {
 .right-sidebar .mode-btn {
     pointer-events: auto;
 }
+/* Adjust the app container to account for the nav bar */
+.app-container {
+    display: flex;
+    height: calc(100vh - 60px); /* Subtract nav bar height */
+    gap: 12px;
+    padding: 12px;
+    margin-top: 0;
+}
+
+/* Make sure the nav bar sits above the app container */
+.sticky-nav-full {
+    position: sticky;
+    top: 0;
+    z-index: 1000;
+    width: 100%;
+    height: 60px; /* Fixed height */
+    background: rgba(10, 10, 10, 0.75);
+    backdrop-filter: blur(16px);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+/* Remove any margin/padding that might cause gaps */
+body {
+    overflow: hidden;
+    height: 100vh;
+    margin: 0;
+    padding: 0;
+}
+
+.main-content {
+    flex: 1;
+    background: linear-gradient(180deg, var(--gradient-color) 0%, var(--bg) 20%);
+    border-radius: 12px;
+    overflow-y: auto;
+    padding: 0;
+    transition: background .8s;
+}
+
+/* Content padding */
+#homeView, #searchView {
+    padding: 24px 32px;
+}
+
+/* ============================================
+   FINAL NAV BAR FIX - Makes it flush with top
+   ============================================ */
+
+/* Reset body padding/margin */
+body {
+    margin: 0;
+    padding: 0;
+    overflow: hidden;
+    height: 100vh;
+}
+
+/* Adjust the main app container to account for nav bar */
+.app-container {
+    display: flex;
+    height: calc(100vh - 60px); /* Subtract nav bar height */
+    gap: 12px;
+    padding: 12px;
+    margin-top: 0;
+}
+
+/* Make nav bar stick to top with proper positioning */
+.sticky-nav-full {
+    position: sticky;
+    top: 0;
+    left: 0;
+    right: 0;
+    z-index: 1000;
+    width: 100%;
+    height: 60px;
+    background: rgba(10, 10, 10, 0.85);
+    backdrop-filter: blur(16px);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+    margin: 0;
+    padding: 0;
+}
+
+/* Fix the container inside nav */
+.sticky-nav-container {
+    max-width: 100%;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 24px;
+    margin: 0 auto;
+}
+
+/* Remove any negative margins that might cause gaps */
+.sticky-nav-full {
+    margin-left: 0;
+    margin-right: 0;
+    width: 100%;
+}
+
+/* Ensure main content starts immediately after nav */
+.main-content {
+    flex: 1;
+    background: linear-gradient(180deg, var(--gradient-color) 0%, var(--bg) 20%);
+    border-radius: 12px;
+    overflow-y: auto;
+    padding: 0;
+    margin: 0;
+    transition: background 0.8s;
+}
+
+/* Add proper padding to content areas */
+#homeView, #searchView {
+    padding: 24px 32px;
+    margin: 0;
+}
+
+/* Remove any top margin from first elements */
+.filter-chips {
+    margin-top: 0 !important;
+    padding-top: 0 !important;
+}
+
+/* Ensure the featured section doesn't add extra space */
+#featuredSection {
+    margin-top: 0;
+}
+
+/* Fix any conflicting styles */
+.main-content > *:first-child {
+    margin-top: 0;
+}
+
+/* Remove the problematic full-width hack */
+.sticky-nav-full {
+    width: 100%;
+    margin-left: 0;
+    margin-right: 0;
+}
+
+/* Adjust for any leftover spacing */
+.section:first-of-type {
+    margin-top: 0;
+}
+
+/* ============================================
+   FIX ALBUM/PLAYLIST VIEW PADDING
+   ============================================ */
+
+/* Ensure album and playlist views have proper padding */
+.album-view,
+.playlist-view {
+    padding: 32px !important;
+}
+
+/* Make sure these views are positioned correctly */
+#mainContent > .album-view,
+#mainContent > .playlist-view {
+    padding: 32px !important;
+    margin: 0 !important;
+}
+
+/* Fix back button positioning */
+.album-view .back-btn,
+.playlist-view .back-btn {
+    margin-top: 0 !important;
+    margin-bottom: 24px;
+}
+
+/* Ensure album/playlist header has proper spacing */
+.album-header,
+.playlist-header {
+    margin-top: 0 !important;
+    margin-bottom: 32px;
+}
+
+/* ============================================
+   ADD TOP MARGIN TO FILTER CHIPS
+   ============================================ */
+
+/* Add spacing between nav bar and filter chips */
+.filter-chips {
+    margin-top: 24px !important;
+}
+
+/* Also add top padding to the home view container for extra breathing room */
+#homeView {
+    padding-top: 32px !important;
+}
+
+/* Make sure search view has the same spacing */
+#searchView {
+    padding-top: 32px !important;
+}
 </style>
 </head>
 <body>
 
+    <!-- STICKY NAVIGATION BAR - Full width, above everything -->
+<div class="sticky-nav-full" id="stickyNav">
+    <div class="sticky-nav-container">
+        <div class="nav-left">
+            <div class="nav-logo" href="index.html">
+                <span class="nav-logo-icon">✦</span>
+                <span class="nav-logo-text">INDY MUSIC</span>
+            </div>
+        </div>
+        
+        
+        <div class="nav-center">
+                        <a class="nav-home-btn" href="index.html" style="text-decoration: none;">
+  <span>⌂</span>
+</a>
+
+            <div class="nav-search-container">
+                <span class="nav-search-icon">⌕</span>
+                <input type="text" class="nav-search-input" id="navSearchInput" placeholder="What do you want to listen to?" onkeypress="handleNavSearchKeyPress(event)">
+                <button class="nav-search-btn" onclick="performNavSearch()">Search</button>
+            </div>
+        </div>
+        
+        <div class="nav-right">
+                            <button class="nav-btn" id="linkBtn" onclick="linkIndy()">
+                    <span>🔗</span> Link
+                </button>
+        </div>
+    </div>
+</div>
+
+<style>
+/* ============================================
+   ELEGANT STICKY NAVIGATION BAR
+   ============================================ */
+
+.sticky-nav-full {
+    position: sticky;
+    top: 0;
+    left: 0;
+    right: 0;
+    z-index: 1000;
+    width: 100vw;
+    margin-left: calc(-50vw + 50%);
+    margin-right: calc(-50vw + 50%);
+    background: rgba(10, 10, 10, 0.75);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    margin-bottom: 24px;
+}
+
+.sticky-nav-full.scrolled {
+    background: rgba(5, 5, 5, 0.85);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border-bottom-color: rgba(255, 255, 255, 0.1);
+    box-shadow: 0 8px 40px rgba(0, 0, 0, 0.4);
+}
+
+.sticky-nav-container {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    max-width: 1600px;
+    margin: 0 auto;
+    padding: 8px 32px;
+    width: 100%;
+}
+
+/* Left section - Logo */
+.nav-left {
+    flex: 0 0 auto;
+}
+
+.nav-logo {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    cursor: pointer;
+    padding: 6px 12px;
+    border-radius: 40px;
+    transition: all 0.3s ease;
+}
+
+.nav-logo:hover {
+    background: rgba(255, 255, 255, 0.05);
+}
+
+.nav-logo-icon {
+    font-size: 28px;
+    font-weight: 400;
+    background: linear-gradient(135deg, #ffffff 0%, #b0b0b0 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.2));
+}
+
+.nav-logo-text {
+    font-family: 'Syne', sans-serif;
+    font-size: 22px;
+    font-weight: 800;
+    letter-spacing: -0.5px;
+    background: linear-gradient(135deg, #ffffff 0%, #d0d0d0 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+
+/* Center section - Search */
+.nav-center {
+    flex: 1;
+    max-width: 580px;
+    margin: 0 24px;
+}
+
+.nav-search-container {
+    display: flex;
+    align-items: center;
+    background: rgba(20, 20, 20, 0.6);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 40px;
+    padding: 2px 2px 2px 20px;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    backdrop-filter: blur(8px);
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
+}
+
+.nav-search-container:hover {
+    background: rgba(30, 30, 30, 0.7);
+    border-color: rgba(255, 255, 255, 0.15);
+}
+
+.nav-search-container:focus-within {
+    border-color: rgba(255, 255, 255, 0.3);
+    background: rgba(35, 35, 35, 0.8);
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3), 0 0 0 2px rgba(255, 255, 255, 0.02);
+}
+
+.nav-search-icon {
+    color: rgba(255, 255, 255, 0.4);
+    font-size: 30px;
+    margin-right: 10px;
+}
+
+.nav-search-input {
+    flex: 1;
+    background: transparent;
+    border: none;
+    color: var(--text);
+    font-size: 15px;
+    padding: 12px 0;
+    outline: none;
+    font-family: 'DM Sans', sans-serif;
+    font-weight: 400;
+}
+
+.nav-search-input::placeholder {
+    color: rgba(255, 255, 255, 0.3);
+    font-weight: 300;
+    font-size: 14px;
+    letter-spacing: 0.2px;
+}
+
+.nav-search-btn {
+    background: rgba(255, 255, 255, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    color: var(--text);
+    padding: 8px 24px;
+    border-radius: 40px;
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    backdrop-filter: blur(4px);
+    letter-spacing: 0.3px;
+}
+
+.nav-search-btn:hover {
+    background: rgba(255, 255, 255, 0.15);
+    border-color: rgba(255, 255, 255, 0.2);
+    transform: scale(1.02);
+}
+
+.nav-search-btn:active {
+    transform: scale(0.98);
+}
+
+/* Right section - Home button */
+.nav-right {
+    flex: 0 0 auto;
+}
+
+.nav-home-btn {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    color: var(--text);
+    padding: 10px 22px;
+    border-radius: 40px;
+    font-size: 15px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    backdrop-filter: blur(4px);
+}
+
+.nav-home-btn:hover {
+    background: rgba(255, 255, 255, 0.1);
+    border-color: rgba(255, 255, 255, 0.15);
+    transform: translateY(-1px);
+}
+
+.nav-home-btn:active {
+    transform: translateY(0);
+}
+
+.nav-home-btn span:first-child {
+    font-size: 20px;
+    opacity: 0.8;
+}
+
+.nav-home-text {
+    font-weight: 500;
+}
+
+/* Remove the pseudo-element that was causing issues */
+.sticky-nav-full::before {
+    display: none;
+}
+
+/* Responsive adjustments */
+@media (max-width: 1000px) {
+    .sticky-nav-container {
+        padding: 8px 20px;
+    }
+    
+    .nav-logo-text {
+        font-size: 20px;
+    }
+    
+    .nav-logo-icon {
+        font-size: 24px;
+    }
+    
+    .nav-search-btn {
+        padding: 6px 18px;
+    }
+}
+
+@media (max-width: 800px) {
+    .nav-logo-text {
+        display: none;
+    }
+    
+    .nav-center {
+        margin: 0 12px;
+    }
+    
+    .nav-home-text {
+        display: none;
+    }
+    
+    .nav-home-btn {
+        padding: 10px 16px;
+    }
+    
+    .nav-search-btn {
+        padding: 6px 14px;
+        font-size: 13px;
+    }
+}
+
+@media (max-width: 600px) {
+    .sticky-nav-container {
+        padding: 6px 12px;
+    }
+    
+    .nav-search-input {
+        width: 80px;
+        font-size: 14px;
+    }
+    
+    .nav-search-input::placeholder {
+        font-size: 12px;
+    }
+    
+    .nav-search-btn {
+        padding: 5px 12px;
+        font-size: 12px;
+    }
+    
+    .nav-home-btn {
+        padding: 8px 12px;
+    }
+    
+    .nav-home-btn span:first-child {
+        font-size: 18px;
+    }
+    
+    .nav-logo-icon {
+        font-size: 22px;
+    }
+}
+
+/* Animation for nav on scroll */
+@keyframes navFadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(-10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.sticky-nav-full {
+    animation: navFadeIn 0.4s ease forwards;
+}
+
+/* Fix the gap between nav bar and content */
+.main-content {
+    padding-top: 0 !important;
+    margin-top: 0 !important;
+}
+
+/* Remove any extra spacing from the first section */
+.main-content > div:first-child {
+    margin-top: 0;
+    padding-top: 0;
+}
+
+/* Specifically target the filter chips which appear right after nav */
+.filter-chips {
+    margin-top: 0 !important;
+    padding-top: 0 !important;
+}
+
+/* Ensure the home view has no top spacing */
+#homeView {
+    margin-top: 0;
+    padding-top: 0;
+}
+/* ============================================
+   FIX NAV BAR LAYOUT - CENTER HOME + SEARCH
+   ============================================ */
+
+/* Keep space-between for left/center/right layout */
+.sticky-nav-container {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    max-width: 1600px;
+    margin: 0 auto;
+    padding: 8px 32px;
+    width: 100%;
+}
+
+/* Center section contains home button + search */
+.nav-center {
+    flex: 1;
+    max-width: 620px;
+    margin: 0 auto; /* Center the entire group */
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+/* Make search container take remaining space */
+.nav-search-container {
+    flex: 1;
+    min-width: 0;
+}
+
+/* Make home button compact and circular */
+.nav-center .nav-home-btn {
+    padding: 10px;
+    width: 44px;
+    height: 44px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+
+.nav-center .nav-home-btn span:first-child {
+    font-size: 22px;
+    margin: 0;
+}
+
+/* Keep right section for balance but make it match left width */
+.nav-right {
+    flex: 0 0 auto;
+    width: 140px; /* Match approximate width of logo section for balance */
+}
+
+/* Responsive adjustments */
+@media (max-width: 800px) {
+    .nav-center {
+        gap: 10px;
+        max-width: 500px;
+    }
+    
+    .nav-center .nav-home-btn {
+        width: 40px;
+        height: 40px;
+        padding: 8px;
+    }
+    
+    .nav-center .nav-home-btn span:first-child {
+        font-size: 20px;
+    }
+    
+    .nav-right {
+        width: 80px;
+    }
+}
+
+@media (max-width: 600px) {
+    .nav-center {
+        gap: 8px;
+        max-width: none;
+        margin: 0 8px;
+    }
+    
+    .nav-center .nav-home-btn {
+        width: 36px;
+        height: 36px;
+        padding: 6px;
+    }
+    
+    .nav-center .nav-home-btn span:first-child {
+        font-size: 18px;
+    }
+    
+    .nav-right {
+        width: 40px;
+    }
+}
+
+/* ============================================
+   REDUCE LEFT MARGIN FOR LOGO
+   ============================================ */
+
+/* Reduce left padding of nav container */
+.sticky-nav-container {
+    padding: 8px 32px 8px 16px;/* Changed left padding from 32px to 16px */
+}
+
+/* Also reduce padding on the logo itself */
+.nav-logo {
+    padding: 6px 8px; /* Reduced from 6px 12px */
+}
+
+/* Responsive adjustments */
+@media (max-width: 1000px) {
+    .sticky-nav-container {
+        padding: 8px 20px 8px 12px;
+    }
+}
+
+@media (max-width: 600px) {
+    .sticky-nav-container {
+        padding: 6px 12px 6px 8px;
+    }
+}
+/* ============================================
+   REDUCE LEFT MARGIN FOR LOGO - FIXED
+   ============================================ */
+
+/* Reduce left padding of nav container */
+.sticky-nav-container {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    max-width: 1600px;
+    margin: 0 auto;
+    padding: 8px 32px 8px 8px !important; /* Left: 8px, Right: 32px */
+    width: 100%;
+}
+
+/* Also reduce padding on the logo itself */
+.nav-logo {
+    padding: 6px 4px; /* Reduced further for tighter spacing */
+    margin-left: 0;
+}
+
+/* Responsive adjustments */
+@media (max-width: 1000px) {
+    .sticky-nav-container {
+        padding: 8px 20px 8px 8px !important;
+    }
+}
+
+@media (max-width: 600px) {
+    .sticky-nav-container {
+        padding: 6px 12px 6px 4px !important;
+    }
+}
+</style>
+
 <div class="app-container">
     <!-- LEFT SIDEBAR -->
     <aside class="left-sidebar" id="leftSidebar">
-        <div class="sidebar-top">
-            <div class="nav-buttons">
-                <button class="nav-btn active" id="homeBtn" onclick="showHome()">
-                    <span>⌂</span> Home
-                </button>
-                <button class="nav-btn" id="searchBtn" onclick="showSearch()">
-                    <span>⌕</span> Search
-                </button>
-                <button class="nav-btn" id="linkBtn" onclick="linkIndy()">
-                    <span>🔗</span> Link
-                </button>
-            </div>
-        </div>
+
         
         <div class="sidebar-library">
             <div class="library-header">
                 <h3>Your Library</h3>
-                <button class="create-playlist-btn" onclick="openCreateModal()">+</button>
+                <button class="nav-search-btn" onclick="openCreateModal()">+ Create</button>
             </div>
             
             <div class="playlist-item" onclick="viewLikedSongs()">
@@ -3459,26 +4113,29 @@ img {
 
 <!-- MAIN CONTENT -->
 <main class="main-content" id="mainContent">
+
+    
     <!-- HOME VIEW -->
     <div id="homeView">
         <!-- NEW: Filter Chips -->
-        <div class="filter-chips" id="filterChips">
-            <button class="filter-chip active" onclick="filterContent('all')" data-filter="all">
-                <span>🎵</span> All <span class="count" id="filterAllCount"></span>
-            </button>
-            <button class="filter-chip" onclick="filterContent('songs')" data-filter="songs">
-                <span></span> Songs <span class="count" id="filterSongsCount"></span>
-            </button>
-            <button class="filter-chip" onclick="filterContent('albums')" data-filter="albums">
-                <span></span> Albums <span class="count" id="filterAlbumsCount"></span>
-            </button>
-            <button class="filter-chip" onclick="filterContent('mixes')" data-filter="mixes">
-                <span>✦</span> Mixes <span class="count" id="filterMixesCount"></span>
-            </button>
-            <button class="filter-chip" onclick="filterContent('library')" data-filter="library">
-                <span></span> My Library <span class="count" id="filterLibraryCount"></span>
-            </button>
-        </div>
+<!-- Update your filter chips with IDs and add the JavaScript -->
+<div class="filter-chips" id="filterChips">
+    <button class="filter-chip active" onclick="filterContent('all')" data-filter="all" id="filterAll">
+        <span></span> All <span class="count" id="filterAllCount"></span>
+    </button>
+    <button class="filter-chip" onclick="filterContent('songs')" data-filter="songs" id="filterSongs">
+        <span></span> Music <span class="count" id="filterSongsCount"></span>
+    </button>
+    <button class="filter-chip" onclick="filterContent('albums')" data-filter="albums" id="filterAlbums">
+        <span></span> Albums <span class="count" id="filterAlbumsCount"></span>
+    </button>
+    <button class="filter-chip" onclick="filterContent('mixes')" data-filter="mixes" id="filterMixes">
+        <span>✦</span> Mixes <span class="count" id="filterMixesCount"></span>
+    </button>
+    <button class="filter-chip" onclick="filterContent('library')" data-filter="library" id="filterLibrary">
+        <span></span> My Library <span class="count" id="filterLibraryCount"></span>
+    </button>
+</div>
 
         <!-- NEW: Stats Card -->
         <div class="stats-card" id="statsCard" style="display:none;">
@@ -3502,6 +4159,146 @@ img {
             </div>
         </div>
     
+
+<style>
+/* Featured Image Styles - Add to your existing CSS */
+.featured-container {
+    position: relative;
+    width: 100%;
+    border-radius: 20px;
+    overflow: hidden;
+    cursor: pointer;
+    /* margin-bottom: 24px; */
+    aspect-ratio: 100/1;
+    transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+
+.featured-image {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    transition: transform 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.featured-overlay {
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(
+        90deg,
+        rgba(0, 0, 0, 0.7) 0%,
+        rgba(0, 0, 0, 0.3) 50%,
+        rgba(0, 0, 0, 0.7) 100%
+    );
+    display: flex;
+    align-items: center;
+    padding: 40px;
+}
+
+.featured-content {
+    color: white;
+    max-width: 600px;
+    animation: fadeInUp 0.6s ease;
+}
+
+.featured-content h3 {
+    font-family: 'Syne', sans-serif;
+    font-size: 42px;
+    font-weight: 800;
+    margin-bottom: 12px;
+    letter-spacing: -1px;
+    text-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
+    background: linear-gradient(135deg, #ffffff 0%, #f0f0f0 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+
+.featured-content p {
+    font-size: 18px;
+    opacity: 0.9;
+    margin-bottom: 20px;
+    text-shadow: 0 2px 10px rgba(0, 0, 0, 0.5);
+    color: rgba(255, 255, 255, 0.9);
+}
+
+.featured-badge {
+    display: inline-block;
+    padding: 8px 20px;
+    background: rgba(255, 255, 255, 0.15);
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: 30px;
+    font-size: 14px;
+    font-weight: 600;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    color: white;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+}
+
+.featured-container::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: radial-gradient(circle at 20% 50%, rgba(255,255,255,0.1) 0%, transparent 70%);
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity 0.4s ease;
+}
+
+.featured-container:hover::after {
+    opacity: 1;
+}
+
+/* Responsive adjustments */
+@media (max-width: 1200px) {
+    .featured-content h3 {
+        font-size: 32px;
+    }
+    .featured-content p {
+        font-size: 16px;
+    }
+    .featured-overlay {
+        padding: 30px;
+    }
+}
+
+@media (max-width: 768px) {
+    .featured-container {
+        aspect-ratio: 16/9;
+    }
+    .featured-content h3 {
+        font-size: 24px;
+    }
+    .featured-content p {
+        font-size: 14px;
+    }
+    .featured-badge {
+        padding: 6px 16px;
+        font-size: 12px;
+    }
+    .featured-overlay {
+        padding: 20px;
+    }
+}
+
+@keyframes fadeInUp {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+</style>
+</script>
+
         <div class="section" id="recentSection">
             <div class="section-header">
                 <h2>Recently Played</h2>
@@ -3678,5 +4475,139 @@ img {
 </div>
 
 <script src="script.js"></script>
+
+<script>
+
+function filterContent(type) {
+    currentFilter = type;
+    
+    console.log("Filtering by:", type);
+    
+    // Update active chip
+    document.querySelectorAll('.filter-chip').forEach(chip => {
+        chip.classList.remove('active');
+        if (chip.getAttribute('data-filter') === type) {
+            chip.classList.add('active');
+        }
+    });
+    
+    // Get all section elements
+    const recentSection = document.getElementById('recentSection');
+    const albumsSection = document.getElementById('albumsSection');
+    const mixesSection = document.getElementById('mixesSection');
+    const popularSection = document.getElementById('popularSection');
+    const artistsSection = document.getElementById('artistsSection');
+    const librarySection = document.getElementById('librarySection');
+    const statsCard = document.getElementById('statsCard');
+    
+    // Hide all sections first
+    if (recentSection) recentSection.style.display = 'none';
+    if (albumsSection) albumsSection.style.display = 'none';
+    if (mixesSection) mixesSection.style.display = 'none';
+    if (popularSection) popularSection.style.display = 'none';
+    if (artistsSection) artistsSection.style.display = 'none';
+    if (librarySection) librarySection.style.display = 'none';
+    if (statsCard) statsCard.style.display = 'none';
+    
+    // Show sections based on filter
+    switch(type) {
+        case 'all':
+            if (recentSection) recentSection.style.display = 'block';
+            if (albumsSection) albumsSection.style.display = 'block';
+            if (mixesSection) mixesSection.style.display = 'block';
+            if (popularSection) popularSection.style.display = 'block';
+            if (artistsSection) artistsSection.style.display = 'block';
+            // Show library if there are saved albums
+            if (Object.keys(savedAlbums).length > 0 && librarySection) {
+                librarySection.style.display = 'block';
+            }
+            break;
+            
+        case 'songs':
+            if (recentSection) recentSection.style.display = 'block';
+            if (popularSection) popularSection.style.display = 'block';
+            break;
+            
+        case 'albums':
+            if (albumsSection) albumsSection.style.display = 'block';
+            break;
+            
+        case 'mixes':
+            if (mixesSection) mixesSection.style.display = 'block';
+            break;
+            
+        case 'library':
+            if (librarySection) librarySection.style.display = 'block';
+            if (statsCard) {
+                statsCard.style.display = 'block';
+                updateStats();
+            }
+            break;
+    }
+    
+    console.log("Filter applied successfully");
+}
+
+// Function to handle nav bar search
+function performNavSearch() {
+    const navSearchInput = document.getElementById('navSearchInput');
+    const searchInput = document.getElementById('searchInput');
+    const searchQuery = navSearchInput.value.trim();
+    
+    if (searchQuery) {
+        // Switch to search view
+        showSearch();
+        
+        // Populate the search input with the nav bar query
+        searchInput.value = searchQuery;
+        
+        // Trigger the search
+        searchMusic(searchQuery);
+        
+        // Optional: Clear the nav search input
+        // navSearchInput.value = '';
+    } else {
+        // If empty, just open search view
+        showSearch();
+        searchInput.focus();
+    }
+}
+
+// Function to handle Enter key in nav search
+function handleNavSearchKeyPress(event) {
+    if (event.key === 'Enter') {
+        performNavSearch();
+    }
+}
+
+
+let konamiCode = [];
+const konamiSequence = ['ArrowUp', 'ArrowUp', 'ArrowDown', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'ArrowLeft', 'ArrowRight', 'b', 'a'];
+
+document.addEventListener('keydown', (e) => {
+    konamiCode.push(e.key);
+    konamiCode = konamiCode.slice(-10);
+    
+    if (konamiCode.join(',') === konamiSequence.join(',')) {
+        triggerConfetti();
+        showNotification('🎉 Secret unlocked! Party mode activated!');
+        document.body.style.animation = 'rainbow 2s linear infinite';
+    }
+});
+
+function triggerConfetti() {
+    for (let i = 0; i < 100; i++) {
+        setTimeout(() => {
+            const confetti = document.createElement('div');
+            confetti.className = 'confetti';
+            confetti.style.left = Math.random() * 100 + 'vw';
+            confetti.style.background = `hsl(${Math.random() * 360}, 100%, 50%)`;
+            document.body.appendChild(confetti);
+            setTimeout(() => confetti.remove(), 3000);
+        }, i * 30);
+    }
+}
+</script>
+
 </body>
 </html>
