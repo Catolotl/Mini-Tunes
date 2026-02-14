@@ -93,6 +93,34 @@ function showNotification(message) {
 // CACHING & API HELPERS
 // ────────────────────────────────────────
 
+
+// Add these missing functions
+function getCachedMetadata(videoId) {
+    const cached = load(`metadata_${videoId}`, null);
+    return cached;
+}
+
+function saveMetadataToCache(videoId, title, artist) {
+    save(`metadata_${videoId}`, { title, artist, timestamp: Date.now() });
+}
+
+function applyMetadata(videoId, song, title, artist) {
+    if (song) {
+        song.title = title;
+        song.artist = artist;
+    }
+    // Update UI if this song is currently displayed
+    updateSongTitlesInUI(videoId, title, artist);
+}
+
+function updateSongTitlesInUI(videoId, title, artist) {
+    // Find all elements displaying this song and update them
+    document.querySelectorAll(`[data-song-id="${videoId}"] .song-title`).forEach(el => {
+        el.textContent = title;
+        el.classList.remove('loading');
+    });
+}
+
 function cachedFetch(url, cacheKey, maxAge = CACHE_TTL) {
     const cached = load(cacheKey, null);
     if (cached && Date.now() - cached.timestamp < maxAge) {
@@ -519,6 +547,214 @@ function onPlayerStateChange(event) {
 }
 
 // ────────────────────────────────────────
+// LRCLIB LYRICS API - KEYLESS & FREE
+// ────────────────────────────────────────
+
+const LRCLIB_API_BASE = 'https://lrclib.net/api';
+
+// Cache for lyrics to reduce API calls
+const lyricsCache = {};
+
+async function fetchLyrics(song) {
+    if (!song || !song.title || !song.artist) return null;
+    
+    // Clean the title for better matching
+    const cleanTitle = await getCleanSongTitle(song.id, song.title);
+    
+    // Create cache key
+    const cacheKey = `${song.id}_${cleanTitle}`;
+    
+    // Check cache first
+    if (lyricsCache[cacheKey]) {
+        console.log(`Lyrics cache hit for: ${cleanTitle}`);
+        return lyricsCache[cacheKey];
+    }
+    
+    try {
+        // Method 1: Try direct lookup first (more accurate)
+        const directParams = new URLSearchParams({
+            track_name: cleanTitle,
+            artist_name: song.artist || '',
+        });
+        
+        const directUrl = `${LRCLIB_API_BASE}/get?${directParams.toString()}`;
+        console.log(`Trying direct lyrics lookup: ${directUrl}`);
+        
+        let response = await fetch(directUrl);
+        
+        // If direct lookup succeeds (200), we're done
+        if (response.ok) {
+            const lyricsData = await response.json();
+            lyricsCache[cacheKey] = lyricsData;
+            return lyricsData;
+        }
+        
+        // If direct lookup returns 404, try search method
+        if (response.status === 404) {
+            console.log(`Direct lookup failed, trying search...`);
+            
+            const searchParams = new URLSearchParams({
+                track_name: cleanTitle,
+                artist_name: song.artist || ''
+            });
+            
+            const searchUrl = `${LRCLIB_API_BASE}/search?${searchParams.toString()}`;
+            const searchResponse = await fetch(searchUrl);
+            
+            // Check if response is OK and is JSON
+            if (!searchResponse.ok) {
+                console.log(`Search returned status: ${searchResponse.status}`);
+                lyricsCache[cacheKey] = null;
+                return null;
+            }
+            
+            // Check content type to ensure it's JSON
+            const contentType = searchResponse.headers.get('content-type');
+            if (!contentType || !contentType.includes('application/json')) {
+                console.log(`Search returned non-JSON response: ${contentType}`);
+                lyricsCache[cacheKey] = null;
+                return null;
+            }
+            
+            const results = await searchResponse.json();
+            
+            if (!results || results.length === 0) {
+                lyricsCache[cacheKey] = null;
+                return null;
+            }
+            
+            // Get the best match (usually first result)
+            const bestMatch = results[0];
+            
+            // Fetch full lyrics data
+            const lyricsResponse = await fetch(`${LRCLIB_API_BASE}/get?id=${bestMatch.id}`);
+            
+            if (!lyricsResponse.ok) {
+                lyricsCache[cacheKey] = null;
+                return null;
+            }
+            
+            const lyricsData = await lyricsResponse.json();
+            lyricsCache[cacheKey] = lyricsData;
+            return lyricsData;
+        }
+        
+        lyricsCache[cacheKey] = null;
+        return null;
+        
+    } catch (error) {
+        console.error("Lyrics fetch error:", error);
+        lyricsCache[cacheKey] = null;
+        return null;
+    }
+}
+
+// Format lyrics for display
+function formatLyricsForDisplay(lyricsData) {
+    if (!lyricsData) return "No lyrics found";
+    
+    // Prefer synced lyrics if available
+    if (lyricsData.syncedLyrics) {
+        return formatSyncedLyrics(lyricsData.syncedLyrics);
+    } else if (lyricsData.plainLyrics) {
+        return formatPlainLyrics(lyricsData.plainLyrics);
+    } else if (lyricsData.instrumental) {
+        return "♪ Instrumental ♪";
+    }
+    
+    return "No lyrics available";
+}
+
+function formatPlainLyrics(text) {
+    return text.split('\n').map(line => 
+        `<p>${escapeHtml(line)}</p>`
+    ).join('');
+}
+
+function formatSyncedLyrics(lrcText) {
+    // Parse LRC format: [mm:ss.xx] Lyric text
+    const lines = lrcText.split('\n');
+    let html = '<div class="synced-lyrics">';
+    
+    lines.forEach(line => {
+        const match = line.match(/\[(\d{2}):(\d{2})\.(\d{2})\](.*)/);
+        if (match) {
+            const minutes = parseInt(match[1]);
+            const seconds = parseInt(match[2]);
+            const totalSeconds = minutes * 60 + seconds;
+            const text = match[4].trim();
+            
+            if (text) {
+                html += `<p data-time="${totalSeconds}" class="lyric-line">${escapeHtml(text)}</p>`;
+            }
+        } else if (line.trim()) {
+            // Handle lines without timestamps
+            html += `<p class="lyric-line">${escapeHtml(line.trim())}</p>`;
+        }
+    });
+    
+    html += '</div>';
+    return html;
+}
+
+// Update lyrics in the UI
+async function updateLyrics(song) {
+    const lyricsContainer = document.getElementById('lyrics');
+    if (!lyricsContainer) return;
+    
+    // Show loading state
+    lyricsContainer.innerHTML = '<div class="lyrics-loading">Loading lyrics...</div>';
+    
+    const lyricsData = await fetchLyrics(song);
+    
+    if (lyricsData) {
+        const formatted = formatLyricsForDisplay(lyricsData);
+        lyricsContainer.innerHTML = formatted;
+        
+        // Update fullscreen lyrics if open
+        if (isFullscreenLyrics) {
+            const fullscreenText = document.getElementById('fullscreenLyricsText');
+            if (fullscreenText) fullscreenText.innerHTML = formatted;
+        }
+    } else {
+        lyricsContainer.innerHTML = '<div class="lyrics-placeholder">No lyrics found</div>';
+    }
+}
+
+// Highlight current line during playback (for synced lyrics)
+function highlightLyricLine(currentTimeSeconds) {
+    const lines = document.querySelectorAll('.lyric-line[data-time]');
+    let activeLine = null;
+    
+    lines.forEach(line => {
+        const time = parseFloat(line.dataset.time);
+        if (time <= currentTimeSeconds) {
+            activeLine = line;
+        }
+    });
+    
+    lines.forEach(line => line.classList.remove('active'));
+    if (activeLine) {
+        activeLine.classList.add('active');
+        activeLine.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }
+}
+
+// Set up lyrics sync interval
+function setupLyricsSync() {
+    if (window.lyricsInterval) clearInterval(window.lyricsInterval);
+    
+    window.lyricsInterval = setInterval(() => {
+        if (ytPlayer && typeof ytPlayer.getCurrentTime === 'function' && 
+            document.querySelector('.synced-lyrics')) {
+            const currentTime = ytPlayer.getCurrentTime();
+            highlightLyricLine(currentTime);
+        }
+    }, 500);
+}
+
+
+// ────────────────────────────────────────
 // PLAYBACK FUNCTIONS
 // ────────────────────────────────────────
 
@@ -618,6 +854,27 @@ async function playSong(song, fromPlaylist = null) {
             console.log(`Playing "${cleanTitle}" via direct iframe src`);
         }
     }
+
+        // ADD THIS AT THE END OF THE FUNCTION (right before the closing })
+    
+    // Fetch lyrics for the new song
+    setTimeout(() => {
+        if (song && song.id) {
+            updateLyrics(song);
+            
+            // Set up lyrics sync if we have the player
+            if (ytPlayer && typeof ytPlayer.getCurrentTime === 'function') {
+                if (window.lyricsInterval) clearInterval(window.lyricsInterval);
+                
+                window.lyricsInterval = setInterval(() => {
+                    if (ytPlayer && ytPlayer.getCurrentTime && document.querySelector('.synced-lyrics')) {
+                        const currentTime = ytPlayer.getCurrentTime();
+                        highlightLyricLine(currentTime);
+                    }
+                }, 500);
+            }
+        }
+    }, 1000); // Small delay to let the player initialize
 }
 
 function skipToNext() {
@@ -2579,6 +2836,7 @@ window.showContextMenu = showContextMenu;
 window.contextMenuAction = contextMenuAction;
 window.currentSongs = currentSongs;
 
+
 console.log('🎵 INDY Music v2.0 - Fully debugged and enhanced!');
 
 // ════════════════════════════════════════════════════════════
@@ -2905,5 +3163,45 @@ function mergePastedData() {
     } catch (err) {
         showNotification("❌ Invalid JSON — check formatting");
         console.error(err);
+    }
+}
+
+// Fallback: Try with just the track name (sometimes artist name causes issues)
+async function fetchLyricsFallback(song) {
+    if (!song || !song.title) return null;
+    
+    const cleanTitle = await getCleanSongTitle(song.id, song.title);
+    const cacheKey = `fallback_${song.id}`;
+    
+    if (lyricsCache[cacheKey]) return lyricsCache[cacheKey];
+    
+    try {
+        // Try with just the track name
+        const url = `${LRCLIB_API_BASE}/search?track_name=${encodeURIComponent(cleanTitle)}`;
+        const response = await fetch(url);
+        
+        if (!response.ok) return null;
+        
+        const results = await response.json();
+        
+        if (!results || results.length === 0) return null;
+        
+        // Filter results that might match the artist
+        const matchingResults = results.filter(r => 
+            r.artistName.toLowerCase().includes(song.artist.toLowerCase()) ||
+            song.artist.toLowerCase().includes(r.artistName.toLowerCase())
+        );
+        
+        const bestMatch = matchingResults[0] || results[0];
+        
+        const lyricsResponse = await fetch(`${LRCLIB_API_BASE}/get?id=${bestMatch.id}`);
+        const lyricsData = await lyricsResponse.json();
+        
+        lyricsCache[cacheKey] = lyricsData;
+        return lyricsData;
+        
+    } catch (error) {
+        console.error("Fallback lyrics fetch error:", error);
+        return null;
     }
 }
