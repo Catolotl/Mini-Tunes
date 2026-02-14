@@ -3407,7 +3407,15 @@ img {
     z-index: 9999;
     animation: confetti 3s ease-out forwards;
 }
+.right-sidebar > *:not(.video-container) {
+    pointer-events: none;
+}
 
+.right-sidebar .control-btn,
+.right-sidebar .add-to-playlist-btn,
+.right-sidebar .mode-btn {
+    pointer-events: auto;
+}
 </style>
 </head>
 <body>
