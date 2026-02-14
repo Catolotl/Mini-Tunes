@@ -274,7 +274,7 @@ async function fetchVideoDetails(videoId, song) {
     } catch (err) {
         console.warn("Metadata fetch failed:", err);
         // Fallback: use regex guess from original title if available
-        if (song?.title && song.title !== "Loading title...") {
+        if (song?.title && song.title !== "[couldn't fetch title]") {
             const guessed = shortenSongTitle(song.title);
             applyMetadata(videoId, song, guessed, "YouTube");
         }
@@ -323,6 +323,7 @@ function showHome() {
     
     // Setup search input
     setTimeout(setupSearchInput, 100);
+    window.location.reload();
 }
 
 function initializeApp() {
@@ -1126,8 +1127,8 @@ function setupSearchInput() {
                 e.target.value = '';
                 const song = {
                     id: videoId,
-                    title: "Loading title...",
-                    artist: "YouTube",
+                    title: "[Couldn't fetch title]",
+                    artist: "N/A",
                     art: `https://img.youtube.com/vi/${videoId}/mqdefault.jpg`
                 };
                 playSong(song);
@@ -2970,19 +2971,19 @@ window.showHome = function() {
             <!-- Filter Chips -->
             <div class="filter-chips" id="filterChips">
                 <button class="filter-chip active" onclick="filterContent('all')" data-filter="all">
-                    <span>🎵</span> All <span class="count" id="filterAllCount"></span>
+                    <span></span> All <span class="count" id="filterAllCount"></span>
                 </button>
                 <button class="filter-chip" onclick="filterContent('songs')" data-filter="songs">
-                    <span>🎵</span> Songs <span class="count" id="filterSongsCount"></span>
+                    <span></span> Songs <span class="count" id="filterSongsCount"></span>
                 </button>
                 <button class="filter-chip" onclick="filterContent('albums')" data-filter="albums">
-                    <span>💿</span> Albums <span class="count" id="filterAlbumsCount"></span>
+                    <span></span> Albums <span class="count" id="filterAlbumsCount"></span>
                 </button>
                 <button class="filter-chip" onclick="filterContent('mixes')" data-filter="mixes">
                     <span>✦</span> Mixes <span class="count" id="filterMixesCount"></span>
                 </button>
                 <button class="filter-chip" onclick="filterContent('library')" data-filter="library">
-                    <span>📚</span> My Library <span class="count" id="filterLibraryCount"></span>
+                    <span></span> My Library <span class="count" id="filterLibraryCount"></span>
                 </button>
             </div>
 
