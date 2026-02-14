@@ -2872,6 +2872,65 @@ img {
     background: rgba(255, 107, 107, 0.12);
     border-color: rgba(255, 107, 107, 0.4);
 }
+
+/* Lyrics styling */
+.lyrics-section {
+    padding: 20px;
+    max-height: 400px;
+    overflow-y: auto;
+    scroll-behavior: smooth;
+}
+
+.lyrics-loading {
+    text-align: center;
+    color: var(--muted);
+    padding: 40px;
+    opacity: 0.7;
+    animation: pulse 1.5s infinite;
+}
+
+@keyframes pulse {
+    0%, 100% { opacity: 0.7; }
+    50% { opacity: 0.4; }
+}
+
+.lyrics-placeholder {
+    text-align: center;
+    color: var(--muted);
+    padding: 40px;
+    font-style: italic;
+}
+
+.lyric-line {
+    margin: 12px 0;
+    line-height: 1.8;
+    font-size: 16px;
+    transition: all 0.3s ease;
+    opacity: 0.8;
+}
+
+.lyric-line.active {
+    opacity: 1;
+    font-weight: 600;
+    transform: scale(1.02);
+    color: var(--accent);
+}
+
+.synced-lyrics {
+    padding: 10px 0;
+}
+
+/* For fullscreen mode */
+#fullscreenLyricsOverlay .lyric-line {
+    font-size: 24px;
+    margin: 16px 0;
+}
+
+#fullscreenLyricsOverlay .lyric-line.active {
+    font-size: 32px;
+    color: #fff;
+    text-shadow: 0 0 20px rgba(255,255,255,0.5);
+}
 </style>
 </head>
 <body>
