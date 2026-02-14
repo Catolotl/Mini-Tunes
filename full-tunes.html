@@ -2931,6 +2931,482 @@ img {
     color: #fff;
     text-shadow: 0 0 20px rgba(255,255,255,0.5);
 }
+/* ============================================
+   ADDITIONAL ENHANCEMENTS FOR INDY MUSIC
+   ============================================ */
+
+/* ──────────────────────────────────────────
+   ANIMATED GRADIENT BACKGROUND FOR MAIN CONTENT
+   ────────────────────────────────────────── */
+
+.main-content {
+    position: relative;
+    overflow-y: auto;
+    background: linear-gradient(180deg, 
+        var(--gradient-color) 0%, 
+        rgba(10, 10, 10, 0.98) 20%, 
+        var(--bg) 40%);
+    background-size: 100% 200%;
+    transition: background 1.5s ease;
+}
+
+.main-content::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 300px;
+    background: radial-gradient(circle at 20% 50%, 
+        rgba(255,255,255,0.08) 0%, 
+        transparent 70%);
+    pointer-events: none;
+    z-index: 0;
+}
+
+/* ──────────────────────────────────────────
+   NOW PLAYING ANIMATION
+   ────────────────────────────────────────── */
+
+@keyframes nowPlayingPulse {
+    0% { box-shadow: 0 0 0 0 rgba(255,255,255,0.4); }
+    70% { box-shadow: 0 0 0 10px rgba(255,255,255,0); }
+    100% { box-shadow: 0 0 0 0 rgba(255,255,255,0); }
+}
+
+.now-playing-indicator {
+    display: inline-block;
+    width: 8px;
+    height: 8px;
+    background: #4caf50;
+    border-radius: 50%;
+    margin-right: 8px;
+    animation: nowPlayingPulse 2s infinite;
+}
+
+/* ──────────────────────────────────────────
+   VOLUME SLIDER
+   ────────────────────────────────────────── */
+
+.volume-control {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-top: 16px;
+    padding: 0 8px;
+}
+
+.volume-slider {
+    -webkit-appearance: none;
+    width: 100%;
+    height: 4px;
+    background: rgba(255,255,255,0.1);
+    border-radius: 2px;
+    outline: none;
+}
+
+.volume-slider::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    width: 12px;
+    height: 12px;
+    background: var(--accent);
+    border-radius: 50%;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.volume-slider::-webkit-slider-thumb:hover {
+    transform: scale(1.2);
+    box-shadow: 0 0 10px var(--accent);
+}
+
+/* ──────────────────────────────────────────
+   PROGRESS BAR
+   ────────────────────────────────────────── */
+
+.progress-container {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    width: 100%;
+    margin-top: 12px;
+    font-size: 12px;
+    color: var(--muted);
+}
+
+.progress-bar {
+    flex: 1;
+    height: 4px;
+    background: rgba(255,255,255,0.1);
+    border-radius: 2px;
+    cursor: pointer;
+    position: relative;
+}
+
+.progress-fill {
+    width: 0%;
+    height: 100%;
+    background: linear-gradient(90deg, var(--accent), var(--accent-dim));
+    border-radius: 2px;
+    position: relative;
+    transition: width 0.1s linear;
+}
+
+.progress-fill::after {
+    content: '';
+    position: absolute;
+    right: -4px;
+    top: -4px;
+    width: 12px;
+    height: 12px;
+    background: var(--accent);
+    border-radius: 50%;
+    opacity: 0;
+    transition: opacity 0.2s ease;
+}
+
+.progress-bar:hover .progress-fill::after {
+    opacity: 1;
+}
+
+/* ──────────────────────────────────────────
+   SONG CARD ACTION BUTTONS (Play on Hover)
+   ────────────────────────────────────────── */
+
+.song-card {
+    position: relative;
+    overflow: hidden;
+}
+
+.song-card .play-overlay {
+    position: absolute;
+    right: 16px;
+    bottom: 16px;
+    width: 40px;
+    height: 40px;
+    background: var(--accent);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #000;
+    font-size: 18px;
+    opacity: 0;
+    transform: translateY(10px);
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+}
+
+.song-card:hover .play-overlay {
+    opacity: 1;
+    transform: translateY(0);
+}
+
+/* ──────────────────────────────────────────
+   RIPPLE EFFECT FOR BUTTONS
+   ────────────────────────────────────────── */
+
+.ripple {
+    position: relative;
+    overflow: hidden;
+}
+
+.ripple::after {
+    content: '';
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    top: 0;
+    left: 0;
+    background: radial-gradient(circle, rgba(255,255,255,0.3) 0%, transparent 100%);
+    opacity: 0;
+    transition: opacity 0.5s;
+    pointer-events: none;
+}
+
+.ripple:active::after {
+    opacity: 1;
+    transition: 0s;
+}
+
+/* ──────────────────────────────────────────
+   GLOWING TEXT FOR LYRICS
+   ────────────────────────────────────────── */
+
+.lyric-line.active {
+    position: relative;
+    color: #fff;
+    font-weight: 700;
+    text-shadow: 
+        0 0 10px rgba(255,255,255,0.5),
+        0 0 20px rgba(255,255,255,0.3),
+        0 0 30px rgba(255,255,255,0.2);
+    transform: scale(1.02) translateX(4px);
+}
+
+/* ──────────────────────────────────────────
+   SKELETON LOADING ANIMATION
+   ────────────────────────────────────────── */
+
+.skeleton {
+    background: linear-gradient(
+        90deg,
+        rgba(255,255,255,0.05) 25%,
+        rgba(255,255,255,0.1) 50%,
+        rgba(255,255,255,0.05) 75%
+    );
+    background-size: 200% 100%;
+    animation: skeletonLoading 1.5s infinite;
+}
+
+@keyframes skeletonLoading {
+    0% { background-position: 200% 0; }
+    100% { background-position: -200% 0; }
+}
+
+/* ──────────────────────────────────────────
+   TOOLTIP STYLES
+   ────────────────────────────────────────── */
+
+[data-tooltip] {
+    position: relative;
+    cursor: help;
+}
+
+[data-tooltip]::before {
+    content: attr(data-tooltip);
+    position: absolute;
+    bottom: 100%;
+    left: 50%;
+    transform: translateX(-50%) translateY(-8px);
+    padding: 6px 12px;
+    background: rgba(0,0,0,0.9);
+    color: #fff;
+    font-size: 12px;
+    white-space: nowrap;
+    border-radius: 4px;
+    pointer-events: none;
+    opacity: 0;
+    transition: all 0.2s ease;
+    z-index: 1000;
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255,255,255,0.1);
+}
+
+[data-tooltip]:hover::before {
+    opacity: 1;
+    transform: translateX(-50%) translateY(-4px);
+}
+
+/* ──────────────────────────────────────────
+   BEAUTIFUL CHECKBOXES FOR SETTINGS
+   ────────────────────────────────────────── */
+
+.checkbox-container {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    cursor: pointer;
+    user-select: none;
+}
+
+.checkbox-container input {
+    display: none;
+}
+
+.checkmark {
+    width: 20px;
+    height: 20px;
+    background: rgba(255,255,255,0.1);
+    border: 1px solid rgba(255,255,255,0.2);
+    border-radius: 4px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s ease;
+}
+
+.checkbox-container input:checked + .checkmark {
+    background: var(--accent);
+    border-color: var(--accent);
+}
+
+.checkbox-container input:checked + .checkmark::after {
+    content: '✓';
+    color: #000;
+    font-size: 14px;
+    font-weight: bold;
+}
+
+.checkbox-container:hover .checkmark {
+    background: rgba(255,255,255,0.15);
+}
+
+/* ──────────────────────────────────────────
+   DROPZONE FOR FILE UPLOADS
+   ────────────────────────────────────────── */
+
+.dropzone {
+    border: 2px dashed rgba(255,255,255,0.2);
+    border-radius: 12px;
+    padding: 40px;
+    text-align: center;
+    transition: all 0.3s ease;
+    cursor: pointer;
+    margin: 16px 0;
+}
+
+.dropzone:hover {
+    border-color: var(--accent);
+    background: rgba(255,255,255,0.05);
+}
+
+.dropzone.dragover {
+    border-color: var(--accent);
+    background: rgba(255,255,255,0.1);
+    transform: scale(1.02);
+}
+
+/* ──────────────────────────────────────────
+   MOBILE RESPONSIVE IMPROVEMENTS
+   ────────────────────────────────────────── */
+
+@media (max-width: 768px) {
+    .app-container {
+        flex-direction: column;
+        padding: 8px;
+    }
+    
+    .left-sidebar {
+        width: 100%;
+        height: auto;
+        max-height: 200px;
+    }
+    
+    .left-sidebar.minimized {
+        width: 100%;
+        height: 60px;
+    }
+    
+    .right-sidebar {
+        width: 100%;
+        height: 300px;
+    }
+    
+    .right-sidebar.minimized {
+        width: 100%;
+        height: 60px;
+    }
+    
+    .main-content {
+        height: calc(100vh - 500px);
+        padding: 16px;
+    }
+    
+    .recent-grid {
+        grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+        gap: 8px;
+    }
+    
+    .filter-chips {
+        flex-wrap: nowrap;
+        overflow-x: auto;
+        padding-bottom: 8px;
+    }
+    
+    .filter-chip {
+        white-space: nowrap;
+    }
+    
+    .queue-panel {
+        width: 100%;
+        right: -100%;
+    }
+    
+    .queue-panel.open {
+        right: 0;
+    }
+    
+    .queue-toggle-btn {
+        display: none;
+    }
+}
+
+/* ──────────────────────────────────────────
+   PRINT STYLES
+   ────────────────────────────────────────── */
+
+@media print {
+    .left-sidebar,
+    .right-sidebar,
+    .video-container,
+    .playback-controls,
+    .filter-chips,
+    .toast,
+    .modal {
+        display: none !important;
+    }
+    
+    .main-content {
+        width: 100%;
+        background: white;
+        color: black;
+    }
+    
+    .song-card,
+    .album-card {
+        break-inside: avoid;
+        border: 1px solid #ccc;
+    }
+}
+
+/* ──────────────────────────────────────────
+   DARK MODE TOGGLE (if you want to add later)
+   ────────────────────────────────────────── */
+
+.theme-toggle {
+    position: fixed;
+    bottom: 24px;
+    left: 24px;
+    width: 48px;
+    height: 48px;
+    background: rgba(0,0,0,0.8);
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255,255,255,0.1);
+    border-radius: 50%;
+    color: var(--text);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 20px;
+    z-index: 999;
+    transition: all 0.3s ease;
+}
+
+.theme-toggle:hover {
+    transform: rotate(45deg);
+    background: rgba(30,30,30,0.9);
+}
+
+/* ──────────────────────────────────────────
+   CELEBRATION CONFETTI EFFECT (for liked songs)
+   ────────────────────────────────────────── */
+
+@keyframes confetti {
+    0% { transform: translateY(0) rotate(0deg); opacity: 1; }
+    100% { transform: translateY(100vh) rotate(720deg); opacity: 0; }
+}
+
+.confetti {
+    position: fixed;
+    width: 10px;
+    height: 10px;
+    background: var(--accent);
+    pointer-events: none;
+    z-index: 9999;
+    animation: confetti 3s ease-out forwards;
+}
 </style>
 </head>
 <body>
@@ -3194,5 +3670,23 @@ img {
 
 <script src="script.js"></script>
 
+
+<!-- Volume Control (add to right sidebar) -->
+<div class="volume-control">
+    <span>🔊</span>
+    <input type="range" class="volume-slider" id="volumeSlider" min="0" max="100" value="70">
+</div>
+
+<!-- Progress Bar (add to right sidebar) -->
+<div class="progress-container">
+    <span class="current-time">0:00</span>
+    <div class="progress-bar" id="progressBar">
+        <div class="progress-fill" id="progressFill" style="width: 0%;"></div>
+    </div>
+    <span class="total-time">0:00</span>
+</div>
+
+<!-- Theme Toggle Button -->
+<button class="theme-toggle" onclick="toggleTheme()" data-tooltip="Toggle Theme">🌙</button>
 </body>
 </html>
