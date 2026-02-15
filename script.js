@@ -705,7 +705,6 @@ function formatSyncedLyrics(lrcText) {
     return html;
 }
 
-// Update lyrics in the UI
 async function updateLyrics(song) {
     const lyricsContainer = document.getElementById('lyrics');
     if (!lyricsContainer) return;
@@ -727,6 +726,9 @@ async function updateLyrics(song) {
     } else {
         lyricsContainer.innerHTML = '<div class="lyrics-placeholder">No lyrics found</div>';
     }
+    
+    // Reinitialize fullscreen button (IMPORTANT!)
+    setupFullscreenLyrics();
 }
 
 // Highlight current line during playback (for synced lyrics)
@@ -1123,18 +1125,37 @@ function setupSearchInput() {
         searchTimeout = setTimeout(async () => {
             const videoId = extractYouTubeVideoId(value);
 
-            if (videoId) {
-                e.target.value = '';
-                const song = {
-                    id: videoId,
-                    title: "[Couldn't fetch title]",
-                    artist: "N/A",
-                    art: `https://img.youtube.com/vi/${videoId}/mqdefault.jpg`
-                };
-                playSong(song);
-                showNotification("Playing pasted YouTube video...");
-                fetchVideoDetails(videoId, song);
-            } else if (value.length >= 3) {
+if (videoId) {
+    e.target.value = '';
+    showNotification("Loading video...");
+    
+    // Fetch metadata BEFORE playing
+    const song = {
+        id: videoId,
+        title: "Loading...",
+        artist: "YouTube",
+        art: `https://img.youtube.com/vi/${videoId}/mqdefault.jpg`
+    };
+    
+    // Fetch the real title first
+    fetch(`https://www.googleapis.com/youtube/v3/videos?part=snippet&id=${videoId}&key=${getNextKey()}`)
+        .then(r => r.json())
+        .then(data => {
+            const item = data.items?.[0];
+            if (item?.snippet) {
+                song.title = item.snippet.title;
+                song.artist = item.snippet.channelTitle;
+                saveMetadataToCache(videoId, song.title, song.artist);
+            }
+            playSong(song);
+            showNotification("Playing pasted video!");
+        })
+        .catch(err => {
+            console.error("Error fetching video details:", err);
+            playSong(song);
+            showNotification("Playing video (couldn't fetch title)");
+        });
+} else if (value.length >= 3) {
                 try {
                     const [videos, playlists] = await Promise.all([
                         fetch(`https://www.googleapis.com/youtube/v3/search?part=snippet&type=video&videoCategoryId=10&maxResults=10&q=${encodeURIComponent(value)}&key=${getNextKey()}`).then(r => r.json()),
@@ -1155,18 +1176,37 @@ function setupSearchInput() {
             const value = searchInput.value.trim();
             const videoId = extractYouTubeVideoId(value);
 
-            if (videoId) {
-                const song = {
-                    id: videoId,
-                    title: "Loading title...",
-                    artist: "YouTube",
-                    art: `https://img.youtube.com/vi/${videoId}/mqdefault.jpg`
-                };
-                playSong(song);
-                searchInput.value = '';
-                showNotification("Playing pasted video!");
-                fetchVideoDetails(videoId, song);
+if (videoId) {
+    e.target.value = '';
+    showNotification("Loading video...");
+    
+    // Fetch metadata BEFORE playing
+    const song = {
+        id: videoId,
+        title: "Loading...",
+        artist: "YouTube",
+        art: `https://img.youtube.com/vi/${videoId}/mqdefault.jpg`
+    };
+    
+    // Fetch the real title first
+    fetch(`https://www.googleapis.com/youtube/v3/videos?part=snippet&id=${videoId}&key=${getNextKey()}`)
+        .then(r => r.json())
+        .then(data => {
+            const item = data.items?.[0];
+            if (item?.snippet) {
+                song.title = item.snippet.title;
+                song.artist = item.snippet.channelTitle;
+                saveMetadataToCache(videoId, song.title, song.artist);
             }
+            playSong(song);
+            showNotification("Playing pasted video!");
+        })
+        .catch(err => {
+            console.error("Error fetching video details:", err);
+            playSong(song);
+            showNotification("Playing video (couldn't fetch title)");
+        });
+}
         }
     });
 }
@@ -1311,22 +1351,85 @@ function renderSearchResults(videos, playlists) {
     if (!container) return;
     container.innerHTML = '';
     
+    // Extract unique artists from search results
+    const artistsMap = new Map();
+    if (videos.items) {
+        videos.items.forEach(item => {
+            const artistName = item.snippet.channelTitle;
+            if (!artistsMap.has(artistName)) {
+                artistsMap.set(artistName, {
+                    name: artistName,
+                    channelId: item.snippet.channelId,
+                    thumbnail: item.snippet.thumbnails.default.url
+                });
+            }
+        });
+    }
+    
+    // Artists Section
+    if (artistsMap.size > 0) {
+        const artistSection = document.createElement('div');
+        artistSection.className = 'section';
+        artistSection.innerHTML = `
+            <div class="section-header"><h2>Artists</h2></div>
+            <div class="scroll-container" id="searchArtistsScroll"></div>
+        `;
+        
+        const scrollContainer = artistSection.querySelector('.scroll-container');
+        const artistsArray = Array.from(artistsMap.values()).slice(0, 8);
+        
+        artistsArray.forEach(artist => {
+            const artistId = artist.name.replace(/\W/g, '_');
+            const isInLibrary = savedArtists[artistId];
+            
+            const div = document.createElement('div');
+            div.className = 'search-artist-card';
+            div.innerHTML = `
+                <div class="search-artist-image-container">
+                    <img src="${artist.thumbnail}" alt="${escapeHtml(artist.name)}" class="search-artist-image">
+                    ${isInLibrary ? '<div class="in-library-badge">✓</div>' : ''}
+                </div>
+                <div class="search-artist-name">${escapeHtml(artist.name)}</div>
+                <div class="search-artist-type">Artist</div>
+                <button class="search-artist-btn" onclick="event.stopPropagation(); ${isInLibrary ? `viewArtistProfile('${artistId}')` : `saveArtistToLibrary('${escapeHtml(artist.name)}', '${artist.channelId}')`}">
+                    ${isInLibrary ? 'View Profile' : '+ Follow'}
+                </button>
+            `;
+            
+            div.onclick = () => {
+                if (isInLibrary) {
+                    viewArtistProfile(artistId);
+                } else {
+                    showArtistQuickMenu(artist.name);
+                }
+            };
+            
+            if (scrollContainer) scrollContainer.appendChild(div);
+        });
+        
+        container.appendChild(artistSection);
+    }
+    
+    // Albums Section
     if (playlists.items && playlists.items.length > 0) {
         const albumSection = document.createElement('div');
         albumSection.className = 'section';
         albumSection.innerHTML = `
-            <div class="section-header"><h2>Albums</h2></div>
-            <div class="scroll-container"></div>
+            <div class="section-header"><h2>Albums & Playlists</h2></div>
+            <div class="scroll-container" id="searchAlbumsScroll"></div>
         `;
         
         const scrollContainer = albumSection.querySelector('.scroll-container');
         playlists.items.forEach(item => {
             const div = document.createElement('div');
-            div.className = 'album-card';
+            div.className = 'search-album-card';
             div.innerHTML = `
                 <img src="${item.snippet.thumbnails.medium.url}" alt="">
-                <div class="album-title">${escapeHtml(item.snippet.title)}</div>
-                <div class="album-artist">${escapeHtml(item.snippet.channelTitle)}</div>
+                <div class="search-card-title">${escapeHtml(item.snippet.title)}</div>
+                <div class="search-card-artist">${escapeHtml(item.snippet.channelTitle)}</div>
+                <button class="search-card-play-btn" onclick="event.stopPropagation(); playPlaylist('${item.id.playlistId}', true)">
+                    ▶ Play
+                </button>
             `;
             div.onclick = () => playPlaylist(item.id.playlistId, true);
             if (scrollContainer) scrollContainer.appendChild(div);
@@ -1335,14 +1438,16 @@ function renderSearchResults(videos, playlists) {
         container.appendChild(albumSection);
     }
     
+    // Songs Section
     if (videos.items && videos.items.length > 0) {
         const songSection = document.createElement('div');
         songSection.className = 'section';
         songSection.innerHTML = `
             <div class="section-header"><h2>Songs</h2></div>
-            <div class="recent-grid"></div>
+            <div class="scroll-container" id="searchSongsScroll"></div>
         `;
-        const grid = songSection.querySelector('.recent-grid');
+        
+        const scrollContainer = songSection.querySelector('.scroll-container');
 
         videos.items.forEach(item => {
             const song = {
@@ -1353,17 +1458,30 @@ function renderSearchResults(videos, playlists) {
             };
 
             const div = document.createElement('div');
-            div.className = 'song-card';
+            div.className = 'search-song-card';
             div.setAttribute('data-song', JSON.stringify(song));
             div.innerHTML = `
-                <img src="${song.art}" alt="">
-                <div class="song-info">
-                    <div class="song-title loading">${escapeHtml(song.title)}</div>
-                    <div class="song-artist">${escapeHtml(song.artist)}</div>
+                <img src="${song.art}" alt="" class="search-song-image">
+                <div class="search-song-info">
+                    <div class="search-song-title loading">${escapeHtml(song.title)}</div>
+                    <div class="search-song-artist clickable-artist" onclick="event.stopPropagation(); showArtistQuickMenu('${escapeHtml(song.artist)}')">${escapeHtml(song.artist)}</div>
                 </div>
-                <button onclick="event.stopPropagation(); showAddToPlaylistMenu(${JSON.stringify(song).replace(/"/g, '&quot;')})" style="background:var(--accent);color:#000;border:none;width:32px;height:32px;border-radius:50%;cursor:pointer;font-size:18px;flex-shrink:0;">+</button>
-                <button onclick="event.stopPropagation(); toggleLike(${JSON.stringify(song).replace(/"/g, '&quot;')})" style="background:transparent;border:none;color:${isLiked(song.id) ? 'var(--accent)' : 'var(--muted)'};font-size:20px;cursor:pointer;margin-left:8px;">❤️</button>
+                <div class="search-song-actions">
+                    <button class="search-action-btn play-btn" onclick="event.stopPropagation(); playSong(${JSON.stringify(song).replace(/"/g, '&quot;')})" title="Play">
+                        ▶
+                    </button>
+                    <button class="search-action-btn" onclick="event.stopPropagation(); addToQueue(${JSON.stringify(song).replace(/"/g, '&quot;')})" title="Add to Queue">
+                        +
+                    </button>
+                    <button class="search-action-btn" onclick="event.stopPropagation(); showAddToPlaylistMenu(${JSON.stringify(song).replace(/"/g, '&quot;')})" title="Add to Playlist">
+                        📝
+                    </button>
+                    <button class="search-action-btn ${isLiked(song.id) ? 'liked' : ''}" onclick="event.stopPropagation(); toggleLike(${JSON.stringify(song).replace(/"/g, '&quot;')})" title="Like">
+                        ❤️
+                    </button>
+                </div>
             `;
+            
             div.onclick = () => playSong(song);
             
             // Add context menu
@@ -1371,10 +1489,10 @@ function renderSearchResults(videos, playlists) {
                 showContextMenu(e, song);
             });
             
-            if (grid) grid.appendChild(div);
+            if (scrollContainer) scrollContainer.appendChild(div);
 
             getCleanSongTitle(song.id, song.title).then(clean => {
-                const titleEl = div.querySelector('.song-title');
+                const titleEl = div.querySelector('.search-song-title');
                 if (titleEl) {
                     titleEl.textContent = clean;
                     titleEl.classList.remove('loading');
@@ -1384,13 +1502,72 @@ function renderSearchResults(videos, playlists) {
 
         container.appendChild(songSection);
     }
+    
+    // Radio Section (no API - uses recent songs as seed)
+    if (recent.length > 0) {
+        const radioSection = document.createElement('div');
+        radioSection.className = 'section';
+        radioSection.innerHTML = `
+            <div class="section-header"><h2>🎙️ Suggested Radio Stations</h2></div>
+            <div class="scroll-container" id="searchRadioScroll"></div>
+        `;
+        
+        const scrollContainer = radioSection.querySelector('.scroll-container');
+        
+        // Create radio stations from recent artists (no API needed)
+        const recentArtists = [...new Set(recent.map(s => s.artist).filter(Boolean))].slice(0, 6);
+        
+        recentArtists.forEach(artistName => {
+            const div = document.createElement('div');
+            div.className = 'search-radio-card';
+            
+            const colors = ['#FF6B6B', '#4ECDC4', '#45B7D1', '#96CEB4', '#FFEAA7', '#DDA0DD'];
+            const randomColor = colors[Math.floor(Math.random() * colors.length)];
+            
+            div.innerHTML = `
+                <div class="search-radio-icon" style="background: linear-gradient(135deg, ${randomColor}, ${randomColor}88);">
+                    📻
+                </div>
+                <div class="search-card-title">${escapeHtml(artistName)} Radio</div>
+                <div class="search-card-artist">Based on your listening</div>
+                <button class="search-card-play-btn" onclick="event.stopPropagation(); playArtistMix('${escapeHtml(artistName)}')">
+                    ▶ Play
+                </button>
+            `;
+            
+            div.onclick = () => playArtistMix(artistName);
+            if (scrollContainer) scrollContainer.appendChild(div);
+        });
+        
+        container.appendChild(radioSection);
+    }
 }
+
+// Helper function for artist mix (uses cached data, no API)
+function playArtistMix(artistName) {
+    const artistSongs = recent.filter(s => s.artist === artistName);
+    
+    if (artistSongs.length === 0) {
+        showNotification("No songs found for this artist");
+        return;
+    }
+    
+    currentSongs = [...artistSongs];
+    currentIndex = 0;
+    currentPlaylist = null;
+    
+    playSong(currentSongs[0]);
+    showNotification(`Playing ${artistName} Mix 📻`);
+}
+
+window.playArtistMix = playArtistMix; 
 
 function renderPlaylists() {
     const container = document.getElementById('playlistsList');
     if (!container) return;
     container.innerHTML = '';
 
+    // First, render regular playlists (excluding Liked Songs)
     Object.keys(playlists).forEach(name => {
         if (name === "Liked Songs") return;
 
@@ -1405,6 +1582,24 @@ function renderPlaylists() {
             </div>
         `;
         div.onclick = () => viewPlaylist(name);
+        container.appendChild(div);
+    });
+
+    // Then, render saved albums
+    const albums = Object.values(savedAlbums);
+    albums.sort((a, b) => (b.dateAdded || 0) - (a.dateAdded || 0));
+    
+    albums.forEach(album => {
+        const div = document.createElement('div');
+        div.className = 'playlist-item album-playlist-item';
+        div.innerHTML = `
+            <img src="${album.cover}" class="playlist-album-cover" alt="">
+            <div class="playlist-info">
+                <div class="playlist-name">${escapeHtml(album.name)}</div>
+                <div class="playlist-count">${album.songs?.length || 0} songs</div>
+            </div>
+        `;
+        div.onclick = () => playAlbumFromLibrary(album);
         container.appendChild(div);
     });
 }
@@ -2185,86 +2380,241 @@ window.clearAllData = function() {
 console.log('✓ Link button features enabled');
 
 // ────────────────────────────────────────
-// FULLSCREEN LYRICS
+// FULLSCREEN LYRICS - IMPROVED
 // ────────────────────────────────────────
 
 function setupFullscreenLyrics() {
+    // Remove any existing fullscreen overlay
+    const existingOverlay = document.getElementById('fullscreenLyricsOverlay');
+    if (existingOverlay) existingOverlay.remove();
+    
+    // Remove any existing fullscreen button
+    const existingBtn = document.getElementById('fullscreenLyricsBtn');
+    if (existingBtn) existingBtn.remove();
+    
     const lyricsSection = document.querySelector('.lyrics-section');
     if (!lyricsSection) return;
 
-    lyricsSection.style.position = 'relative';
+    // Create fullscreen button
     const fullscreenBtn = document.createElement('button');
-    fullscreenBtn.innerHTML = '↔';
-    fullscreenBtn.style.cssText = `
-        position: absolute; top: 16px; right: 16px; width: 40px; height: 40px;
-        background: rgba(255,255,255,0.15); backdrop-filter: blur(10px);
-        border: 1px solid rgba(255,255,255,0.2); border-radius: 50%;
-        color: white; font-size: 18px; cursor: pointer; z-index: 10;
-        transition: all 0.3s ease;
+    fullscreenBtn.id = 'fullscreenLyricsBtn';
+    fullscreenBtn.innerHTML = `
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3"/>
+        </svg>
     `;
-    fullscreenBtn.onmouseover = () => fullscreenBtn.style.background = 'rgba(255,255,255,0.3)';
-    fullscreenBtn.onmouseout = () => fullscreenBtn.style.background = 'rgba(255,255,255,0.15)';
+    fullscreenBtn.style.cssText = `
+        position: absolute;
+        top: 20px;
+        right: 20px;
+        width: 44px;
+        height: 44px;
+        background: rgba(0, 0, 0, 0.6);
+        backdrop-filter: blur(10px);
+        border: 1px solid rgba(255, 255, 255, 0.2);
+        border-radius: 50%;
+        color: white;
+        cursor: pointer;
+        z-index: 10;
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+    `;
+    
+    fullscreenBtn.onmouseover = () => {
+        fullscreenBtn.style.background = 'rgba(255, 255, 255, 0.15)';
+        fullscreenBtn.style.transform = 'scale(1.1)';
+    };
+    fullscreenBtn.onmouseout = () => {
+        fullscreenBtn.style.background = 'rgba(0, 0, 0, 0.6)';
+        fullscreenBtn.style.transform = 'scale(1)';
+    };
+    
     lyricsSection.appendChild(fullscreenBtn);
 
+    // Create fullscreen overlay
     const fullscreenLyricsOverlay = document.createElement('div');
     fullscreenLyricsOverlay.id = 'fullscreenLyricsOverlay';
     fullscreenLyricsOverlay.style.cssText = `
-        position: fixed; top: 0; left: 0; right: 0; bottom: 0;
-        background: var(--gradient-color); z-index: 9999;
-        display: flex; flex-direction: column; align-items: center; justify-content: center;
-        padding: 60px; opacity: 0; pointer-events: none;
-        transition: opacity 0.5s cubic-bezier(0.22, 1, 0.36, 1);
-        font-size: 28px; line-height: 2; text-align: center;
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: linear-gradient(135deg, #0a0a0a 0%, #1a1a1a 100%);
+        z-index: 99999;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        padding: 80px 40px;
+        opacity: 0;
+        pointer-events: none;
+        transition: opacity 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+        overflow: hidden;
     `;
+    
     fullscreenLyricsOverlay.innerHTML = `
+        <!-- Animated background -->
+        <div id="fullscreenLyricsBg" style="
+            position: absolute;
+            inset: 0;
+            background: radial-gradient(circle at 50% 50%, var(--gradient-color) 0%, transparent 70%);
+            opacity: 0.3;
+            animation: breathe 8s ease-in-out infinite;
+        "></div>
+        
+        <!-- Now Playing Info -->
+        <div id="fullscreenNowPlaying" style="
+            position: absolute;
+            top: 40px;
+            left: 40px;
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            z-index: 2;
+        ">
+            <img id="fullscreenAlbumArt" src="" style="
+                width: 64px;
+                height: 64px;
+                border-radius: 8px;
+                box-shadow: 0 8px 24px rgba(0, 0, 0, 0.6);
+            ">
+            <div>
+                <div id="fullscreenSongTitle" style="
+                    font-family: 'Syne', sans-serif;
+                    font-size: 20px;
+                    font-weight: 700;
+                    color: white;
+                    text-shadow: 0 2px 8px rgba(0, 0, 0, 0.6);
+                    margin-bottom: 4px;
+                ">Song Title</div>
+                <div id="fullscreenArtist" style="
+                    font-size: 14px;
+                    color: rgba(255, 255, 255, 0.7);
+                    text-shadow: 0 2px 8px rgba(0, 0, 0, 0.6);
+                ">Artist</div>
+            </div>
+        </div>
+        
+        <!-- Exit Button -->
         <button id="exitFullscreenLyrics" style="
-            position: absolute; top: 30px; right: 30px;
-            background: rgba(0,0,0,0.4); border: none; color: white;
-            width: 50px; height: 50px; border-radius: 50%; font-size: 24px;
-            cursor: pointer; backdrop-filter: blur(10px);
+            position: absolute;
+            top: 40px;
+            right: 40px;
+            background: rgba(0, 0, 0, 0.6);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            color: white;
+            width: 52px;
+            height: 52px;
+            border-radius: 50%;
+            font-size: 28px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4);
+            z-index: 2;
         ">×</button>
+        
+        <!-- Lyrics Container -->
         <div id="fullscreenLyricsText" style="
-            max-width: 90%; max-height: 90vh; overflow-y: auto;
-            padding: 20px; color: white; text-shadow: 0 4px 20px rgba(0,0,0,0.6);
+            max-width: 900px;
+            width: 100%;
+            max-height: calc(100vh - 200px);
+            overflow-y: auto;
+            padding: 40px 20px;
+            color: white;
+            text-align: center;
+            font-size: 32px;
+            line-height: 2.2;
+            font-weight: 400;
+            text-shadow: 0 4px 20px rgba(0, 0, 0, 0.8);
+            position: relative;
+            z-index: 1;
+            scroll-behavior: smooth;
         "></div>
     `;
+    
     document.body.appendChild(fullscreenLyricsOverlay);
 
+    // Toggle function
     function toggleFullscreenLyrics() {
         isFullscreenLyrics = !isFullscreenLyrics;
         
         if (isFullscreenLyrics) {
+            // Open fullscreen
             fullscreenLyricsOverlay.style.opacity = '1';
             fullscreenLyricsOverlay.style.pointerEvents = 'all';
+            
+            // Copy lyrics content
             const lyricsContainer = document.getElementById('lyrics');
             const fullscreenText = document.getElementById('fullscreenLyricsText');
-            if (fullscreenText) {
-                fullscreenText.innerHTML = lyricsContainer ? lyricsContainer.innerHTML : '';
+            if (fullscreenText && lyricsContainer) {
+                fullscreenText.innerHTML = lyricsContainer.innerHTML;
             }
             
-            const rgb = getComputedStyle(document.documentElement).getPropertyValue('--gradient-color').trim();
-            const match = rgb.match(/\d+/g);
-            if (match && match.length >= 3) {
-                const r = parseInt(match[0]), g = parseInt(match[1]), b = parseInt(match[2]);
-                const brightness = (r*299 + g*587 + b*114) / 1000;
-                const fullscreenTextEl = document.getElementById('fullscreenLyricsText');
-                if (fullscreenTextEl) {
-                    fullscreenTextEl.style.color = brightness > 128 ? '#000' : '#fff';
-                }
+            // Update now playing info
+            if (currentPlayingSong) {
+                const albumArt = document.getElementById('fullscreenAlbumArt');
+                const songTitle = document.getElementById('fullscreenSongTitle');
+                const artist = document.getElementById('fullscreenArtist');
+                
+                if (albumArt) albumArt.src = currentPlayingSong.art || '';
+                if (songTitle) songTitle.textContent = currentPlayingSong.title || 'Unknown';
+                if (artist) artist.textContent = currentPlayingSong.artist || 'Unknown';
             }
             
-            lyricsSection.style.opacity = '0';
+            // Prevent body scroll
+            document.body.style.overflow = 'hidden';
+            
         } else {
+            // Close fullscreen
             fullscreenLyricsOverlay.style.opacity = '0';
-            setTimeout(() => { fullscreenLyricsOverlay.style.pointerEvents = 'none'; }, 500);
-            lyricsSection.style.opacity = '1';
+            fullscreenLyricsOverlay.style.pointerEvents = 'none';
+            
+            // Restore body scroll
+            document.body.style.overflow = '';
         }
     }
 
+    // Event listeners
     fullscreenBtn.onclick = toggleFullscreenLyrics;
+    
     const exitBtn = document.getElementById('exitFullscreenLyrics');
-    if (exitBtn) exitBtn.onclick = toggleFullscreenLyrics;
+    if (exitBtn) {
+        exitBtn.onmouseover = () => {
+            exitBtn.style.background = 'rgba(255, 255, 255, 0.15)';
+            exitBtn.style.transform = 'scale(1.1) rotate(90deg)';
+        };
+        exitBtn.onmouseout = () => {
+            exitBtn.style.background = 'rgba(0, 0, 0, 0.6)';
+            exitBtn.style.transform = 'scale(1) rotate(0deg)';
+        };
+        exitBtn.onclick = toggleFullscreenLyrics;
+    }
+    
+    // Close on ESC key
+    document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape' && isFullscreenLyrics) {
+            toggleFullscreenLyrics();
+        }
+    });
+    
+    // Click overlay background to close
+    fullscreenLyricsOverlay.addEventListener('click', (e) => {
+        if (e.target === fullscreenLyricsOverlay) {
+            toggleFullscreenLyrics();
+        }
+    });
 }
+
+// Export to global scope
+window.setupFullscreenLyrics = setupFullscreenLyrics;
 
 // ═══════════════════════════════════════
 // IMPROVED QUEUE SYSTEM
@@ -2452,6 +2802,7 @@ function saveAlbumToLibrary(albumData) {
     save('indy_saved_albums', savedAlbums);
     showNotification(`Added "${albumData.name}" to library! 🎵`);
     renderLibrary();
+    renderPlaylists(); // ADD THIS LINE
     updateFilterCounts();
     return true;
 }
@@ -2465,6 +2816,7 @@ function removeAlbumFromLibrary(albumId) {
         save('indy_saved_albums', savedAlbums);
         showNotification(`Removed "${albumName}" from library`);
         renderLibrary();
+        renderPlaylists(); // ADD THIS LINE
         updateFilterCounts();
     }
 }
@@ -2802,6 +3154,9 @@ function contextMenuAction(action) {
             break;
         case 'like':
             toggleLike(contextMenuTarget);
+            break;
+        case 'artist':  // NEW
+            showArtistQuickMenu(contextMenuTarget.artist);
             break;
         case 'share':
             const url = `https://youtube.com/watch?v=${contextMenuTarget.id}`;
@@ -3313,3 +3668,680 @@ function isPlayingFromQueue() {
            currentPlayingSong && 
            queue.some(s => s.id === currentPlayingSong.id);
 }
+
+
+// ═══════════════════════════════════════
+// ARTIST LIBRARY SYSTEM
+// ═══════════════════════════════════════
+
+let savedArtists = load('indy_saved_artists', {});
+
+// Artist data structure
+function createArtistObject(name, channelId = null) {
+    return {
+        id: channelId || name.replace(/\W/g, '_'),
+        name: name,
+        channelId: channelId,
+        image: `https://ui-avatars.com/api/?name=${encodeURIComponent(name)}&size=400&background=random&bold=true`,
+        dateAdded: Date.now(),
+        topTracks: [],
+        albums: [],
+        lastFetched: null
+    };
+}
+
+// Save artist to library
+function saveArtistToLibrary(artistName, channelId = null) {
+    const artistId = channelId || artistName.replace(/\W/g, '_');
+    
+    if (savedArtists[artistId]) {
+        showNotification("Artist already in library!");
+        return false;
+    }
+    
+    const artist = createArtistObject(artistName, channelId);
+    savedArtists[artistId] = artist;
+    
+    save('indy_saved_artists', savedArtists);
+    showNotification(`Added ${artistName} to library! 🎤`);
+    
+    renderPlaylists();
+    updateFilterCounts();
+    
+    // Fetch artist data in background (only once)
+    fetchArtistDataBackground(artistId);
+    
+    return true;
+}
+
+// Fetch artist data with caching (only if not fetched recently)
+async function fetchArtistDataBackground(artistId) {
+    const artist = savedArtists[artistId];
+    if (!artist) return;
+    
+    // If fetched within last 7 days, skip
+    const weekAgo = Date.now() - (7 * 24 * 60 * 60 * 1000);
+    if (artist.lastFetched && artist.lastFetched > weekAgo) {
+        console.log(`Artist data for ${artist.name} is fresh, skipping fetch`);
+        return;
+    }
+    
+    try {
+        // Fetch top tracks (limited to 10 to save quota)
+        const tracksUrl = `https://www.googleapis.com/youtube/v3/search?part=snippet&type=video&videoCategoryId=10&maxResults=10&q=${encodeURIComponent(artist.name + ' official audio')}&key=${getNextKey()}`;
+        const tracksRes = await fetch(tracksUrl);
+        const tracksData = await tracksRes.json();
+        
+        if (tracksData.items) {
+            artist.topTracks = tracksData.items.map(item => ({
+                id: item.id.videoId,
+                title: item.snippet.title,
+                artist: item.snippet.channelTitle,
+                art: item.snippet.thumbnails.medium.url
+            }));
+        }
+        
+        // Fetch albums (limited to 6 to save quota)
+        const albumsUrl = `https://www.googleapis.com/youtube/v3/search?part=snippet&type=playlist&maxResults=6&q=${encodeURIComponent(artist.name + ' album')}&key=${getNextKey()}`;
+        const albumsRes = await fetch(albumsUrl);
+        const albumsData = await albumsRes.json();
+        
+        if (albumsData.items) {
+            artist.albums = albumsData.items.map(item => ({
+                id: item.id.playlistId,
+                name: item.snippet.title,
+                art: item.snippet.thumbnails.medium.url
+            }));
+        }
+        
+        artist.lastFetched = Date.now();
+        save('indy_saved_artists', savedArtists);
+        
+        console.log(`✓ Artist data cached for ${artist.name}`);
+        
+    } catch (error) {
+        console.error("Artist data fetch error:", error);
+    }
+}
+
+// View artist profile
+async function viewArtistProfile(artistId) {
+    const artist = savedArtists[artistId];
+    if (!artist) return;
+    
+    const mainContent = document.getElementById('mainContent');
+    if (!mainContent) return;
+    
+    // Show loading state
+    mainContent.innerHTML = `
+        <div class="artist-view">
+            <button class="back-btn" onclick="showHome()">← Back</button>
+            <div class="artist-header">
+                <img src="${artist.image}" class="artist-image skeleton" alt="${escapeHtml(artist.name)}">
+                <div class="artist-info">
+                    <h1>${escapeHtml(artist.name)}</h1>
+                    <div class="loading-text">Loading artist data...</div>
+                </div>
+            </div>
+            <div class="skeleton" style="height: 300px; border-radius: 12px; margin-top: 24px;"></div>
+        </div>
+    `;
+    
+    // Fetch fresh data only if needed
+    await fetchArtistDataBackground(artistId);
+    
+    // Render full artist view
+    renderArtistView(artistId);
+}
+
+// Render complete artist profile
+function renderArtistView(artistId) {
+    const artist = savedArtists[artistId];
+    if (!artist) return;
+    
+    const mainContent = document.getElementById('mainContent');
+    if (!mainContent) return;
+    
+    mainContent.innerHTML = `
+        <div class="artist-view">
+            <button class="back-btn" onclick="showHome()">← Back</button>
+            
+            <div class="artist-header">
+                <img src="${artist.image}" class="artist-image" alt="${escapeHtml(artist.name)}">
+                <div class="artist-info">
+                    <h1>${escapeHtml(artist.name)}</h1>
+                    <p>${artist.topTracks?.length || 0} top tracks • ${artist.albums?.length || 0} albums</p>
+                    <div style="display:flex;gap:12px;margin-top:16px;">
+                        <button class="play-all-btn" onclick="playArtistRadio('${artistId}')">
+                            ▶ Play Radio
+                        </button>
+                        <button class="remove-artist-btn" onclick="removeArtistFromLibrary('${artistId}')">
+                            🗑️ Remove from Library
+                        </button>
+                    </div>
+                </div>
+            </div>
+            
+            ${artist.topTracks && artist.topTracks.length > 0 ? `
+                <div class="section">
+                    <div class="section-header">
+                        <h2>Popular Tracks</h2>
+                    </div>
+                    <div class="artist-tracks" id="artistTopTracks"></div>
+                </div>
+            ` : ''}
+            
+            ${artist.albums && artist.albums.length > 0 ? `
+                <div class="section">
+                    <div class="section-header">
+                        <h2>Albums</h2>
+                    </div>
+                    <div class="scroll-container" id="artistAlbums"></div>
+                </div>
+            ` : ''}
+        </div>
+    `;
+    
+    // Render top tracks
+    if (artist.topTracks && artist.topTracks.length > 0) {
+        const tracksContainer = document.getElementById('artistTopTracks');
+        artist.topTracks.forEach((track, i) => {
+            const div = document.createElement('div');
+            div.className = 'album-song-item';
+            div.innerHTML = `
+                <span class="song-number">${i + 1}</span>
+                <img src="${track.art}" alt="">
+                <div class="song-info">
+                    <div class="song-title">${escapeHtml(track.title)}</div>
+                    <div class="song-artist">${escapeHtml(artist.name)}</div>
+                </div>
+                <button onclick="event.stopPropagation(); addToQueue(${JSON.stringify(track).replace(/"/g, '&quot;')})" style="background:rgba(255,255,255,0.1);border:1px solid rgba(255,255,255,0.2);color:var(--text);width:32px;height:32px;border-radius:50%;cursor:pointer;margin-left:auto;">+</button>
+            `;
+            div.onclick = () => {
+                currentSongs = artist.topTracks;
+                currentIndex = i;
+                playSong(track);
+            };
+            if (tracksContainer) tracksContainer.appendChild(div);
+        });
+    }
+    
+    // Render albums
+    if (artist.albums && artist.albums.length > 0) {
+        const albumsContainer = document.getElementById('artistAlbums');
+        artist.albums.forEach(album => {
+            const div = document.createElement('div');
+            div.className = 'album-card';
+            div.innerHTML = `
+                <img src="${album.art}" alt="">
+                <div class="album-title">${escapeHtml(album.name)}</div>
+                <div class="album-artist">${escapeHtml(artist.name)}</div>
+            `;
+            div.onclick = () => playPlaylist(album.id, true);
+            if (albumsContainer) albumsContainer.appendChild(div);
+        });
+    }
+}
+
+// Play artist radio (mix of their top tracks)
+function playArtistRadio(artistId) {
+    const artist = savedArtists[artistId];
+    if (!artist || !artist.topTracks || artist.topTracks.length === 0) {
+        showNotification("No tracks available for this artist");
+        return;
+    }
+    
+    currentSongs = [...artist.topTracks];
+    currentIndex = 0;
+    currentPlaylist = null;
+    
+    playSong(currentSongs[0]);
+    showNotification(`Playing ${artist.name} Radio 📻`);
+}
+
+// Remove artist from library
+function removeArtistFromLibrary(artistId) {
+    const artist = savedArtists[artistId];
+    if (!artist) return;
+    
+    if (confirm(`Remove ${artist.name} from your library?`)) {
+        delete savedArtists[artistId];
+        save('indy_saved_artists', savedArtists);
+        showNotification(`Removed ${artist.name} from library`);
+        
+        renderPlaylists();
+        updateFilterCounts();
+        showHome();
+    }
+}
+
+// Update renderPlaylists to include artists
+window.renderPlaylistsOriginal = renderPlaylists;
+renderPlaylists = function() {
+    renderPlaylistsOriginal();
+    
+    const container = document.getElementById('playlistsList');
+    if (!container) return;
+    
+    // Add artists section
+    const artists = Object.values(savedArtists);
+    if (artists.length > 0) {
+        artists.sort((a, b) => (b.dateAdded || 0) - (a.dateAdded || 0));
+        
+        artists.forEach(artist => {
+            const div = document.createElement('div');
+            div.className = 'playlist-item artist-playlist-item';
+            div.innerHTML = `
+                <img src="${artist.image}" class="playlist-artist-image" alt="">
+                <div class="playlist-info">
+                    <div class="playlist-name">${escapeHtml(artist.name)}</div>
+                    <div class="playlist-count">Artist</div>
+                </div>
+            `;
+            div.onclick = () => viewArtistProfile(artist.id);
+            container.appendChild(div);
+        });
+    }
+};
+
+// Add "Add Artist" button to search results
+window.renderSearchResultsOriginal = renderSearchResults;
+renderSearchResults = function(videos, playlists) {
+    renderSearchResultsOriginal(videos, playlists);
+    
+    // Add quick "Save Artist" buttons to song cards
+    const songCards = document.querySelectorAll('.song-card');
+    songCards.forEach(card => {
+        const songData = card.getAttribute('data-song');
+        if (songData) {
+            try {
+                const song = JSON.parse(songData);
+                const artistBtn = document.createElement('button');
+                artistBtn.innerHTML = '🎤';
+                artistBtn.title = `Add ${song.artist} to library`;
+                artistBtn.style.cssText = `
+                    background: rgba(255,255,255,0.1);
+                    border: 1px solid rgba(255,255,255,0.2);
+                    color: var(--text);
+                    width: 32px;
+                    height: 32px;
+                    border-radius: 50%;
+                    cursor: pointer;
+                    font-size: 18px;
+                    margin-left: 8px;
+                `;
+                artistBtn.onclick = (e) => {
+                    e.stopPropagation();
+                    saveArtistToLibrary(song.artist);
+                };
+                card.appendChild(artistBtn);
+            } catch (e) {
+                console.error("Error parsing song data:", e);
+            }
+        }
+    });
+};
+
+// Export to global scope
+window.saveArtistToLibrary = saveArtistToLibrary;
+window.viewArtistProfile = viewArtistProfile;
+window.removeArtistFromLibrary = removeArtistFromLibrary;
+window.playArtistRadio = playArtistRadio;
+
+console.log('✓ Artist library system loaded');
+
+
+// Update the renderRecent function to make artist names clickable
+function renderRecent() {
+    const recentDiv = document.getElementById('recentGrid');
+    if (!recentDiv) return;
+    recentDiv.innerHTML = '';
+
+    if (recent.length === 0) {
+        recentDiv.innerHTML = '<div style="padding:40px;text-align:center;color:var(--muted);grid-column:1/-1">No recent songs yet</div>';
+        return;
+    }
+
+    recent.forEach(song => {
+        const div = document.createElement('div');
+        div.className = 'song-card';
+        div.innerHTML = `
+            <img src="${song.art || ''}" alt="">
+            <div class="song-info">
+                <div class="song-title loading">${escapeHtml(song.title)}</div>
+                <div class="song-artist clickable-artist" data-artist="${escapeHtml(song.artist)}">${escapeHtml(song.artist)}</div>
+            </div>
+        `;
+        div.onclick = () => playSong(song);
+        
+        // Make artist name clickable
+        const artistEl = div.querySelector('.song-artist');
+        if (artistEl) {
+            artistEl.onclick = (e) => {
+                e.stopPropagation();
+                showArtistQuickMenu(song.artist);
+            };
+        }
+        
+        // Add context menu
+        div.addEventListener('contextmenu', (e) => {
+            showContextMenu(e, song);
+        });
+        
+        recentDiv.appendChild(div);
+
+        getCleanSongTitle(song.id, song.title).then(clean => {
+            const titleEl = div.querySelector('.song-title');
+            if (titleEl) {
+                titleEl.textContent = clean;
+                titleEl.classList.remove('loading');
+            }
+        });
+    });
+}
+
+
+// Show quick menu when clicking artist name
+function showArtistQuickMenu(artistName) {
+    const artistId = artistName.replace(/\W/g, '_');
+    const isInLibrary = savedArtists[artistId];
+    
+    const menu = document.createElement('div');
+    menu.className = 'modal active';
+    menu.id = 'artistQuickMenu';
+    menu.innerHTML = `
+        <div class="modal-content" style="max-width: 360px;">
+            <h3 style="margin-bottom: 20px;">🎤 ${escapeHtml(artistName)}</h3>
+            
+            <div style="display: flex; flex-direction: column; gap: 12px; margin-bottom: 24px;">
+                ${isInLibrary ? `
+                    <button class="link-option-btn" onclick="viewArtistProfile('${artistId}'); closeArtistQuickMenu()">
+                        <span style="font-size: 28px;">👤</span>
+                        <div>
+                            <div>View Artist Profile</div>
+                            <div style="font-size: 13px; color: var(--muted); margin-top: 3px;">
+                                See all songs and albums
+                            </div>
+                        </div>
+                    </button>
+                ` : `
+                    <button class="link-option-btn" onclick="saveArtistToLibrary('${escapeHtml(artistName)}'); closeArtistQuickMenu()">
+                        <span style="font-size: 28px;">➕</span>
+                        <div>
+                            <div>Add to Library</div>
+                            <div style="font-size: 13px; color: var(--muted); margin-top: 3px;">
+                                Save this artist to your library
+                            </div>
+                        </div>
+                    </button>
+                `}
+                
+                <button class="link-option-btn" onclick="searchArtistSongs('${escapeHtml(artistName)}'); closeArtistQuickMenu()">
+                    <span style="font-size: 28px;">🔍</span>
+                    <div>
+                        <div>Search Songs</div>
+                        <div style="font-size: 13px; color: var(--muted); margin-top: 3px;">
+                            Find more by this artist
+                        </div>
+                    </div>
+                </button>
+            </div>
+            
+            <div class="modal-buttons">
+                <button class="secondary" onclick="closeArtistQuickMenu()">Close</button>
+            </div>
+        </div>
+    `;
+    
+    document.body.appendChild(menu);
+}
+
+function closeArtistQuickMenu() {
+    const menu = document.getElementById('artistQuickMenu');
+    if (menu) menu.remove();
+}
+
+function searchArtistSongs(artistName) {
+    const searchInput = document.getElementById('searchInput');
+    if (searchInput) {
+        searchInput.value = artistName;
+        showSearch();
+        setTimeout(() => {
+            searchInput.focus();
+            searchInput.dispatchEvent(new Event('input'));
+        }, 100);
+    }
+}
+
+// Export functions
+window.showArtistQuickMenu = showArtistQuickMenu;
+window.closeArtistQuickMenu = closeArtistQuickMenu;
+window.searchArtistSongs = searchArtistSongs;
+
+// ═══════════════════════════════════════
+// GENRE BROWSE SYSTEM
+// ═══════════════════════════════════════
+
+const musicGenres = [
+    { name: 'Pop', emoji: '🎤', color: '#FF6B9D', gradient: 'linear-gradient(135deg, #FF6B9D, #C44569)' },
+    { name: 'Hip Hop', emoji: '🎧', color: '#8E44AD', gradient: 'linear-gradient(135deg, #8E44AD, #6C5CE7)' },
+    { name: 'Rock', emoji: '🎸', color: '#E74C3C', gradient: 'linear-gradient(135deg, #E74C3C, #C0392B)' },
+    { name: 'Jazz', emoji: '🎷', color: '#3498DB', gradient: 'linear-gradient(135deg, #3498DB, #2980B9)' },
+    { name: 'Classical', emoji: '🎻', color: '#9B59B6', gradient: 'linear-gradient(135deg, #9B59B6, #8E44AD)' },
+    { name: 'Electronic', emoji: '🎹', color: '#1ABC9C', gradient: 'linear-gradient(135deg, #1ABC9C, #16A085)' },
+    { name: 'R&B', emoji: '💿', color: '#E67E22', gradient: 'linear-gradient(135deg, #E67E22, #D35400)' },
+    { name: 'Country', emoji: '🤠', color: '#F39C12', gradient: 'linear-gradient(135deg, #F39C12, #E67E22)' },
+    { name: 'Reggae', emoji: '🌴', color: '#27AE60', gradient: 'linear-gradient(135deg, #27AE60, #229954)' },
+    { name: 'Blues', emoji: '🎺', color: '#34495E', gradient: 'linear-gradient(135deg, #34495E, #2C3E50)' },
+    { name: 'Metal', emoji: '⚡', color: '#95A5A6', gradient: 'linear-gradient(135deg, #95A5A6, #7F8C8D)' },
+    { name: 'Soul', emoji: '✨', color: '#D4AF37', gradient: 'linear-gradient(135deg, #D4AF37, #C19A2E)' },
+    { name: 'Indie', emoji: '🌙', color: '#5DADE2', gradient: 'linear-gradient(135deg, #5DADE2, #3498DB)' },
+    { name: 'Folk', emoji: '🍂', color: '#A04000', gradient: 'linear-gradient(135deg, #A04000, #7D3C00)' },
+    { name: 'Latin', emoji: '💃', color: '#EC7063', gradient: 'linear-gradient(135deg, #EC7063, #E74C3C)' },
+    { name: 'K-Pop', emoji: '🌸', color: '#FF69B4', gradient: 'linear-gradient(135deg, #FF69B4, #FF1493)' },
+    { name: 'Disco', emoji: '🕺', color: '#BB8FCE', gradient: 'linear-gradient(135deg, #BB8FCE, #9B59B6)' },
+    { name: 'Funk', emoji: '🎵', color: '#F4D03F', gradient: 'linear-gradient(135deg, #F4D03F, #F39C12)' },
+    { name: 'Gospel', emoji: '🙏', color: '#85C1E2', gradient: 'linear-gradient(135deg, #85C1E2, #5DADE2)' },
+    { name: 'Punk', emoji: '💀', color: '#E74C3C', gradient: 'linear-gradient(135deg, #E74C3C, #CB4335)' },
+    { name: 'Broadway', emoji: '🎭', color: '#FFD700', gradient: 'linear-gradient(135deg, #FFD700, #FFA500)' },
+    { name: 'Anime', emoji: '🎌', color: '#FF6B9D', gradient: 'linear-gradient(135deg, #FF6B9D, #FF1493)' },
+    { name: 'Lo-fi', emoji: '☕', color: '#A0826D', gradient: 'linear-gradient(135deg, #A0826D, #8B7355)' },
+    { name: 'EDM', emoji: '💥', color: '#00D9FF', gradient: 'linear-gradient(135deg, #00D9FF, #0099CC)' },
+    { name: 'Trap', emoji: '🔥', color: '#FF4757', gradient: 'linear-gradient(135deg, #FF4757, #EE5A6F)' },
+    { name: 'Acoustic', emoji: '🎼', color: '#6C5B7B', gradient: 'linear-gradient(135deg, #6C5B7B, #5B4A6B)' },
+    { name: 'Ambient', emoji: '🌊', color: '#4ECDC4', gradient: 'linear-gradient(135deg, #4ECDC4, #44A9A0)' },
+    { name: 'Techno', emoji: '⚙️', color: '#2C3E50', gradient: 'linear-gradient(135deg, #2C3E50, #1A252F)' },
+    { name: 'House', emoji: '🏠', color: '#F39C12', gradient: 'linear-gradient(135deg, #F39C12, #D68910)' },
+    { name: 'Trance', emoji: '🌀', color: '#9B59B6', gradient: 'linear-gradient(135deg, #9B59B6, #7D3C98)' },
+    { name: 'Dubstep', emoji: '🎚️', color: '#16A085', gradient: 'linear-gradient(135deg, #16A085, #138D75)' },
+    { name: 'Drum & Bass', emoji: '🥁', color: '#E67E22', gradient: 'linear-gradient(135deg, #E67E22, #CA6F1E)' },
+    { name: 'Ska', emoji: '🎺', color: '#F1C40F', gradient: 'linear-gradient(135deg, #F1C40F, #D4AC0D)' },
+    { name: 'Swing', emoji: '🎩', color: '#566573', gradient: 'linear-gradient(135deg, #566573, #424949)' },
+    { name: 'Bollywood', emoji: '🇮🇳', color: '#FF9933', gradient: 'linear-gradient(135deg, #FF9933, #FF6600)' },
+    { name: 'Afrobeat', emoji: '🌍', color: '#28B463', gradient: 'linear-gradient(135deg, #28B463, #239B56)' }
+];
+
+function renderGenreBrowse() {
+    const genreGrid = document.getElementById('genreGrid');
+    if (!genreGrid) return;
+    
+    genreGrid.innerHTML = '';
+    
+    musicGenres.forEach((genre, index) => {
+        const card = document.createElement('div');
+        card.className = 'genre-card';
+        card.style.background = genre.gradient;
+        card.style.animationDelay = `${index * 0.03}s`;
+        
+        card.innerHTML = `
+            <div class="genre-emoji">${genre.emoji}</div>
+            <div class="genre-name">${escapeHtml(genre.name)}</div>
+        `;
+        
+        card.onclick = () => searchGenre(genre.name);
+        
+        genreGrid.appendChild(card);
+    });
+}
+
+function searchGenre(genreName) {
+    const searchInput = document.getElementById('searchInput');
+    if (searchInput) {
+        searchInput.value = genreName;
+        
+        // Trigger search
+        const event = new Event('input');
+        searchInput.dispatchEvent(event);
+    }
+}
+
+// Update setupSearchInput to handle showing/hiding genre browse
+function setupSearchInput() {
+    const searchInput = document.getElementById('searchInput');
+    if (!searchInput || searchInput.dataset.enhanced) return;
+
+    searchInput.dataset.enhanced = 'true';
+    
+    const genreBrowse = document.getElementById('genreBrowse');
+    const searchResults = document.getElementById('searchResults');
+
+    searchInput.oninput = (e) => {
+        clearTimeout(searchTimeout);
+        const value = e.target.value.trim();
+
+        if (!value) {
+            // Show genre browse, hide results
+            if (genreBrowse) genreBrowse.style.display = 'block';
+            if (searchResults) {
+                searchResults.style.display = 'none';
+                searchResults.innerHTML = '';
+            }
+            return;
+        }
+        
+        // Hide genre browse, show results
+        if (genreBrowse) genreBrowse.style.display = 'none';
+        if (searchResults) searchResults.style.display = 'block';
+
+        searchTimeout = setTimeout(async () => {
+            const videoId = extractYouTubeVideoId(value);
+
+            if (videoId) {
+                e.target.value = '';
+                showNotification("Loading video...");
+                
+                const song = {
+                    id: videoId,
+                    title: "Loading...",
+                    artist: "YouTube",
+                    art: `https://img.youtube.com/vi/${videoId}/mqdefault.jpg`
+                };
+                
+                fetch(`https://www.googleapis.com/youtube/v3/videos?part=snippet&id=${videoId}&key=${getNextKey()}`)
+                    .then(r => r.json())
+                    .then(data => {
+                        const item = data.items?.[0];
+                        if (item?.snippet) {
+                            song.title = item.snippet.title;
+                            song.artist = item.snippet.channelTitle;
+                            saveMetadataToCache(videoId, song.title, song.artist);
+                        }
+                        playSong(song);
+                        showNotification("Playing pasted video!");
+                    })
+                    .catch(err => {
+                        console.error("Error fetching video details:", err);
+                        playSong(song);
+                        showNotification("Playing video (couldn't fetch title)");
+                    });
+            } else if (value.length >= 3) {
+                try {
+                    const [videos, playlists] = await Promise.all([
+                        fetch(`https://www.googleapis.com/youtube/v3/search?part=snippet&type=video&videoCategoryId=10&maxResults=10&q=${encodeURIComponent(value)}&key=${getNextKey()}`).then(r => r.json()),
+                        fetch(`https://www.googleapis.com/youtube/v3/search?part=snippet&type=playlist&maxResults=4&q=${encodeURIComponent(value + ' album')}&key=${getNextKey()}`).then(r => r.json())
+                    ]);
+                    renderSearchResults(videos, playlists);
+                } catch (error) {
+                    console.error("Search error:", error);
+                    showNotification("Search failed");
+                }
+            }
+        }, 500);
+    };
+
+    searchInput.addEventListener('keypress', (e) => {
+        if (e.key === 'Enter') {
+            clearTimeout(searchTimeout);
+            const value = searchInput.value.trim();
+            const videoId = extractYouTubeVideoId(value);
+
+            if (videoId) {
+                e.target.value = '';
+                showNotification("Loading video...");
+                
+                const song = {
+                    id: videoId,
+                    title: "Loading...",
+                    artist: "YouTube",
+                    art: `https://img.youtube.com/vi/${videoId}/mqdefault.jpg`
+                };
+                
+                fetch(`https://www.googleapis.com/youtube/v3/videos?part=snippet&id=${videoId}&key=${getNextKey()}`)
+                    .then(r => r.json())
+                    .then(data => {
+                        const item = data.items?.[0];
+                        if (item?.snippet) {
+                            song.title = item.snippet.title;
+                            song.artist = item.snippet.channelTitle;
+                            saveMetadataToCache(videoId, song.title, song.artist);
+                        }
+                        playSong(song);
+                        showNotification("Playing pasted video!");
+                    })
+                    .catch(err => {
+                        console.error("Error fetching video details:", err);
+                        playSong(song);
+                        showNotification("Playing video (couldn't fetch title)");
+                    });
+            }
+        }
+    });
+    
+    // Initial render of genre browse
+    renderGenreBrowse();
+}
+
+// Update showSearch to show genre browse initially
+function showSearch() {
+    const homeView = document.getElementById('homeView');
+    const searchView = document.getElementById('searchView');
+    const homeBtn = document.getElementById('homeBtn');
+    const searchBtn = document.getElementById('searchBtn');
+
+    if (homeView) homeView.style.display = 'none';
+    if (searchView) {
+        searchView.classList.add('active');
+        searchView.style.display = 'block';
+    }
+    if (homeBtn) homeBtn.classList.remove('active');
+    if (searchBtn) searchBtn.classList.add('active');
+    
+    const searchInput = document.getElementById('searchInput');
+    if (searchInput) {
+        searchInput.focus();
+        setTimeout(setupSearchInput, 100);
+    }
+    
+    // Show genre browse if search is empty
+    const genreBrowse = document.getElementById('genreBrowse');
+    const searchResults = document.getElementById('searchResults');
+    if (searchInput && !searchInput.value.trim()) {
+        if (genreBrowse) genreBrowse.style.display = 'block';
+        if (searchResults) searchResults.style.display = 'none';
+        renderGenreBrowse();
+    }
+}
+console.log('✓ Genre browse system loaded');
+// Export functions
+window.renderGenreBrowse = renderGenreBrowse;
+window.searchGenre = searchGenre;
