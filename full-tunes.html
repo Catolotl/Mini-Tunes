@@ -3597,6 +3597,8 @@ body {
     flex: 1;
     min-width: 0;
 }
+
+
 </style>
 </head>
 <body>
@@ -3605,7 +3607,7 @@ body {
 <div class="sticky-nav-full" id="stickyNav">
     <div class="sticky-nav-container">
         <div class="nav-left">
-            <div class="nav-logo" href="index.html">
+            <div class="nav-logo" href="full-tunes.html">
                 <span class="nav-logo-icon">✦</span>
                 <span class="nav-logo-text">INDY MUSIC</span>
             </div>
@@ -3613,7 +3615,7 @@ body {
         
         
         <div class="nav-center">
-                        <a class="nav-home-btn" href="index.html" style="text-decoration: none;">
+                        <a class="nav-home-btn" href="full-tunes.html" style="text-decoration: none;">
   <span>⌂</span>
 </a>
 
@@ -4173,6 +4175,66 @@ body {
     display: flex;
     align-items: center;
     gap: 12px;
+}
+
+/* ============================================
+   FIX: RIGHT SIDEBAR CLICK-THROUGH ISSUE - COMPREHENSIVE
+   ============================================ */
+
+/* Remove pointer events from ALL overlay containers */
+.now-playing-info,
+.playback-controls,
+.lyrics-section {
+    pointer-events: none !important;
+}
+
+/* Only allow pointer events on actual interactive elements */
+.np-title,
+.np-artist,
+.control-btn,
+.add-to-playlist-btn,
+.mode-btn,
+.playback-mode-btns,
+.playback-mode-btns *,
+#addToPlaylistBtn,
+.lyrics,
+.lyric-line {
+    pointer-events: auto !important;
+}
+
+/* Ensure video iframe and container are ALWAYS clickable */
+.video-container,
+.video-container iframe {
+    pointer-events: auto !important;
+    z-index: 1 !important;
+}
+
+/* Make sure the video container overlay gradient doesn't block clicks */
+.video-container::after {
+    pointer-events: none !important;
+    z-index: 2 !important;
+}
+
+/* Force the overlays to be non-interactive for their backgrounds */
+.now-playing-info::before,
+.now-playing-info::after,
+.playback-controls::before,
+.playback-controls::after,
+.lyrics-section::before,
+.lyrics-section::after {
+    pointer-events: none !important;
+}
+
+/* Ensure lyrics scrolling works */
+.lyrics-section {
+    pointer-events: auto !important;
+    overflow-y: auto !important;
+}
+
+/* Make lyrics content scrollable but background non-interactive */
+.lyrics-section > h4,
+.lyrics-section > .lyrics {
+    pointer-events: auto !important;
 }
 </style>
 
