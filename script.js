@@ -4347,9 +4347,8 @@ window.renderGenreBrowse = renderGenreBrowse;
 window.searchGenre = searchGenre;
 
 
-
 // ════════════════════════════════════════════════════════════
-// AI DJ FEATURE - Smart Music Curation with GROQ (Ultra Fast!)
+// AI DJ FEATURE - Minimalist ✦ Button Design
 // Paste at the VERY END of script.js
 // ════════════════════════════════════════════════════════════
 
@@ -4358,43 +4357,63 @@ let djHistory = [];
 let djPlaylist = [];
 let djCurrentIndex = 0;
 
-// Initialize AI DJ
+// Initialize AI DJ with elegant ✦ button
 function initAIDJ() {
-    // Add DJ button to playback controls
-    const playerControls = document.querySelector('.playback-mode-btns');
-    if (playerControls && !document.getElementById('aiDjBtn')) {
-        const djBtn = document.createElement('button');
-        djBtn.id = 'aiDjBtn';
-        djBtn.className = 'mode-btn';
-        djBtn.innerHTML = `<span>🎧</span> AI DJ`;
-        djBtn.title = 'Open AI DJ';
-        djBtn.style.cssText = `
+    // Add ✦ button next to "Recently Played" header
+    const recentHeader = document.querySelector('#recentSection .section-header h2');
+    if (recentHeader && !document.getElementById('aiDjSparkleBtn')) {
+        const sparkleBtn = document.createElement('button');
+        sparkleBtn.id = 'aiDjSparkleBtn';
+        sparkleBtn.innerHTML = '✦';
+        sparkleBtn.title = 'Open AI DJ';
+        sparkleBtn.style.cssText = `
+            width: 48px;
+            height: 48px;
             background: linear-gradient(135deg, #667eea, #764ba2);
+            border: 2px solid rgba(255, 255, 255, 0.2);
+            border-radius: 50%;
             color: white;
-            border: none;
-            padding: 8px 16px;
-            border-radius: 20px;
+            font-size: 24px;
             cursor: pointer;
             display: flex;
             align-items: center;
-            gap: 6px;
-            transition: all 0.3s ease;
-            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
-            font-size: 13px;
-            font-weight: 600;
+            justify-content: center;
+            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4);
+            margin-left: 16px;
+            animation: sparkleGlow 2s ease-in-out infinite;
         `;
         
-        djBtn.onmouseover = () => {
-            djBtn.style.transform = 'scale(1.05)';
-            djBtn.style.boxShadow = '0 6px 20px rgba(102, 126, 234, 0.6)';
+        sparkleBtn.onmouseover = () => {
+            sparkleBtn.style.transform = 'scale(1.15) rotate(90deg)';
+            sparkleBtn.style.boxShadow = '0 10px 30px rgba(102, 126, 234, 0.7)';
         };
-        djBtn.onmouseout = () => {
-            djBtn.style.transform = 'scale(1)';
-            djBtn.style.boxShadow = '0 4px 12px rgba(102, 126, 234, 0.4)';
+        sparkleBtn.onmouseout = () => {
+            sparkleBtn.style.transform = 'scale(1) rotate(0deg)';
+            sparkleBtn.style.boxShadow = '0 6px 20px rgba(102, 126, 234, 0.4)';
         };
         
-        djBtn.onclick = openAIDJ;
-        playerControls.appendChild(djBtn);
+        sparkleBtn.onclick = openAIDJ;
+        
+        // Insert button next to the heading
+        const headerContainer = recentHeader.parentElement;
+        headerContainer.style.display = 'flex';
+        headerContainer.style.alignItems = 'center';
+        headerContainer.appendChild(sparkleBtn);
+        
+        // Add sparkle animation
+        const sparkleStyle = document.createElement('style');
+        sparkleStyle.textContent = `
+            @keyframes sparkleGlow {
+                0%, 100% {
+                    box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4);
+                }
+                50% {
+                    box-shadow: 0 8px 30px rgba(102, 126, 234, 0.7), 0 0 20px rgba(102, 126, 234, 0.5);
+                }
+            }
+        `;
+        document.head.appendChild(sparkleStyle);
     }
 }
 
@@ -4460,9 +4479,9 @@ function openAIDJ() {
                     display: flex;
                     align-items: center;
                     justify-content: center;
-                    font-size: 28px;
+                    font-size: 32px;
                     animation: pulse 2s ease-in-out infinite;
-                ">🎧</div>
+                ">✦</div>
                 <div>
                     <h1 style="
                         font-family: 'Syne', sans-serif;
@@ -4552,6 +4571,7 @@ function openAIDJ() {
                     display: flex;
                     flex-direction: column;
                     gap: 16px;
+                    max-height: 500px;
                 "></div>
                 
                 <div style="
@@ -4650,6 +4670,17 @@ function openAIDJ() {
                 transform: scale(1.05);
             }
         }
+        
+        @keyframes breathe {
+            0%, 100% {
+                transform: scale(1);
+                opacity: 0.3;
+            }
+            50% {
+                transform: scale(1.1);
+                opacity: 0.5;
+            }
+        }
     `;
     document.head.appendChild(style);
     
@@ -4663,6 +4694,15 @@ function openAIDJ() {
     
     // Event listeners
     document.getElementById('closeDjBtn').onclick = closeAIDJ;
+    document.getElementById('closeDjBtn').onmouseover = function() {
+        this.style.background = 'rgba(255, 255, 255, 0.2)';
+        this.style.transform = 'rotate(90deg)';
+    };
+    document.getElementById('closeDjBtn').onmouseout = function() {
+        this.style.background = 'rgba(255, 255, 255, 0.1)';
+        this.style.transform = 'rotate(0deg)';
+    };
+    
     document.getElementById('djInput').addEventListener('keypress', (e) => {
         if (e.key === 'Enter') sendDJMessage();
     });
@@ -4736,7 +4776,7 @@ async function startDJSession(type) {
     const messagesDiv = document.getElementById('djMessages');
     
     responseArea.style.display = 'flex';
-    messagesDiv.innerHTML = '<div style="text-align: center; color: rgba(255, 255, 255, 0.5);">🎧 AI DJ is thinking...</div>';
+    messagesDiv.innerHTML = '<div style="text-align: center; color: rgba(255, 255, 255, 0.5);"><div style="font-size:48px;margin-bottom:16px;">✦</div>AI DJ is thinking...</div>';
     
     let prompt = '';
     let systemContext = buildMusicContext();
@@ -4800,7 +4840,7 @@ async function callDJ(userMessage, context = '') {
                 messages: [
                     {
                         role: 'system',
-                        content: `You are an enthusiastic AI DJ for INDY Music app. You are INDY, running on DART 1.0w. You're knowledgeable, fun, and passionate about music. Your job is to:
+                        content: `You are an enthusiastic AI DJ for INDY Music app. You're knowledgeable, fun, and passionate about music. Your job is to:
 - Curate personalized playlists based on listening history
 - Recommend new music with compelling reasons
 - Share interesting stories and facts about songs and artists
@@ -4837,7 +4877,7 @@ Keep responses concise but impactful. Use emojis sparingly. When suggesting song
         
     } catch (error) {
         console.error('DJ error:', error);
-        addDJMessage('assistant', "Oops! I'm having technical difficulties. Mind trying again? 🎧");
+        addDJMessage('assistant', "Oops! I'm having technical difficulties. Mind trying again? ✦");
     }
 }
 
@@ -4883,8 +4923,8 @@ function addDJMessage(role, content) {
                     align-items: center;
                     justify-content: center;
                     flex-shrink: 0;
-                    font-size: 18px;
-                ">🎧</div>
+                    font-size: 20px;
+                ">✦</div>
                 <div style="flex: 1; padding-top: 4px;">
                     ${formatDJMessage(content)}
                 </div>
@@ -4931,8 +4971,18 @@ function parseSongsFromResponse(text) {
                 cursor: pointer;
                 margin-top: 12px;
                 transition: transform 0.2s ease;
+                display: flex;
+                align-items: center;
+                gap: 8px;
+                justify-content: center;
             `;
-            playlistBtn.textContent = `🎵 Play DJ Playlist (${songs.length} songs)`;
+            playlistBtn.innerHTML = `<span style="font-size:20px;">✦</span> Play DJ Playlist (${songs.length} songs)`;
+            playlistBtn.onmouseover = () => {
+                playlistBtn.style.transform = 'scale(1.05)';
+            };
+            playlistBtn.onmouseout = () => {
+                playlistBtn.style.transform = 'scale(1)';
+            };
             playlistBtn.onclick = () => searchAndPlayDJPlaylist(songs);
             
             messagesDiv.appendChild(playlistBtn);
@@ -4943,7 +4993,7 @@ function parseSongsFromResponse(text) {
 
 // Search and play DJ-recommended songs
 async function searchAndPlayDJPlaylist(songs) {
-    showNotification(`🎧 DJ is preparing your playlist...`);
+    showNotification(`✦ DJ is preparing your playlist...`);
     
     const foundSongs = [];
     
@@ -4978,7 +5028,7 @@ async function searchAndPlayDJPlaylist(songs) {
         
         playSong(foundSongs[0]);
         closeAIDJ();
-        showNotification(`🎧 DJ Playlist started! ${foundSongs.length} songs queued`);
+        showNotification(`✦ DJ Playlist started! ${foundSongs.length} songs queued`);
     } else {
         showNotification("Couldn't find those songs, try different ones!");
     }
@@ -4987,7 +5037,7 @@ async function searchAndPlayDJPlaylist(songs) {
 // Initialize when app loads
 setTimeout(() => {
     initAIDJ();
-    console.log('🎧 AI DJ initialized (powered by GROQ ⚡)');
+    console.log('✦ AI DJ initialized (powered by GROQ ⚡)');
 }, 1000);
 
 // Export functions
@@ -4996,4 +5046,4 @@ window.closeAIDJ = closeAIDJ;
 window.startDJSession = startDJSession;
 window.sendDJMessage = sendDJMessage;
 
-console.log('✓ AI DJ feature loaded - Click the DJ button in the player!');
+console.log('✓ AI DJ feature loaded - Look for the ✦ button!');
