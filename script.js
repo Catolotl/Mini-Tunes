@@ -4345,3 +4345,655 @@ console.log('✓ Genre browse system loaded');
 // Export functions
 window.renderGenreBrowse = renderGenreBrowse;
 window.searchGenre = searchGenre;
+
+
+
+// ════════════════════════════════════════════════════════════
+// AI DJ FEATURE - Smart Music Curation with GROQ (Ultra Fast!)
+// Paste at the VERY END of script.js
+// ════════════════════════════════════════════════════════════
+
+let djMode = false;
+let djHistory = [];
+let djPlaylist = [];
+let djCurrentIndex = 0;
+
+// Initialize AI DJ
+function initAIDJ() {
+    // Add DJ button to playback controls
+    const playerControls = document.querySelector('.playback-mode-btns');
+    if (playerControls && !document.getElementById('aiDjBtn')) {
+        const djBtn = document.createElement('button');
+        djBtn.id = 'aiDjBtn';
+        djBtn.className = 'mode-btn';
+        djBtn.innerHTML = `<span>🎧</span> AI DJ`;
+        djBtn.title = 'Open AI DJ';
+        djBtn.style.cssText = `
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 20px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+            font-size: 13px;
+            font-weight: 600;
+        `;
+        
+        djBtn.onmouseover = () => {
+            djBtn.style.transform = 'scale(1.05)';
+            djBtn.style.boxShadow = '0 6px 20px rgba(102, 126, 234, 0.6)';
+        };
+        djBtn.onmouseout = () => {
+            djBtn.style.transform = 'scale(1)';
+            djBtn.style.boxShadow = '0 4px 12px rgba(102, 126, 234, 0.4)';
+        };
+        
+        djBtn.onclick = openAIDJ;
+        playerControls.appendChild(djBtn);
+    }
+}
+
+// Open AI DJ interface
+function openAIDJ() {
+    // Create fullscreen DJ interface
+    let djOverlay = document.getElementById('aiDjOverlay');
+    
+    if (djOverlay) {
+        djOverlay.remove();
+    }
+    
+    djOverlay = document.createElement('div');
+    djOverlay.id = 'aiDjOverlay';
+    djOverlay.style.cssText = `
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: linear-gradient(135deg, #0a0a0a 0%, #1a1a2e 50%, #16213e 100%);
+        z-index: 99999;
+        display: flex;
+        flex-direction: column;
+        opacity: 0;
+        transition: opacity 0.4s ease;
+        overflow: hidden;
+    `;
+    
+    djOverlay.innerHTML = `
+        <!-- Animated Background -->
+        <div style="
+            position: absolute;
+            inset: 0;
+            background: radial-gradient(circle at 50% 50%, rgba(102, 126, 234, 0.15) 0%, transparent 70%);
+            animation: breathe 8s ease-in-out infinite;
+        "></div>
+        
+        <canvas id="djVisualizer" style="
+            position: absolute;
+            inset: 0;
+            opacity: 0.3;
+        "></canvas>
+        
+        <!-- Header -->
+        <div style="
+            position: relative;
+            z-index: 2;
+            padding: 32px 40px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: rgba(0, 0, 0, 0.5);
+            backdrop-filter: blur(20px);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        ">
+            <div style="display: flex; align-items: center; gap: 16px;">
+                <div style="
+                    width: 52px;
+                    height: 52px;
+                    background: linear-gradient(135deg, #667eea, #764ba2);
+                    border-radius: 50%;
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    font-size: 28px;
+                    animation: pulse 2s ease-in-out infinite;
+                ">🎧</div>
+                <div>
+                    <h1 style="
+                        font-family: 'Syne', sans-serif;
+                        font-size: 28px;
+                        font-weight: 800;
+                        margin: 0;
+                        background: linear-gradient(135deg, #667eea, #764ba2);
+                        -webkit-background-clip: text;
+                        -webkit-text-fill-color: transparent;
+                        background-clip: text;
+                    ">AI DJ</h1>
+                    <p style="
+                        margin: 4px 0 0 0;
+                        color: rgba(255, 255, 255, 0.6);
+                        font-size: 14px;
+                    ">Powered by GROQ ⚡ Ultra Fast</p>
+                </div>
+            </div>
+            <button id="closeDjBtn" style="
+                background: rgba(255, 255, 255, 0.1);
+                border: 1px solid rgba(255, 255, 255, 0.2);
+                color: white;
+                width: 44px;
+                height: 44px;
+                border-radius: 50%;
+                font-size: 24px;
+                cursor: pointer;
+                transition: all 0.3s ease;
+            ">×</button>
+        </div>
+        
+        <!-- Main Content -->
+        <div style="
+            position: relative;
+            z-index: 2;
+            flex: 1;
+            overflow-y: auto;
+            padding: 40px;
+        ">
+            <!-- Quick Actions -->
+            <div style="
+                display: grid;
+                grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+                gap: 20px;
+                margin-bottom: 40px;
+            ">
+                <button onclick="startDJSession('vibe')" class="dj-action-card">
+                    <div class="dj-card-icon">🌊</div>
+                    <h3>Create a Vibe</h3>
+                    <p>AI builds the perfect mood playlist from your taste</p>
+                </button>
+                
+                <button onclick="startDJSession('discovery')" class="dj-action-card">
+                    <div class="dj-card-icon">🔍</div>
+                    <h3>Discover New Music</h3>
+                    <p>Find hidden gems you've never heard before</p>
+                </button>
+                
+                <button onclick="startDJSession('story')" class="dj-action-card">
+                    <div class="dj-card-icon">📖</div>
+                    <h3>Song Stories</h3>
+                    <p>Learn fascinating facts about your favorite tracks</p>
+                </button>
+                
+                <button onclick="startDJSession('custom')" class="dj-action-card">
+                    <div class="dj-card-icon">💭</div>
+                    <h3>Custom Request</h3>
+                    <p>Ask the DJ for anything music-related</p>
+                </button>
+            </div>
+            
+            <!-- DJ Chat/Response Area -->
+            <div id="djResponseArea" style="
+                background: rgba(0, 0, 0, 0.4);
+                backdrop-filter: blur(10px);
+                border: 1px solid rgba(255, 255, 255, 0.1);
+                border-radius: 20px;
+                padding: 32px;
+                min-height: 300px;
+                display: none;
+                flex-direction: column;
+                gap: 20px;
+            ">
+                <div id="djMessages" style="
+                    flex: 1;
+                    overflow-y: auto;
+                    display: flex;
+                    flex-direction: column;
+                    gap: 16px;
+                "></div>
+                
+                <div style="
+                    display: flex;
+                    gap: 12px;
+                    padding-top: 20px;
+                    border-top: 1px solid rgba(255, 255, 255, 0.1);
+                ">
+                    <input id="djInput" type="text" placeholder="Chat with your AI DJ..." style="
+                        flex: 1;
+                        background: rgba(255, 255, 255, 0.05);
+                        border: 1px solid rgba(255, 255, 255, 0.15);
+                        border-radius: 12px;
+                        padding: 14px 20px;
+                        color: white;
+                        font-size: 15px;
+                    ">
+                    <button onclick="sendDJMessage()" style="
+                        background: linear-gradient(135deg, #667eea, #764ba2);
+                        border: none;
+                        border-radius: 12px;
+                        padding: 14px 28px;
+                        color: white;
+                        font-weight: 600;
+                        cursor: pointer;
+                        transition: transform 0.2s ease;
+                    ">Send</button>
+                </div>
+            </div>
+        </div>
+    `;
+    
+    document.body.appendChild(djOverlay);
+    
+    // Add styles
+    const style = document.createElement('style');
+    style.textContent = `
+        .dj-action-card {
+            background: rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 16px;
+            padding: 28px;
+            text-align: left;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            color: white;
+        }
+        
+        .dj-action-card:hover {
+            transform: translateY(-4px);
+            background: rgba(255, 255, 255, 0.08);
+            border-color: rgba(102, 126, 234, 0.5);
+            box-shadow: 0 12px 32px rgba(102, 126, 234, 0.2);
+        }
+        
+        .dj-card-icon {
+            font-size: 48px;
+            margin-bottom: 16px;
+        }
+        
+        .dj-action-card h3 {
+            font-family: 'Syne', sans-serif;
+            font-size: 20px;
+            font-weight: 700;
+            margin: 0 0 8px 0;
+        }
+        
+        .dj-action-card p {
+            color: rgba(255, 255, 255, 0.6);
+            font-size: 14px;
+            line-height: 1.6;
+            margin: 0;
+        }
+        
+        .dj-message {
+            animation: slideInMessage 0.4s ease;
+        }
+        
+        @keyframes slideInMessage {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        
+        @keyframes pulse {
+            0%, 100% {
+                transform: scale(1);
+            }
+            50% {
+                transform: scale(1.05);
+            }
+        }
+    `;
+    document.head.appendChild(style);
+    
+    // Animate in
+    setTimeout(() => {
+        djOverlay.style.opacity = '1';
+    }, 50);
+    
+    // Setup visualizer
+    setupDJVisualizer();
+    
+    // Event listeners
+    document.getElementById('closeDjBtn').onclick = closeAIDJ;
+    document.getElementById('djInput').addEventListener('keypress', (e) => {
+        if (e.key === 'Enter') sendDJMessage();
+    });
+    
+    // Close on ESC key
+    const escHandler = (e) => {
+        if (e.key === 'Escape') {
+            closeAIDJ();
+            document.removeEventListener('keydown', escHandler);
+        }
+    };
+    document.addEventListener('keydown', escHandler);
+}
+
+function closeAIDJ() {
+    const overlay = document.getElementById('aiDjOverlay');
+    if (overlay) {
+        overlay.style.opacity = '0';
+        setTimeout(() => overlay.remove(), 400);
+    }
+}
+
+// Setup audio visualizer
+function setupDJVisualizer() {
+    const canvas = document.getElementById('djVisualizer');
+    if (!canvas) return;
+    
+    const ctx = canvas.getContext('2d');
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
+    
+    const particles = [];
+    const particleCount = 50;
+    
+    for (let i = 0; i < particleCount; i++) {
+        particles.push({
+            x: Math.random() * canvas.width,
+            y: Math.random() * canvas.height,
+            radius: Math.random() * 3 + 1,
+            vx: (Math.random() - 0.5) * 0.5,
+            vy: (Math.random() - 0.5) * 0.5,
+            opacity: Math.random() * 0.5 + 0.2
+        });
+    }
+    
+    function animate() {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        
+        particles.forEach(p => {
+            ctx.beginPath();
+            ctx.arc(p.x, p.y, p.radius, 0, Math.PI * 2);
+            ctx.fillStyle = `rgba(102, 126, 234, ${p.opacity})`;
+            ctx.fill();
+            
+            p.x += p.vx;
+            p.y += p.vy;
+            
+            if (p.x < 0 || p.x > canvas.width) p.vx *= -1;
+            if (p.y < 0 || p.y > canvas.height) p.vy *= -1;
+        });
+        
+        requestAnimationFrame(animate);
+    }
+    
+    animate();
+}
+
+// Start a DJ session
+async function startDJSession(type) {
+    const responseArea = document.getElementById('djResponseArea');
+    const messagesDiv = document.getElementById('djMessages');
+    
+    responseArea.style.display = 'flex';
+    messagesDiv.innerHTML = '<div style="text-align: center; color: rgba(255, 255, 255, 0.5);">🎧 AI DJ is thinking...</div>';
+    
+    let prompt = '';
+    let systemContext = buildMusicContext();
+    
+    switch (type) {
+        case 'vibe':
+            prompt = `Based on my listening history, create a perfect vibe playlist for right now. Analyze the mood, energy, and genres I enjoy, then suggest 8-10 songs that flow together perfectly. Explain why each song fits and how they connect.`;
+            break;
+        case 'discovery':
+            prompt = `Look at my music taste and recommend 5 completely new artists or songs I've never heard but would love. For each recommendation, explain why it matches my taste and what makes it special.`;
+            break;
+        case 'story':
+            prompt = `Pick 3 songs from my recent plays and tell me fascinating stories about them - the inspiration behind the song, interesting facts about the artist, or the cultural impact. Make it engaging and fun!`;
+            break;
+        case 'custom':
+            messagesDiv.innerHTML = '';
+            addDJMessage('assistant', "Hey! I'm your AI DJ powered by GROQ ⚡. What kind of music experience are you looking for today? I can create playlists, tell you about songs, find new discoveries, or anything else music-related!");
+            return;
+    }
+    
+    await callDJ(prompt, systemContext);
+}
+
+// Build context about user's music taste
+function buildMusicContext() {
+    const recentSongs = recent.slice(0, 10).map(s => `"${s.title}" by ${s.artist}`).join(', ');
+    const likedSongs = (playlists["Liked Songs"]?.songs || []).slice(0, 5).map(s => `"${s.title}" by ${s.artist}`).join(', ');
+    const topArtists = [...new Set(recent.map(s => s.artist))].slice(0, 5).join(', ');
+    
+    return `
+User's Music Profile:
+- Recently played: ${recentSongs || 'No recent plays yet'}
+- Liked songs: ${likedSongs || 'No liked songs yet'}
+- Favorite artists: ${topArtists || 'No data yet'}
+- Total songs played: ${listeningStats.songsPlayed || 0}
+- Saved albums: ${Object.keys(savedAlbums).length}
+
+Current vibe: ${getCurrentTimeBasedMood()}
+    `.trim();
+}
+
+function getCurrentTimeBasedMood() {
+    const hour = new Date().getHours();
+    if (hour >= 5 && hour < 12) return 'Morning energy';
+    if (hour >= 12 && hour < 17) return 'Afternoon flow';
+    if (hour >= 17 && hour < 22) return 'Evening wind-down';
+    return 'Late night vibes';
+}
+
+// Call GROQ AI (super fast!)
+async function callDJ(userMessage, context = '') {
+    try {
+        const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${GROQ_API_KEY}`
+            },
+            body: JSON.stringify({
+                model: 'llama-3.3-70b-versatile',
+                messages: [
+                    {
+                        role: 'system',
+                        content: `You are an enthusiastic AI DJ for INDY Music app. You are INDY, running on DART 1.0w. You're knowledgeable, fun, and passionate about music. Your job is to:
+- Curate personalized playlists based on listening history
+- Recommend new music with compelling reasons
+- Share interesting stories and facts about songs and artists
+- Create seamless musical journeys
+- Be conversational and engaging, not robotic
+
+Keep responses concise but impactful. Use emojis sparingly. When suggesting songs, format them as: "Song Title" by Artist Name`
+                    },
+                    ...djHistory,
+                    {
+                        role: 'user',
+                        content: `${context}\n\n${userMessage}`
+                    }
+                ],
+                temperature: 0.8,
+                max_tokens: 800
+            })
+        });
+        
+        const data = await response.json();
+        const djResponse = data.choices?.[0]?.message?.content || 'Sorry, I got a bit tongue-tied there!';
+        
+        // Update history
+        djHistory.push(
+            { role: 'user', content: userMessage },
+            { role: 'assistant', content: djResponse }
+        );
+        
+        // Display response
+        addDJMessage('assistant', djResponse);
+        
+        // Parse and create playlist if songs mentioned
+        parseSongsFromResponse(djResponse);
+        
+    } catch (error) {
+        console.error('DJ error:', error);
+        addDJMessage('assistant', "Oops! I'm having technical difficulties. Mind trying again? 🎧");
+    }
+}
+
+// Send user message
+async function sendDJMessage() {
+    const input = document.getElementById('djInput');
+    const message = input.value.trim();
+    
+    if (!message) return;
+    
+    addDJMessage('user', message);
+    input.value = '';
+    
+    const context = buildMusicContext();
+    await callDJ(message, context);
+}
+
+// Add message to chat
+function addDJMessage(role, content) {
+    const messagesDiv = document.getElementById('djMessages');
+    
+    const messageEl = document.createElement('div');
+    messageEl.className = 'dj-message';
+    messageEl.style.cssText = `
+        background: ${role === 'user' ? 'rgba(102, 126, 234, 0.2)' : 'rgba(255, 255, 255, 0.05)'};
+        border: 1px solid ${role === 'user' ? 'rgba(102, 126, 234, 0.3)' : 'rgba(255, 255, 255, 0.1)'};
+        border-radius: 16px;
+        padding: 16px 20px;
+        color: white;
+        line-height: 1.6;
+        ${role === 'user' ? 'margin-left: auto; max-width: 70%;' : 'margin-right: auto; max-width: 85%;'}
+    `;
+    
+    if (role === 'assistant') {
+        messageEl.innerHTML = `
+            <div style="display: flex; align-items: start; gap: 12px;">
+                <div style="
+                    width: 32px;
+                    height: 32px;
+                    background: linear-gradient(135deg, #667eea, #764ba2);
+                    border-radius: 50%;
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    flex-shrink: 0;
+                    font-size: 18px;
+                ">🎧</div>
+                <div style="flex: 1; padding-top: 4px;">
+                    ${formatDJMessage(content)}
+                </div>
+            </div>
+        `;
+    } else {
+        messageEl.textContent = content;
+    }
+    
+    messagesDiv.appendChild(messageEl);
+    messagesDiv.scrollTop = messagesDiv.scrollHeight;
+}
+
+// Format DJ message (markdown-like)
+function formatDJMessage(text) {
+    return text
+        .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+        .replace(/\*(.*?)\*/g, '<em>$1</em>')
+        .replace(/\n/g, '<br>');
+}
+
+// Parse songs from DJ response and create actionable playlist
+function parseSongsFromResponse(text) {
+    const songPattern = /"([^"]+)"\s+by\s+([^,\n.]+)/gi;
+    const matches = [...text.matchAll(songPattern)];
+    
+    if (matches.length > 0) {
+        const songs = matches.map(m => ({
+            title: m[1].trim(),
+            artist: m[2].trim()
+        }));
+        
+        // Show playlist button
+        setTimeout(() => {
+            const messagesDiv = document.getElementById('djMessages');
+            const playlistBtn = document.createElement('button');
+            playlistBtn.style.cssText = `
+                background: linear-gradient(135deg, #667eea, #764ba2);
+                border: none;
+                border-radius: 12px;
+                padding: 14px 24px;
+                color: white;
+                font-weight: 600;
+                cursor: pointer;
+                margin-top: 12px;
+                transition: transform 0.2s ease;
+            `;
+            playlistBtn.textContent = `🎵 Play DJ Playlist (${songs.length} songs)`;
+            playlistBtn.onclick = () => searchAndPlayDJPlaylist(songs);
+            
+            messagesDiv.appendChild(playlistBtn);
+            messagesDiv.scrollTop = messagesDiv.scrollHeight;
+        }, 500);
+    }
+}
+
+// Search and play DJ-recommended songs
+async function searchAndPlayDJPlaylist(songs) {
+    showNotification(`🎧 DJ is preparing your playlist...`);
+    
+    const foundSongs = [];
+    
+    for (const song of songs.slice(0, 8)) { // Limit to 8 to save quota
+        try {
+            const query = `${song.title} ${song.artist}`;
+            const response = await fetch(
+                `https://www.googleapis.com/youtube/v3/search?part=snippet&type=video&videoCategoryId=10&maxResults=1&q=${encodeURIComponent(query)}&key=${getNextKey()}`
+            );
+            
+            const data = await response.json();
+            
+            if (data.items && data.items[0]) {
+                const item = data.items[0];
+                foundSongs.push({
+                    id: item.id.videoId,
+                    title: item.snippet.title,
+                    artist: item.snippet.channelTitle,
+                    art: item.snippet.thumbnails.medium.url
+                });
+            }
+        } catch (error) {
+            console.error(`Failed to find: ${song.title}`, error);
+        }
+    }
+    
+    if (foundSongs.length > 0) {
+        currentSongs = foundSongs;
+        currentIndex = 0;
+        currentPlaylist = null;
+        djMode = true;
+        
+        playSong(foundSongs[0]);
+        closeAIDJ();
+        showNotification(`🎧 DJ Playlist started! ${foundSongs.length} songs queued`);
+    } else {
+        showNotification("Couldn't find those songs, try different ones!");
+    }
+}
+
+// Initialize when app loads
+setTimeout(() => {
+    initAIDJ();
+    console.log('🎧 AI DJ initialized (powered by GROQ ⚡)');
+}, 1000);
+
+// Export functions
+window.openAIDJ = openAIDJ;
+window.closeAIDJ = closeAIDJ;
+window.startDJSession = startDJSession;
+window.sendDJMessage = sendDJMessage;
+
+console.log('✓ AI DJ feature loaded - Click the DJ button in the player!');
