@@ -4497,7 +4497,7 @@ function openAIDJ() {
                         margin: 4px 0 0 0;
                         color: rgba(255, 255, 255, 0.6);
                         font-size: 14px;
-                    ">Powered by GROQ ⚡ Ultra Fast</p>
+                    ">Powered by INDY ⚡ Ultra Fast</p>
                 </div>
             </div>
             <button id="closeDjBtn" style="
@@ -4793,7 +4793,7 @@ async function startDJSession(type) {
             break;
         case 'custom':
             messagesDiv.innerHTML = '';
-            addDJMessage('assistant', "Hey! I'm your AI DJ powered by GROQ ⚡. What kind of music experience are you looking for today? I can create playlists, tell you about songs, find new discoveries, or anything else music-related!");
+            addDJMessage('assistant', "Hey! I'm Indy, a DJ powered by JVST's AI model: DART 1w⚡. What kind of music experience are you looking for today? I can create playlists, tell you about songs, find new discoveries, or anything else music-related!");
             return;
     }
     
