@@ -1,0 +1,2842 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>INDY Jam</title>
+<link rel="icon" type="image/x-icon" href="favicon.png">
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;500;600;700;800;900&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+/* ── RESET & VARIABLES ─────────────────────── */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --bg: #0a0a0a;
+  --panel: #1a1a1a;
+  --sidebar-bg: #252525;
+  --soft: #2a2a2a;
+  --hover: #333;
+  --accent: #ffffff;
+  --accent-dim: #eaeaea;
+  --text: #ffffff;
+  --muted: #b3b3b3;
+  --gradient-color: #517c7a;
+  --gradient2: #3a5f5d;
+  --border: rgba(255,255,255,.08);
+  --glow: rgba(81,124,122,.3);
+}
+
+body {
+  font-family: 'DM Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  overflow: hidden;
+  height: 100vh;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* ── NAV ───────────────────────────────────── */
+.sticky-nav {
+  position: sticky;
+  top: 0;
+  z-index: 1000;
+  width: 100%;
+  height: 60px;
+  background: rgba(10,10,10,.85);
+  backdrop-filter: blur(16px);
+  border-bottom: 1px solid var(--border);
+  box-shadow: 0 2px 20px rgba(0,0,0,.3);
+}
+.nav-inner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  height: 100%;
+  padding: 0 8px 0 8px;
+  max-width: 100%;
+}
+.nav-logo {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+  padding: 6px 8px;
+  border-radius: 40px;
+  text-decoration: none;
+  transition: all .2s;
+}
+.nav-logo:hover { background: rgba(255,255,255,.05); }
+.nav-logo-icon {
+  font-size: 26px;
+  background: linear-gradient(135deg, var(--gradient-color), #7eb8b5);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+.nav-logo-text {
+  font-family: 'Syne', sans-serif;
+  font-size: 20px;
+  font-weight: 800;
+  letter-spacing: -1px;
+  background: linear-gradient(135deg, #fff, #ccc);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+.nav-badge {
+  background: linear-gradient(135deg, var(--gradient-color), #7eb8b5);
+  color: #000;
+  font-size: 9px;
+  font-weight: 700;
+  padding: 2px 7px;
+  border-radius: 10px;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  margin-left: 2px;
+}
+.nav-center {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  max-width: 600px;
+  margin: 0 auto;
+}
+.nav-right {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.nav-user-chip {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: rgba(255,255,255,.05);
+  border: 1px solid var(--border);
+  border-radius: 30px;
+  padding: 6px 14px;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 500;
+  transition: all .2s;
+}
+.nav-user-chip:hover { background: rgba(255,255,255,.1); }
+.nav-btn-ghost {
+  background: rgba(255,255,255,.06);
+  border: 1px solid var(--border);
+  color: var(--text);
+  padding: 8px 18px;
+  border-radius: 30px;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all .2s;
+  font-family: 'DM Sans', sans-serif;
+}
+.nav-btn-ghost:hover { background: rgba(255,255,255,.12); border-color: rgba(255,255,255,.15); }
+
+/* ── APP CONTAINER ─────────────────────────── */
+.app-container {
+  display: flex;
+  height: calc(100vh - 60px);
+  gap: 0;
+}
+
+/* ── SCREENS ───────────────────────────────── */
+.screen {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  z-index: 500;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity .4s ease;
+  background: var(--bg);
+  overflow-y: auto;
+}
+.screen.active { opacity: 1; pointer-events: all; }
+
+/* ── GLASS CARD ────────────────────────────── */
+.glass-card {
+  background: rgba(25,25,25,.92);
+  backdrop-filter: blur(30px);
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  box-shadow: 0 24px 64px rgba(0,0,0,.6), 0 0 0 1px rgba(255,255,255,.03) inset;
+}
+
+/* ── AUTH SCREEN ───────────────────────────── */
+#screenAuth .glass-card {
+  width: 100%;
+  max-width: 420px;
+  padding: 36px;
+}
+.auth-logo-icon {
+  width: 64px;
+  height: 64px;
+  border-radius: 18px;
+  background: linear-gradient(135deg, var(--gradient-color), #7eb8b5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 28px;
+  margin: 0 auto 14px;
+  box-shadow: 0 8px 24px rgba(81,124,122,.4);
+}
+.auth-title {
+  font-family: 'Syne', sans-serif;
+  font-size: 26px;
+  font-weight: 800;
+  letter-spacing: -0.5px;
+  margin-bottom: 6px;
+  text-align: center;
+}
+.auth-subtitle {
+  font-size: 14px;
+  color: var(--muted);
+  line-height: 1.5;
+  text-align: center;
+  margin-bottom: 28px;
+}
+.auth-tabs {
+  display: flex;
+  background: rgba(255,255,255,.04);
+  border-radius: 10px;
+  padding: 4px;
+  margin-bottom: 24px;
+}
+.auth-tab {
+  flex: 1;
+  padding: 9px;
+  background: transparent;
+  border: none;
+  border-radius: 7px;
+  color: var(--muted);
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all .2s;
+  font-family: 'DM Sans', sans-serif;
+}
+.auth-tab.active { background: rgba(255,255,255,.08); color: var(--text); }
+
+/* ── INPUTS ────────────────────────────────── */
+.input {
+  width: 100%;
+  padding: 13px 16px;
+  background: rgba(255,255,255,.04);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  color: var(--text);
+  font-size: 14px;
+  font-family: 'DM Sans', sans-serif;
+  outline: none;
+  transition: border-color .2s, box-shadow .2s;
+}
+.input:focus { border-color: var(--gradient-color); box-shadow: 0 0 0 3px rgba(81,124,122,.2); }
+.input::placeholder { color: var(--muted); }
+.input-label {
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 1.2px;
+  color: var(--muted);
+  margin-bottom: 7px;
+  display: block;
+}
+.input-group { margin-bottom: 18px; }
+
+/* ── BUTTONS ───────────────────────────────── */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 13px 24px;
+  border-radius: 12px;
+  font-size: 14px;
+  font-weight: 600;
+  font-family: 'DM Sans', sans-serif;
+  cursor: pointer;
+  border: none;
+  transition: all .25s;
+  white-space: nowrap;
+}
+.btn-primary {
+  background: linear-gradient(135deg, var(--gradient-color), #7eb8b5);
+  color: #000;
+  box-shadow: 0 4px 20px rgba(81,124,122,.35);
+}
+.btn-primary:hover { transform: translateY(-2px); box-shadow: 0 8px 28px rgba(81,124,122,.5); }
+.btn-ghost {
+  background: rgba(255,255,255,.05);
+  color: var(--text);
+  border: 1px solid var(--border);
+}
+.btn-ghost:hover { background: rgba(255,255,255,.1); border-color: rgba(255,255,255,.15); }
+.btn-danger { background: rgba(255,80,80,.15); color: #ff5f5f; border: 1px solid rgba(255,80,80,.25); }
+.btn-danger:hover { background: rgba(255,80,80,.25); }
+.btn-sm { padding: 8px 16px; font-size: 13px; border-radius: 8px; }
+.btn-lg { padding: 16px 32px; font-size: 16px; border-radius: 14px; }
+.btn-block { width: 100%; }
+.btn:disabled { opacity: .4; cursor: not-allowed; transform: none !important; }
+
+/* ── PROFILE SCREEN ────────────────────────── */
+#screenProfile .glass-card { width: 100%; max-width: 460px; padding: 36px; }
+.emoji-picker { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px; }
+.emoji-opt {
+  width: 44px; height: 44px;
+  border-radius: 10px;
+  border: 2px solid var(--border);
+  background: rgba(255,255,255,.03);
+  font-size: 22px;
+  cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  transition: all .2s;
+}
+.emoji-opt:hover { border-color: var(--gradient-color); background: rgba(81,124,122,.12); }
+.emoji-opt.selected { border-color: var(--gradient-color); background: rgba(81,124,122,.22); box-shadow: 0 0 0 3px rgba(81,124,122,.15); }
+.mood-options { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px; }
+.mood-opt {
+  padding: 7px 14px; border-radius: 20px;
+  border: 1px solid var(--border);
+  background: rgba(255,255,255,.03);
+  color: var(--muted);
+  font-size: 13px; font-weight: 500;
+  cursor: pointer; transition: all .2s;
+}
+.mood-opt:hover { border-color: var(--gradient-color); color: var(--text); }
+.mood-opt.selected { border-color: var(--gradient-color); background: rgba(81,124,122,.18); color: var(--text); }
+
+/* ── LOBBY SCREEN ──────────────────────────── */
+#screenLobby {
+  align-items: flex-start;
+  padding: 0;
+  background: var(--bg);
+  overflow: hidden;
+}
+.lobby-layout {
+  display: flex;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+}
+.lobby-sidebar {
+  width: 280px;
+  background: var(--sidebar-bg);
+  border-right: 1px solid var(--border);
+  padding: 28px 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  overflow-y: auto;
+  flex-shrink: 0;
+}
+.lobby-sidebar-title {
+  font-family: 'Syne', sans-serif;
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 1.5px;
+  color: var(--muted);
+  margin-bottom: 12px;
+  margin-top: 16px;
+}
+.lobby-sidebar-title:first-child { margin-top: 0; }
+.lobby-main {
+  flex: 1;
+  min-width: 0;
+  background: linear-gradient(180deg, var(--gradient-color) 0%, var(--bg) 25%);
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding: 36px;
+}
+.lobby-greeting h1 {
+  font-family: 'Syne', sans-serif;
+  font-size: clamp(26px, 4vw, 40px);
+  font-weight: 900;
+  letter-spacing: -2px;
+  margin-bottom: 8px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.lobby-greeting p { color: var(--muted); font-size: 15px; margin-bottom: 32px; }
+
+/* Action cards */
+.lobby-cards { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 36px; }
+.action-card {
+  background: rgba(0,0,0,.25);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255,255,255,.06);
+  border-radius: 16px;
+  padding: 28px;
+  cursor: pointer;
+  transition: all .35s cubic-bezier(.4,0,.2,1);
+  position: relative;
+  overflow: hidden;
+}
+.action-card::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  transition: opacity .3s;
+}
+.action-card.host::before { background: linear-gradient(135deg, rgba(81,124,122,.15), rgba(126,184,181,.05)); }
+.action-card.join::before { background: linear-gradient(135deg, rgba(255,255,255,.08), rgba(81,124,122,.05)); }
+.action-card:hover { border-color: rgba(255,255,255,.12); transform: translateY(-4px); box-shadow: 0 16px 40px rgba(0,0,0,.4); }
+.action-card:hover::before { opacity: 1; }
+.action-card-icon { font-size: 40px; margin-bottom: 16px; display: block; }
+.action-card-title { font-family: 'Syne', sans-serif; font-size: 20px; font-weight: 700; margin-bottom: 8px; }
+.action-card-desc { font-size: 13px; color: var(--muted); line-height: 1.5; }
+
+/* Recent rooms */
+.recent-section { margin-top: 36px; }
+.recent-section h3 {
+  font-family: 'Syne', sans-serif;
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 1.5px;
+  color: var(--muted);
+  margin-bottom: 16px;
+}
+.recent-room-item {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 12px 16px;
+  background: rgba(0,0,0,.2);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  cursor: pointer;
+  transition: all .2s;
+  margin-bottom: 8px;
+}
+.recent-room-item:hover { background: rgba(0,0,0,.35); border-color: rgba(255,255,255,.12); }
+.recent-room-code {
+  font-family: 'Syne', sans-serif;
+  font-size: 18px;
+  font-weight: 800;
+  letter-spacing: 2px;
+  color: var(--gradient-color);
+  min-width: 80px;
+}
+.recent-room-info { flex: 1; }
+.recent-room-name { font-size: 14px; font-weight: 600; }
+.recent-room-time { font-size: 12px; color: var(--muted); margin-top: 2px; }
+
+/* Profile card in sidebar */
+.profile-card-mini {
+  background: rgba(0,0,0,.2);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 16px;
+  margin-bottom: 20px;
+}
+.profile-card-mini .emoji { font-size: 32px; margin-bottom: 8px; }
+.profile-card-mini .name { font-size: 15px; font-weight: 600; }
+.profile-card-mini .mood { font-size: 12px; color: var(--muted); margin-top: 2px; }
+
+/* ── CREATE/JOIN SCREENS ───────────────────── */
+#screenCreate .glass-card, #screenJoin .glass-card {
+  width: 100%; max-width: 440px; padding: 36px;
+}
+.error-box {
+  background: rgba(255,80,80,.1);
+  border: 1px solid rgba(255,80,80,.25);
+  border-radius: 10px;
+  padding: 11px 14px;
+  font-size: 13px;
+  color: #ff8f8f;
+  margin-bottom: 16px;
+  display: none;
+}
+.success-box {
+  background: rgba(81,124,122,.12);
+  border: 1px solid rgba(81,124,122,.3);
+  border-radius: 10px;
+  padding: 11px 14px;
+  font-size: 13px;
+  color: #7eb8b5;
+  margin-bottom: 16px;
+  display: none;
+}
+.setting-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 0;
+  border-bottom: 1px solid var(--border);
+}
+.setting-row:last-child { border-bottom: none; }
+.setting-label { font-size: 14px; font-weight: 500; }
+.setting-desc { font-size: 12px; color: var(--muted); margin-top: 2px; }
+.toggle { position: relative; width: 44px; height: 24px; }
+.toggle input { opacity: 0; width: 0; height: 0; }
+.toggle-slider {
+  position: absolute; inset: 0;
+  background: rgba(255,255,255,.1);
+  border-radius: 12px;
+  cursor: pointer;
+  transition: background .2s;
+}
+.toggle-slider::before {
+  content: '';
+  position: absolute;
+  width: 18px; height: 18px;
+  left: 3px; top: 3px;
+  background: white;
+  border-radius: 50%;
+  transition: transform .2s;
+}
+.toggle input:checked + .toggle-slider { background: var(--gradient-color); }
+.toggle input:checked + .toggle-slider::before { transform: translateX(20px); }
+
+/* ── ROOM SCREEN ───────────────────────────── */
+#screenRoom {
+  align-items: flex-start;
+  padding: 0;
+  background: var(--bg);
+  overflow: hidden;
+}
+.room-layout {
+  display: flex;
+  width: 100%;
+  height: 100%;
+}
+
+/* LEFT: Queue + Members Sidebar */
+.room-left {
+  width: 260px;
+  background: var(--sidebar-bg);
+  border-right: 1px solid var(--border);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  flex-shrink: 0;
+}
+
+/* CENTER: Main content */
+.room-center {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  background: linear-gradient(180deg, var(--gradient-color) 0%, var(--bg) 20%);
+  min-width: 0;
+}
+
+/* RIGHT: Player Sidebar */
+.room-right {
+  width: 340px;
+  background: #000;
+  border-left: 1px solid var(--border);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  flex-shrink: 0;
+  position: relative;
+}
+
+/* Room header */
+.room-header {
+  padding: 14px 20px;
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  flex-shrink: 0;
+  background: rgba(10,10,10,.6);
+  backdrop-filter: blur(10px);
+}
+.room-code-badge {
+  background: rgba(81,124,122,.18);
+  border: 1px solid rgba(81,124,122,.35);
+  border-radius: 8px;
+  padding: 6px 14px;
+  font-family: 'Syne', sans-serif;
+  font-size: 16px;
+  font-weight: 800;
+  letter-spacing: 3px;
+  color: var(--gradient-color);
+  cursor: pointer;
+  transition: all .2s;
+  white-space: nowrap;
+}
+.room-code-badge:hover { background: rgba(81,124,122,.28); }
+.room-name-disp {
+  font-family: 'Syne', sans-serif;
+  font-size: 17px;
+  font-weight: 700;
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* Room content scroll area */
+.room-content {
+  flex: 1;
+  overflow-y: auto;
+  padding: 24px;
+}
+
+/* Panel headers */
+.panel-header {
+  padding: 14px 16px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border-bottom: 1px solid var(--border);
+  flex-shrink: 0;
+}
+.panel-title {
+  font-family: 'Syne', sans-serif;
+  font-size: 12px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+.panel-list {
+  flex: 1;
+  overflow-y: auto;
+  padding: 6px;
+}
+
+/* Badge */
+.badge {
+  display: inline-block;
+  padding: 3px 8px;
+  border-radius: 20px;
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: .5px;
+}
+.badge-teal { background: rgba(81,124,122,.2); color: var(--gradient-color); border: 1px solid rgba(81,124,122,.35); }
+.badge-white { background: rgba(255,255,255,.12); color: #fff; border: 1px solid rgba(255,255,255,.2); }
+
+/* Queue items */
+.queue-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 9px 10px;
+  border-radius: 10px;
+  cursor: pointer;
+  transition: background .2s;
+  position: relative;
+}
+.queue-item:hover { background: rgba(255,255,255,.04); }
+.queue-item.playing { background: rgba(81,124,122,.14); }
+.queue-thumb {
+  width: 38px; height: 38px;
+  border-radius: 6px;
+  background: var(--soft);
+  object-fit: cover;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 16px;
+  overflow: hidden;
+}
+.queue-thumb img { width: 100%; height: 100%; object-fit: cover; border-radius: 6px; }
+.queue-item-info { flex: 1; min-width: 0; }
+.queue-item-title { font-size: 13px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.queue-item-by { font-size: 11px; color: var(--muted); }
+.queue-playing-bar {
+  display: flex;
+  align-items: flex-end;
+  gap: 2px;
+  height: 16px;
+}
+.queue-playing-bar span {
+  width: 3px;
+  background: var(--gradient-color);
+  border-radius: 2px;
+  animation: barBounce 1s ease-in-out infinite;
+}
+.queue-playing-bar span:nth-child(2) { animation-delay: .2s; }
+.queue-playing-bar span:nth-child(3) { animation-delay: .4s; }
+@keyframes barBounce {
+  0%,100% { height: 4px; }
+  50% { height: 14px; }
+}
+
+/* Members */
+.member-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 10px;
+  border-radius: 10px;
+  transition: background .2s;
+}
+.member-item:hover { background: rgba(255,255,255,.03); }
+.member-avatar {
+  width: 34px; height: 34px;
+  border-radius: 8px;
+  background: var(--soft);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 17px;
+  flex-shrink: 0;
+  position: relative;
+}
+.member-host-dot {
+  position: absolute;
+  bottom: -3px; right: -3px;
+  width: 12px; height: 12px;
+  border-radius: 50%;
+  background: var(--gradient-color);
+  border: 2px solid var(--sidebar-bg);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 6px;
+  color: #000;
+  font-weight: 700;
+}
+.member-name { font-size: 13px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.member-mood { font-size: 11px; color: var(--muted); }
+.kick-btn {
+  background: transparent; border: none; color: var(--muted);
+  cursor: pointer; padding: 4px; border-radius: 4px;
+  font-size: 14px; opacity: 0; transition: all .2s; margin-left: auto;
+}
+.member-item:hover .kick-btn { opacity: 1; }
+.kick-btn:hover { color: #ff5f5f; }
+
+/* ── PLAYER SIDEBAR (RIGHT) ────────────────── */
+.player-video {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 16/9;
+  background: #000;
+  flex-shrink: 0;
+}
+.player-video iframe {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  border: none;
+}
+.player-info {
+  padding: 20px 20px 12px;
+  background: linear-gradient(180deg, rgba(0,0,0,.8), transparent);
+  flex-shrink: 0;
+}
+.np-song-title {
+  font-family: 'Syne', sans-serif;
+  font-size: 17px;
+  font-weight: 700;
+  margin-bottom: 4px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.np-song-artist { font-size: 13px; color: var(--muted); margin-bottom: 14px; }
+.np-controls {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  margin-bottom: 10px;
+}
+.np-btn {
+  width: 40px; height: 40px;
+  border-radius: 50%;
+  border: 1px solid rgba(255,255,255,.15);
+  background: rgba(255,255,255,.08);
+  color: var(--text);
+  cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 15px;
+  transition: all .2s;
+  backdrop-filter: blur(8px);
+}
+.np-btn:hover { background: rgba(255,255,255,.18); border-color: rgba(255,255,255,.25); }
+.np-btn-play {
+  width: 48px; height: 48px;
+  background: linear-gradient(135deg, var(--gradient-color), #7eb8b5);
+  border: none;
+  color: #000;
+  font-size: 20px;
+  box-shadow: 0 4px 16px rgba(81,124,122,.4);
+}
+.np-btn-play:hover { transform: scale(1.08); box-shadow: 0 6px 20px rgba(81,124,122,.6); }
+
+/* Progress bar */
+.progress-wrap {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 11px;
+  color: var(--muted);
+  padding: 0 0 10px;
+}
+.progress-bar {
+  flex: 1;
+  height: 4px;
+  background: rgba(255,255,255,.1);
+  border-radius: 2px;
+  cursor: pointer;
+  position: relative;
+}
+.progress-fill {
+  height: 100%;
+  background: linear-gradient(90deg, var(--gradient-color), #7eb8b5);
+  border-radius: 2px;
+  width: 0%;
+  transition: width .5s linear;
+}
+.progress-bar:hover .progress-fill { filter: brightness(1.2); }
+
+/* Volume */
+.volume-wrap {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 0 0 14px;
+}
+.volume-icon { font-size: 14px; color: var(--muted); }
+.volume-slider {
+  -webkit-appearance: none;
+  flex: 1;
+  height: 4px;
+  background: rgba(255,255,255,.1);
+  border-radius: 2px;
+  outline: none;
+}
+.volume-slider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 12px; height: 12px;
+  background: #fff;
+  border-radius: 50%;
+  cursor: pointer;
+}
+
+/* Lyrics in player */
+.player-lyrics {
+  flex: 1;
+  overflow-y: auto;
+  padding: 14px 20px 20px;
+  border-top: 1px solid var(--border);
+}
+.player-lyrics h4 {
+  font-family: 'Syne', sans-serif;
+  font-size: 12px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  color: var(--gradient-color);
+  margin-bottom: 14px;
+}
+.lyric-line {
+  font-size: 14px;
+  color: rgba(255,255,255,.5);
+  line-height: 1.9;
+  transition: all .3s ease;
+  cursor: pointer;
+}
+.lyric-line:hover { color: rgba(255,255,255,.7); }
+.lyric-line.active {
+  color: #fff;
+  font-weight: 600;
+  font-size: 15px;
+  text-shadow: 0 0 15px rgba(81,124,122,.6);
+}
+
+/* ── ROOM MAIN CONTENT ─────────────────────── */
+.upload-panel {
+  background: rgba(0,0,0,.2);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  padding: 20px;
+  margin-bottom: 20px;
+}
+.upload-panel h3 {
+  font-family: 'Syne', sans-serif;
+  font-size: 15px;
+  font-weight: 700;
+  margin-bottom: 14px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.settings-panel {
+  background: rgba(0,0,0,.2);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  padding: 20px;
+  margin-bottom: 20px;
+}
+.settings-panel h3 {
+  font-family: 'Syne', sans-serif;
+  font-size: 15px;
+  font-weight: 700;
+  margin-bottom: 16px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.playlist-select-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 12px;
+  border-radius: 10px;
+  cursor: pointer;
+  transition: background .2s;
+  border: 1px solid transparent;
+}
+.playlist-select-item:hover { background: rgba(255,255,255,.04); }
+.playlist-select-item.selected { background: rgba(81,124,122,.12); border-color: rgba(81,124,122,.28); }
+
+/* ── REACTIONS ─────────────────────────────── */
+.react-bar {
+  position: fixed;
+  bottom: 24px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: rgba(15,15,15,.95);
+  backdrop-filter: blur(20px);
+  border: 1px solid var(--border);
+  border-radius: 50px;
+  padding: 8px 16px;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  z-index: 50;
+  box-shadow: 0 8px 32px rgba(0,0,0,.5);
+}
+.react-btn {
+  width: 42px; height: 42px;
+  border-radius: 50%;
+  border: none;
+  background: transparent;
+  font-size: 22px;
+  cursor: pointer;
+  transition: all .2s;
+  display: flex; align-items: center; justify-content: center;
+}
+.react-btn:hover { background: rgba(255,255,255,.08); transform: scale(1.2); }
+.react-btn:active { transform: scale(.9); }
+.reaction-float {
+  position: fixed;
+  font-size: 28px;
+  pointer-events: none;
+  z-index: 200;
+  animation: floatUp 2.5s ease-out forwards;
+}
+@keyframes floatUp {
+  0% { opacity: 1; transform: translateY(0) scale(1); }
+  50% { opacity: 1; transform: translateY(-80px) scale(1.2); }
+  100% { opacity: 0; transform: translateY(-180px) scale(.8); }
+}
+
+/* ── TOAST ─────────────────────────────────── */
+.jam-toast {
+  position: fixed;
+  top: 72px;
+  right: 24px;
+  background: rgba(20,20,20,.97);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 12px 18px;
+  font-size: 13px;
+  font-weight: 500;
+  z-index: 9999;
+  box-shadow: 0 8px 24px rgba(0,0,0,.4);
+  transform: translateX(130%);
+  transition: transform .35s cubic-bezier(.34,1.56,.64,1);
+  max-width: 300px;
+}
+.jam-toast.show { transform: translateX(0); }
+
+/* ── SPINNER ───────────────────────────────── */
+.spinner {
+  width: 18px; height: 18px;
+  border: 2px solid rgba(255,255,255,.1);
+  border-top-color: var(--gradient-color);
+  border-radius: 50%;
+  animation: spin .7s linear infinite;
+  display: inline-block;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* ── EMPTY STATE ───────────────────────────── */
+.empty-state {
+  text-align: center;
+  padding: 32px 16px;
+  color: var(--muted);
+}
+.empty-state-icon { font-size: 36px; opacity: .4; margin-bottom: 10px; }
+.empty-state-text { font-size: 13px; }
+
+/* ── SCROLLBAR ─────────────────────────────── */
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: rgba(255,255,255,.1); border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: rgba(255,255,255,.2); }
+
+/* ── FADE IN ───────────────────────────────── */
+@keyframes fadeInUp {
+  from { opacity: 0; transform: translateY(16px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+.fade-in { animation: fadeInUp .4s ease forwards; }
+
+/* ── CHAT PANEL (new feature) ──────────────── */
+.chat-panel {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  border-top: 1px solid var(--border);
+}
+.chat-messages {
+  flex: 1;
+  overflow-y: auto;
+  padding: 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.chat-msg {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  padding: 6px 8px;
+  border-radius: 8px;
+  transition: background .15s;
+}
+.chat-msg:hover { background: rgba(255,255,255,.03); }
+.chat-msg-emoji { font-size: 16px; flex-shrink: 0; margin-top: 2px; }
+.chat-msg-body { flex: 1; min-width: 0; }
+.chat-msg-author { font-size: 11px; font-weight: 700; color: var(--gradient-color); margin-bottom: 2px; }
+.chat-msg-text { font-size: 12px; color: var(--muted); line-height: 1.4; word-break: break-word; }
+.chat-msg-text.is-me { color: var(--text); }
+.chat-input-wrap {
+  padding: 8px;
+  border-top: 1px solid var(--border);
+  display: flex;
+  gap: 6px;
+  flex-shrink: 0;
+}
+.chat-input {
+  flex: 1;
+  padding: 8px 12px;
+  background: rgba(255,255,255,.05);
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  color: var(--text);
+  font-size: 12px;
+  font-family: 'DM Sans', sans-serif;
+  outline: none;
+}
+.chat-input:focus { border-color: var(--gradient-color); }
+.chat-send-btn {
+  width: 34px; height: 34px;
+  background: linear-gradient(135deg, var(--gradient-color), #7eb8b5);
+  border: none;
+  border-radius: 50%;
+  color: #000;
+  font-size: 14px;
+  cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  transition: all .2s;
+}
+.chat-send-btn:hover { transform: scale(1.1); }
+
+/* ── VOTE SKIP ─────────────────────────────── */
+.vote-panel {
+  background: rgba(81,124,122,.08);
+  border: 1px solid rgba(81,124,122,.25);
+  border-radius: 12px;
+  padding: 14px;
+  margin-bottom: 14px;
+  display: none;
+}
+.vote-panel.active { display: block; }
+.vote-label { font-size: 13px; font-weight: 600; margin-bottom: 8px; }
+.vote-bar { height: 6px; background: rgba(255,255,255,.1); border-radius: 3px; overflow: hidden; margin-bottom: 8px; }
+.vote-fill { height: 100%; background: linear-gradient(90deg, var(--gradient-color), #7eb8b5); border-radius: 3px; transition: width .4s; }
+
+/* ── ROOM TABS ─────────────────────────────── */
+.room-tabs {
+  display: flex;
+  border-bottom: 1px solid var(--border);
+  flex-shrink: 0;
+  background: rgba(10,10,10,.4);
+}
+.room-tab {
+  flex: 1;
+  padding: 12px;
+  background: transparent;
+  border: none;
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 600;
+  font-family: 'DM Sans', sans-serif;
+  cursor: pointer;
+  transition: all .2s;
+  text-transform: uppercase;
+  letter-spacing: .8px;
+  border-bottom: 2px solid transparent;
+}
+.room-tab.active { color: var(--text); border-bottom-color: var(--gradient-color); }
+.room-tab:hover { color: var(--text); }
+.tab-pane { display: none; }
+.tab-pane.active { display: flex; flex-direction: column; flex: 1; overflow: hidden; }
+
+/* ── LIVE ACTIVITY FEED ────────────────────── */
+.activity-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 7px 10px;
+  border-radius: 8px;
+  font-size: 12px;
+  color: var(--muted);
+  animation: fadeInUp .3s ease;
+}
+.activity-item .a-icon { font-size: 14px; }
+.activity-item .a-name { color: var(--gradient-color); font-weight: 600; }
+
+/* ── MOOD METER ────────────────────────────── */
+.mood-meter-panel {
+  background: rgba(0,0,0,.2);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 18px;
+  margin-bottom: 20px;
+}
+.mood-meter-panel h3 {
+  font-family: 'Syne', sans-serif;
+  font-size: 14px;
+  font-weight: 700;
+  margin-bottom: 14px;
+}
+.mood-bar-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 8px;
+}
+.mood-bar-label { font-size: 12px; color: var(--muted); width: 80px; flex-shrink: 0; }
+.mood-bar { flex: 1; height: 6px; background: rgba(255,255,255,.08); border-radius: 3px; overflow: hidden; }
+.mood-bar-fill { height: 100%; border-radius: 3px; background: linear-gradient(90deg, var(--gradient-color), #7eb8b5); transition: width .6s cubic-bezier(.4,0,.2,1); }
+.mood-count { font-size: 11px; color: var(--muted); width: 24px; text-align: right; }
+
+/* ── RADIO MODE ────────────────────────────── */
+.radio-on-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: rgba(255,80,80,.15);
+  border: 1px solid rgba(255,80,80,.3);
+  border-radius: 20px;
+  padding: 4px 12px;
+  font-size: 11px;
+  font-weight: 700;
+  color: #ff8080;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+.radio-on-dot {
+  width: 6px; height: 6px;
+  border-radius: 50%;
+  background: #ff5f5f;
+  animation: pulse 1.5s ease-in-out infinite;
+}
+@keyframes pulse { 0%,100% { transform: scale(1); opacity: 1; } 50% { transform: scale(1.4); opacity: .6; } }
+
+/* ── FULLSCREEN LYRICS ─────────────────────── */
+#fullLyricsOverlay {
+  position: fixed;
+  inset: 0;
+  z-index: 2000;
+  background: rgba(0,0,0,.92);
+  backdrop-filter: blur(30px);
+  display: none;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 60px;
+}
+#fullLyricsOverlay.open { display: flex; }
+#fullLyricsContent {
+  text-align: center;
+  max-width: 720px;
+}
+#fullLyricsContent .lyric-line {
+  font-size: 28px;
+  margin: 12px 0;
+}
+#fullLyricsContent .lyric-line.active {
+  font-size: 38px;
+  text-shadow: 0 0 30px rgba(81,124,122,.8), 0 0 60px rgba(81,124,122,.4);
+}
+#fullLyricsClose {
+  position: fixed;
+  top: 20px;
+  right: 20px;
+  background: rgba(255,255,255,.1);
+  border: 1px solid rgba(255,255,255,.15);
+  border-radius: 50%;
+  width: 44px; height: 44px;
+  color: #fff;
+  cursor: pointer;
+  font-size: 20px;
+  display: flex; align-items: center; justify-content: center;
+}
+
+/* ── RESPONSIVE ────────────────────────────── */
+@media (max-width: 900px) {
+  .room-right { display: none; }
+  .room-left { width: 220px; }
+}
+@media (max-width: 640px) {
+  .room-left { display: none; }
+  .lobby-sidebar { display: none; }
+  .lobby-cards { grid-template-columns: 1fr; }
+}
+
+/* ── SEARCH BAR IN NAV (for room) ──────────────── */
+.room-search-wrap {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: rgba(255,255,255,.06);
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  padding: 6px 14px;
+  flex: 1;
+  max-width: 320px;
+}
+.room-search-wrap input {
+  flex: 1;
+  background: transparent;
+  border: none;
+  color: var(--text);
+  font-size: 13px;
+  outline: none;
+  font-family: 'DM Sans', sans-serif;
+}
+.room-search-wrap input::placeholder { color: var(--muted); }
+.room-search-icon { color: var(--muted); font-size: 14px; }
+
+/* ── QUEUE ADD INPUT ───────────────────────── */
+.queue-add-wrap {
+  padding: 8px;
+  border-top: 1px solid var(--border);
+  flex-shrink: 0;
+}
+.queue-add-input {
+  width: 100%;
+  padding: 8px 12px;
+  background: rgba(255,255,255,.05);
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  color: var(--text);
+  font-size: 12px;
+  font-family: 'DM Sans', sans-serif;
+  outline: none;
+}
+.queue-add-input:focus { border-color: var(--gradient-color); }
+.queue-add-input::placeholder { color: var(--muted); }
+
+/* ── COLLAB CURSOR ─────────────────────────── */
+.collab-cursors { position: fixed; inset: 0; pointer-events: none; z-index: 999; }
+.collab-cursor {
+  position: absolute;
+  width: 10px; height: 10px;
+  border-radius: 50%;
+  background: var(--gradient-color);
+  pointer-events: none;
+  transition: all .1s;
+}
+.collab-cursor-name {
+  position: absolute;
+  top: -20px;
+  left: 10px;
+  font-size: 10px;
+  font-weight: 700;
+  color: var(--gradient-color);
+  background: rgba(0,0,0,.7);
+  padding: 2px 6px;
+  border-radius: 10px;
+  white-space: nowrap;
+}
+
+/* ── NOW PLAYING MINI (lobby sidebar) ─────── */
+.np-mini {
+  background: rgba(81,124,122,.08);
+  border: 1px solid rgba(81,124,122,.2);
+  border-radius: 12px;
+  padding: 12px;
+  margin-top: auto;
+  display: none;
+}
+.np-mini.active { display: block; }
+.np-mini-title { font-size: 12px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.np-mini-artist { font-size: 11px; color: var(--muted); }
+
+/* ── ROOM STATS BAR ────────────────────────── */
+.room-stats {
+  display: flex;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+.room-stat {
+  background: rgba(0,0,0,.2);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 12px 16px;
+  text-align: center;
+  flex: 1;
+  min-width: 80px;
+}
+.room-stat-val {
+  font-family: 'Syne', sans-serif;
+  font-size: 22px;
+  font-weight: 800;
+  background: linear-gradient(135deg, #fff, var(--gradient-color));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+.room-stat-label { font-size: 11px; color: var(--muted); margin-top: 2px; }
+</style>
+</head>
+<body>
+
+<!-- ── NAV ──────────────────────────────────── -->
+<div class="sticky-nav" id="jamNav" style="display:none;">
+  <div class="nav-inner">
+    <a href="full-tunes.html" class="nav-logo">
+      <span class="nav-logo-icon">✦</span>
+      <span class="nav-logo-text">INDY Jam</span>
+      <span class="nav-badge">Beta</span>
+    </a>
+    <div class="nav-center" id="navCenter"></div>
+    <div class="nav-right" id="navRight"></div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════
+     SCREEN: AUTH
+════════════════════════════════════════════ -->
+<div class="screen active" id="screenAuth">
+  <div class="glass-card fade-in">
+    <div class="auth-logo-icon">✦</div>
+    <div class="auth-title">INDY Jam</div>
+    <div class="auth-subtitle">Sign in to start or join a real-time jam session with your friends</div>
+
+    <div class="auth-tabs">
+      <button class="auth-tab active" onclick="switchTab('signin')" id="tabSignIn">Sign In</button>
+      <button class="auth-tab" onclick="switchTab('signup')" id="tabSignUp">Sign Up</button>
+    </div>
+
+    <div class="error-box" id="authError"></div>
+    <div class="success-box" id="authSuccess"></div>
+
+    <div class="input-group">
+      <label class="input-label">Email</label>
+      <input class="input" id="authEmail" type="email" placeholder="you@example.com" onkeypress="if(event.key==='Enter')document.getElementById('authPass').focus()">
+    </div>
+    <div class="input-group">
+      <label class="input-label">Password</label>
+      <input class="input" id="authPass" type="password" placeholder="••••••••" onkeypress="if(event.key==='Enter')submitAuth()">
+    </div>
+
+    <button class="btn btn-primary btn-block btn-lg" id="authBtn" onclick="submitAuth()">Sign In</button>
+    <button onclick="forgotPass()" id="forgotBtn" style="width:100%;margin-top:12px;background:transparent;border:none;color:var(--muted);font-size:13px;cursor:pointer;font-family:'DM Sans',sans-serif;" onmouseover="this.style.color='#fff'" onmouseout="this.style.color='var(--muted)'">Forgot password?</button>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════
+     SCREEN: PROFILE SETUP
+════════════════════════════════════════════ -->
+<div class="screen" id="screenProfile">
+  <div class="glass-card fade-in">
+    <div class="auth-title" style="text-align:left;margin-bottom:6px;">Your Jam Profile</div>
+    <div class="auth-subtitle" style="text-align:left;margin-bottom:24px;">How you appear in jam sessions</div>
+
+    <div class="input-group">
+      <label class="input-label">Display Name</label>
+      <input class="input" id="profileName" type="text" placeholder="What should we call you?" maxlength="24">
+      <div style="font-size:11px;color:var(--muted);margin-top:6px;" id="profileNameFeedback"></div>
+    </div>
+
+    <div class="input-group">
+      <label class="input-label">Avatar emoji</label>
+      <div class="emoji-picker" id="emojiPicker"></div>
+    </div>
+
+    <div class="input-group">
+      <label class="input-label">Current Vibe</label>
+      <div class="mood-options" id="moodOptions"></div>
+    </div>
+
+    <button class="btn btn-primary btn-block btn-lg" onclick="saveProfile()" id="profileBtn">Save &amp; Continue →</button>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════
+     SCREEN: LOBBY
+════════════════════════════════════════════ -->
+<div class="screen" id="screenLobby">
+  <div class="lobby-layout">
+    <!-- Sidebar -->
+    <div class="lobby-sidebar">
+      <div class="lobby-sidebar-title">You</div>
+      <div class="profile-card-mini" id="lobbyProfileCard">
+        <div class="emoji" id="lbEmoji">🎵</div>
+        <div class="name" id="lbName">Loading...</div>
+        <div class="mood" id="lbMood"></div>
+        <button class="btn btn-ghost btn-sm" onclick="showScreen('screenProfile')" style="margin-top:10px;width:100%;">Edit Profile</button>
+      </div>
+
+      <div class="lobby-sidebar-title">Quick Join</div>
+      <div style="display:flex;flex-direction:column;gap:8px;" id="recentRoomsSection">
+        <div style="font-size:12px;color:var(--muted);">No recent rooms</div>
+      </div>
+
+      <div style="margin-top:auto;padding-top:20px;">
+        <button class="btn btn-ghost btn-sm btn-block" onclick="signOut()" style="opacity:.6;">Sign Out</button>
+      </div>
+    </div>
+
+    <!-- Main -->
+    <div class="lobby-main">
+      <div class="lobby-greeting fade-in">
+        <h1 id="lobbyGreeting">Hey there 👋</h1>
+        <p>Ready to jam? Create a room or jump into a friend's session.</p>
+      </div>
+
+      <div class="lobby-cards fade-in">
+        <div class="action-card host" onclick="showScreen('screenCreate')">
+          <span class="action-card-icon">🎙️</span>
+          <div class="action-card-title">Host a Jam</div>
+          <div class="action-card-desc">Create a room, set the vibe, and invite friends with a code</div>
+        </div>
+        <div class="action-card join" onclick="showScreen('screenJoin')">
+          <span class="action-card-icon">🚪</span>
+          <div class="action-card-title">Join a Jam</div>
+          <div class="action-card-desc">Enter a 6-letter code to join a friend's session</div>
+        </div>
+      </div>
+
+      <!-- Features showcase -->
+      <div class="recent-section fade-in">
+        <h3>What's new in Jam</h3>
+        <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:12px;">
+          <div style="background:rgba(0,0,0,.2);border:1px solid var(--border);border-radius:12px;padding:16px;">
+            <div style="font-size:24px;margin-bottom:8px;">🎵</div>
+            <div style="font-size:13px;font-weight:600;margin-bottom:4px;">Built-in Player</div>
+            <div style="font-size:12px;color:var(--muted);">Songs play right in the sidebar — no new tabs</div>
+          </div>
+          <div style="background:rgba(0,0,0,.2);border:1px solid var(--border);border-radius:12px;padding:16px;">
+            <div style="font-size:24px;margin-bottom:8px;">💬</div>
+            <div style="font-size:13px;font-weight:600;margin-bottom:4px;">Live Chat</div>
+            <div style="font-size:12px;color:var(--muted);">React and chat with your crew in real-time</div>
+          </div>
+          <div style="background:rgba(0,0,0,.2);border:1px solid var(--border);border-radius:12px;padding:16px;">
+            <div style="font-size:24px;margin-bottom:8px;">📊</div>
+            <div style="font-size:13px;font-weight:600;margin-bottom:4px;">Mood Meter</div>
+            <div style="font-size:12px;color:var(--muted);">See the collective vibe of your jam room</div>
+          </div>
+          <div style="background:rgba(0,0,0,.2);border:1px solid var(--border);border-radius:12px;padding:16px;">
+            <div style="font-size:24px;margin-bottom:8px;">🔀</div>
+            <div style="font-size:13px;font-weight:600;margin-bottom:4px;">Vote to Skip</div>
+            <div style="font-size:12px;color:var(--muted);">Democratically skip songs you're not feeling</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════
+     SCREEN: CREATE ROOM
+════════════════════════════════════════════ -->
+<div class="screen" id="screenCreate">
+  <div class="glass-card fade-in">
+    <button class="btn btn-ghost btn-sm" onclick="showScreen('screenLobby')" style="margin-bottom:20px;">← Back</button>
+    <div class="auth-title" style="text-align:left;margin-bottom:6px;">Host a Jam</div>
+    <div class="auth-subtitle" style="text-align:left;margin-bottom:24px;">Set up your room</div>
+
+    <div class="input-group">
+      <label class="input-label">Room Name</label>
+      <input class="input" id="roomNameInput" type="text" placeholder="Friday Night Vibes" maxlength="32">
+    </div>
+
+    <div style="margin-bottom:20px;">
+      <label class="input-label" style="display:block;margin-bottom:12px;">Room Settings</label>
+      <div class="setting-row">
+        <div><div class="setting-label">Allow reactions</div><div class="setting-desc">Members can react with emojis</div></div>
+        <label class="toggle"><input type="checkbox" id="setReactions" checked><span class="toggle-slider"></span></label>
+      </div>
+      <div class="setting-row">
+        <div><div class="setting-label">Allow song uploads</div><div class="setting-desc">Members can add to the queue</div></div>
+        <label class="toggle"><input type="checkbox" id="setUploads" checked><span class="toggle-slider"></span></label>
+      </div>
+      <div class="setting-row">
+        <div><div class="setting-label">Allow vote-skip</div><div class="setting-desc">Members can vote to skip songs</div></div>
+        <label class="toggle"><input type="checkbox" id="setSkips" checked><span class="toggle-slider"></span></label>
+      </div>
+      <div class="setting-row">
+        <div><div class="setting-label">Enable live chat</div><div class="setting-desc">Members can send messages</div></div>
+        <label class="toggle"><input type="checkbox" id="setChat" checked><span class="toggle-slider"></span></label>
+      </div>
+      <div class="setting-row" style="border-bottom:none;">
+        <div><div class="setting-label">Radio mode</div><div class="setting-desc">Auto-play related songs when queue ends</div></div>
+        <label class="toggle"><input type="checkbox" id="setRadio"><span class="toggle-slider"></span></label>
+      </div>
+    </div>
+
+    <button class="btn btn-primary btn-block btn-lg" onclick="createRoom()" id="createBtn">🎙️ Create Room</button>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════
+     SCREEN: JOIN ROOM
+════════════════════════════════════════════ -->
+<div class="screen" id="screenJoin">
+  <div class="glass-card fade-in">
+    <button class="btn btn-ghost btn-sm" onclick="showScreen('screenLobby')" style="margin-bottom:20px;">← Back</button>
+    <div class="auth-title" style="text-align:left;margin-bottom:6px;">Join a Jam</div>
+    <div class="auth-subtitle" style="text-align:left;margin-bottom:24px;">Enter the 6-letter code from your host</div>
+
+    <div class="input-group">
+      <label class="input-label">Room Code</label>
+      <input class="input" id="joinCode" type="text" placeholder="ABC123" maxlength="6"
+        style="font-family:'Syne',sans-serif;font-size:28px;font-weight:800;letter-spacing:8px;text-align:center;text-transform:uppercase;"
+        oninput="this.value=this.value.toUpperCase()"
+        onkeypress="if(event.key==='Enter')joinRoom()">
+    </div>
+
+    <div class="error-box" id="joinError"></div>
+
+    <button class="btn btn-primary btn-block btn-lg" onclick="joinRoom()" id="joinBtn">🚪 Join Room</button>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════
+     SCREEN: ROOM
+════════════════════════════════════════════ -->
+<div class="screen" id="screenRoom" style="overflow:hidden;padding:0;">
+  <div class="room-layout">
+
+    <!-- LEFT: Queue + Chat -->
+    <div class="room-left">
+      <!-- Tabs -->
+      <div class="room-tabs">
+        <button class="room-tab active" onclick="switchRoomTab('queue',this)">Queue</button>
+        <button class="room-tab" onclick="switchRoomTab('chat',this)">Chat</button>
+        <button class="room-tab" onclick="switchRoomTab('members',this)">Members</button>
+      </div>
+
+      <!-- QUEUE TAB -->
+      <div class="tab-pane active" id="tabQueue">
+        <div class="panel-header" style="border-bottom:none;">
+          <div class="panel-title">Up Next</div>
+          <span class="badge badge-teal" id="queueCount">0</span>
+        </div>
+        <div class="vote-panel" id="votePanel">
+          <div class="vote-label" id="voteLabel">Vote to skip?</div>
+          <div class="vote-bar"><div class="vote-fill" id="voteFill" style="width:0%"></div></div>
+          <div style="display:flex;gap:8px;">
+            <button class="btn btn-ghost btn-sm" onclick="voteSkip()" id="voteBtn" style="flex:1;font-size:12px;">👍 Vote Skip</button>
+          </div>
+        </div>
+        <div class="panel-list" id="queueList">
+          <div class="empty-state"><div class="empty-state-icon">🎶</div><div class="empty-state-text">Queue is empty</div></div>
+        </div>
+        <!-- Quick Add -->
+        <div class="queue-add-wrap" id="queueAddWrap">
+          <input class="queue-add-input" id="queueAddInput" placeholder="Paste YouTube URL or search..." onkeypress="if(event.key==='Enter')quickAddSong()">
+        </div>
+      </div>
+
+      <!-- CHAT TAB -->
+      <div class="tab-pane" id="tabChat">
+        <div class="chat-panel">
+          <div class="chat-messages" id="chatMessages">
+            <div class="empty-state" style="padding:20px;"><div class="empty-state-icon">💬</div><div class="empty-state-text">Chat will appear here</div></div>
+          </div>
+          <div class="chat-input-wrap" id="chatInputWrap">
+            <input class="chat-input" id="chatInput" placeholder="Say something..." maxlength="200" onkeypress="if(event.key==='Enter')sendChat()">
+            <button class="chat-send-btn" onclick="sendChat()">↑</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- MEMBERS TAB -->
+      <div class="tab-pane" id="tabMembers">
+        <div class="panel-header" style="border-bottom:none;">
+          <div class="panel-title">Members</div>
+          <span class="badge badge-white" id="memberCount">0</span>
+        </div>
+        <div class="panel-list" id="membersList"></div>
+
+        <!-- Mood meter -->
+        <div style="padding:8px;flex-shrink:0;">
+          <div class="mood-meter-panel">
+            <h3>🎭 Room Vibe</h3>
+            <div id="moodMeterBars"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- CENTER: Room info + playlists -->
+    <div class="room-center">
+      <!-- Header -->
+      <div class="room-header">
+        <div class="room-code-badge" id="roomCodeDisp" onclick="copyCode()" title="Click to copy">------</div>
+        <div class="room-name-disp" id="roomNameDisp">Jam Room</div>
+        <div id="radioOnBadge" style="display:none;"><div class="radio-on-badge"><div class="radio-on-dot"></div> Radio</div></div>
+        <div style="display:flex;gap:8px;margin-left:auto;" id="roomHeaderBtns"></div>
+      </div>
+
+      <!-- Content -->
+      <div class="room-content" id="roomContent">
+        <!-- Populated by JS -->
+      </div>
+    </div>
+
+    <!-- RIGHT: Player -->
+    <div class="room-right">
+      <!-- Video -->
+      <div class="player-video">
+        <iframe id="ytPlayer" allow="autoplay;encrypted-media" allowfullscreen></iframe>
+      </div>
+
+      <!-- Player info -->
+      <div class="player-info">
+        <div class="np-song-title" id="npTitle">No song playing</div>
+        <div class="np-song-artist" id="npArtist">Add songs to get started</div>
+
+        <!-- Progress -->
+        <div class="progress-wrap">
+          <span id="progCurrent">0:00</span>
+          <div class="progress-bar" onclick="seekProgress(event)">
+            <div class="progress-fill" id="progressFill"></div>
+          </div>
+          <span id="progTotal">0:00</span>
+        </div>
+
+        <!-- Controls -->
+        <div class="np-controls">
+          <button class="np-btn" onclick="prevSong()" title="Previous">⏮</button>
+          <button class="np-btn np-btn-play" onclick="togglePlay()" id="playBtn" title="Play/Pause">▶</button>
+          <button class="np-btn" onclick="skipSong()" title="Skip">⏭</button>
+          <button class="np-btn" onclick="toggleFullLyrics()" title="Fullscreen Lyrics" style="font-size:12px;">✦</button>
+        </div>
+
+        <!-- Volume -->
+        <div class="volume-wrap">
+          <span class="volume-icon">🔊</span>
+          <input class="volume-slider" type="range" min="0" max="100" value="80" oninput="setVolume(this.value)" id="volSlider">
+          <span style="font-size:11px;color:var(--muted);min-width:28px;text-align:right;" id="volLabel">80%</span>
+        </div>
+      </div>
+
+      <!-- Lyrics -->
+      <div class="player-lyrics" id="playerLyrics">
+        <h4>♪ Lyrics</h4>
+        <div id="lyricsContent" style="color:var(--muted);font-size:13px;font-style:italic;">Play a song to see lyrics</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Reaction bar -->
+  <div class="react-bar" id="reactBar" style="display:none;">
+    <button class="react-btn" onclick="sendReaction('🔥')">🔥</button>
+    <button class="react-btn" onclick="sendReaction('❤️')">❤️</button>
+    <button class="react-btn" onclick="sendReaction('🎉')">🎉</button>
+    <button class="react-btn" onclick="sendReaction('😮')">😮</button>
+    <button class="react-btn" onclick="sendReaction('👏')">👏</button>
+    <button class="react-btn" onclick="sendReaction('💀')">💀</button>
+    <button class="react-btn" onclick="sendReaction('🎸')">🎸</button>
+    <button class="react-btn" onclick="sendReaction('🎵')">🎵</button>
+  </div>
+</div>
+
+<!-- Fullscreen Lyrics Overlay -->
+<div id="fullLyricsOverlay">
+  <div id="fullLyricsSong" style="font-family:'Syne',sans-serif;font-size:14px;color:var(--gradient-color);letter-spacing:1px;text-transform:uppercase;margin-bottom:32px;"></div>
+  <div id="fullLyricsContent"></div>
+  <button id="fullLyricsClose" onclick="toggleFullLyrics()">✕</button>
+</div>
+
+<!-- Toast -->
+<div class="jam-toast" id="jamToast"></div>
+
+<!-- ══════════════════════════════════════════
+     JAVASCRIPT
+════════════════════════════════════════════ -->
+<script>
+// ── FIREBASE CONFIG ───────────────────────────
+const FB_CONFIG = {
+  apiKey: "AIzaSyC50_wBK3TfERX1gm35puugCD324SxHJR8",
+  authDomain: "tunesandindy.firebaseapp.com",
+  projectId: "tunesandindy",
+  storageBucket: "tunesandindy.firebasestorage.app",
+  messagingSenderId: "335192973371",
+  appId: "1:335192973371:web:ce69d4b67c765d6aaf7c1e"
+};
+
+// ── PROFANITY ────────────────────────────────
+const BAD_WORDS = ['nigger','nigga','faggot','chink','spic','kike','cunt','retard','tranny','bitch','fuck','shit','cock','pussy','dick','whore','slut'];
+function hasProfanity(text) {
+  const t = text.toLowerCase().replace(/[^a-z0-9]/g,'');
+  return BAD_WORDS.some(w => t.includes(w.replace(/[^a-z]/g,'')));
+}
+function sanitize(s) { return s.trim().replace(/[<>]/g,'').slice(0,32); }
+
+// ── STATE ────────────────────────────────────
+let fbAuth, fbDb;
+let jamUser = null, jamProfile = null;
+let currentRoom = null, currentRoomId = null, isHost = false;
+let roomListeners = [];
+let authTabMode = 'signin';
+let ytReady = false;
+let playStartTime = null, playDuration = 0;
+let progressTimer = null;
+let votes = new Set();
+let chatMsgs = [];
+let isPlaying = false;
+let currentVol = 80;
+
+// ── CONSTANTS ────────────────────────────────
+const EMOJIS = ['🎵','🎸','🎹','🎺','🎻','🥁','🎤','🎧','🦁','🐯','🦊','🐺','🐻','🐼','🦄','🌟','⚡','🔥','💎','👑','🌈','🚀','🎮','🏆','💜','🌙','☀️','🎃','🎄','🎭'];
+const MOODS  = ['🎉 Hyped','😌 Chill','🤘 Pumped','😴 Sleepy','💃 Dancey','🎶 Vibing','🤯 Mind blown','😂 Silly','🔥 On fire','💭 Thoughtful'];
+
+// ── INIT ─────────────────────────────────────
+async function loadScript(src) {
+  return new Promise((res,rej) => {
+    if (document.querySelector(`script[src="${src}"]`)) { res(); return; }
+    const s = document.createElement('script');
+    s.src = src; s.onload = res; s.onerror = rej;
+    document.head.appendChild(s);
+  });
+}
+
+async function init() {
+  await loadScript('https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js');
+  await loadScript('https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js');
+  await loadScript('https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js');
+
+  if (!firebase.apps.length) firebase.initializeApp(FB_CONFIG);
+  fbAuth = firebase.auth();
+  fbDb   = firebase.firestore();
+
+  buildEmojiPicker();
+  buildMoodPicker();
+
+  fbAuth.onAuthStateChanged(async user => {
+    jamUser = user;
+    if (user) {
+      jamProfile = await loadProfile(user.uid);
+      if (!jamProfile?.name) {
+        showScreen('screenProfile');
+      } else {
+        showLobby();
+      }
+    } else {
+      showScreen('screenAuth');
+    }
+  });
+}
+
+// ── AUTH ─────────────────────────────────────
+function switchTab(mode) {
+  authTabMode = mode;
+  const isUp = mode === 'signup';
+  document.getElementById('tabSignIn').classList.toggle('active', !isUp);
+  document.getElementById('tabSignUp').classList.toggle('active', isUp);
+  document.getElementById('authBtn').textContent = isUp ? 'Create Account' : 'Sign In';
+  document.getElementById('forgotBtn').style.display = isUp ? 'none' : 'block';
+  clearAuthMsg();
+}
+function clearAuthMsg() {
+  ['authError','authSuccess'].forEach(id => {
+    const el = document.getElementById(id);
+    el.style.display = 'none'; el.textContent = '';
+  });
+}
+function showAuthErr(m) { const el = document.getElementById('authError'); el.textContent = m; el.style.display = 'block'; }
+function showAuthOk(m)  { const el = document.getElementById('authSuccess'); el.textContent = m; el.style.display = 'block'; }
+
+async function submitAuth() {
+  const email = document.getElementById('authEmail').value.trim();
+  const pass  = document.getElementById('authPass').value;
+  const btn   = document.getElementById('authBtn');
+  if (!email || !pass) { showAuthErr('Fill in both fields.'); return; }
+  if (pass.length < 6) { showAuthErr('Password must be 6+ characters.'); return; }
+  clearAuthMsg();
+  btn.disabled = true;
+  btn.innerHTML = '<span class="spinner"></span> Please wait...';
+  try {
+    if (authTabMode === 'signup') {
+      await fbAuth.createUserWithEmailAndPassword(email, pass);
+    } else {
+      await fbAuth.signInWithEmailAndPassword(email, pass);
+    }
+  } catch(err) {
+    const msgs = {
+      'auth/user-not-found':'No account found.',
+      'auth/wrong-password':'Incorrect password.',
+      'auth/email-already-in-use':'Email already in use.',
+      'auth/invalid-email':'Invalid email.',
+      'auth/weak-password':'Password too weak.',
+      'auth/too-many-requests':'Too many attempts. Try later.',
+      'auth/invalid-credential':'Invalid email or password.',
+    };
+    showAuthErr(msgs[err.code] || err.message);
+    btn.disabled = false;
+    btn.textContent = authTabMode === 'signup' ? 'Create Account' : 'Sign In';
+  }
+}
+async function forgotPass() {
+  const email = document.getElementById('authEmail').value.trim();
+  if (!email) { showAuthErr('Enter your email first.'); return; }
+  try { await fbAuth.sendPasswordResetEmail(email); showAuthOk('Reset email sent!'); }
+  catch(e) { showAuthErr(e.message); }
+}
+async function signOut() {
+  await leaveRoom();
+  await fbAuth.signOut();
+  document.getElementById('jamNav').style.display = 'none';
+  showScreen('screenAuth');
+}
+
+// ── PROFILE ──────────────────────────────────
+async function loadProfile(uid) {
+  try { const d = await fbDb.collection('jam_profiles').doc(uid).get(); return d.exists ? d.data() : null; }
+  catch(e) { return null; }
+}
+function buildEmojiPicker() {
+  const c = document.getElementById('emojiPicker');
+  EMOJIS.forEach(e => {
+    const b = document.createElement('button');
+    b.className = 'emoji-opt'; b.dataset.e = e; b.textContent = e;
+    b.onclick = () => { document.querySelectorAll('.emoji-opt').forEach(x => x.classList.remove('selected')); b.classList.add('selected'); };
+    c.appendChild(b);
+  });
+  c.querySelector('.emoji-opt')?.classList.add('selected');
+}
+function buildMoodPicker() {
+  const c = document.getElementById('moodOptions');
+  MOODS.forEach(m => {
+    const b = document.createElement('button');
+    b.className = 'mood-opt'; b.dataset.m = m; b.textContent = m;
+    b.onclick = () => { document.querySelectorAll('.mood-opt').forEach(x => x.classList.remove('selected')); b.classList.add('selected'); };
+    c.appendChild(b);
+  });
+  c.querySelector('.mood-opt')?.classList.add('selected');
+}
+function prefillProfile() {
+  if (!jamProfile) return;
+  document.getElementById('profileName').value = jamProfile.name || '';
+  document.querySelectorAll('.emoji-opt').forEach(b => b.classList.toggle('selected', b.dataset.e === jamProfile.emoji));
+  document.querySelectorAll('.mood-opt').forEach(b => b.classList.toggle('selected', b.dataset.m === jamProfile.mood));
+}
+async function saveProfile() {
+  const name  = sanitize(document.getElementById('profileName').value);
+  const emoji = document.querySelector('.emoji-opt.selected')?.dataset.e || '🎵';
+  const mood  = document.querySelector('.mood-opt.selected')?.dataset.m  || '🎶 Vibing';
+  if (name.length < 2) { toast('⚠️ Name must be 2+ characters'); return; }
+  if (hasProfanity(name)) {
+    document.getElementById('profileNameFeedback').textContent = '⚠️ Choose an appropriate name';
+    document.getElementById('profileNameFeedback').style.color = '#ff5f5f';
+    return;
+  }
+  const btn = document.getElementById('profileBtn');
+  btn.disabled = true; btn.innerHTML = '<span class="spinner"></span>';
+  jamProfile = { name, emoji, mood, uid: jamUser.uid, email: jamUser.email };
+  await fbDb.collection('jam_profiles').doc(jamUser.uid).set(jamProfile);
+  btn.disabled = false; btn.textContent = 'Save & Continue →';
+  showLobby();
+}
+
+// ── NAVIGATION ───────────────────────────────
+function showScreen(id) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+  if (id === 'screenProfile') prefillProfile();
+}
+function showLobby() {
+  buildNav();
+  updateLobbyUI();
+  showScreen('screenLobby');
+  document.getElementById('jamNav').style.display = '';
+  loadRecentRooms();
+}
+function buildNav() {
+  const nc = document.getElementById('navCenter');
+  const nr = document.getElementById('navRight');
+  nc.innerHTML = '';
+  if (jamProfile) {
+    const chip = document.createElement('div');
+    chip.className = 'nav-user-chip';
+    chip.innerHTML = `<span>${jamProfile.emoji}</span><span>${jamProfile.name}</span>`;
+    chip.onclick = () => showScreen('screenProfile');
+    nr.innerHTML = '';
+    nr.appendChild(chip);
+    const so = document.createElement('button');
+    so.className = 'nav-btn-ghost';
+    so.textContent = 'Sign Out';
+    so.onclick = signOut;
+    nr.appendChild(so);
+  }
+}
+function updateLobbyUI() {
+  if (!jamProfile) return;
+  document.getElementById('lobbyGreeting').textContent = `Hey ${jamProfile.name} 👋`;
+  document.getElementById('lbEmoji').textContent = jamProfile.emoji;
+  document.getElementById('lbName').textContent = jamProfile.name;
+  document.getElementById('lbMood').textContent = jamProfile.mood || '';
+}
+function loadRecentRooms() {
+  const recent = JSON.parse(localStorage.getItem('jam_recent') || '[]');
+  const sec = document.getElementById('recentRoomsSection');
+  if (!recent.length) { sec.innerHTML = '<div style="font-size:12px;color:var(--muted);">No recent rooms</div>'; return; }
+  sec.innerHTML = recent.slice(0,3).map(r => `
+    <div class="recent-room-item" onclick="quickJoin('${r.code}')">
+      <div class="recent-room-code">${r.code}</div>
+      <div class="recent-room-info">
+        <div class="recent-room-name">${escHtml(r.name)}</div>
+        <div class="recent-room-time">${r.time || ''}</div>
+      </div>
+    </div>
+  `).join('');
+}
+async function quickJoin(code) {
+  document.getElementById('joinCode').value = code;
+  showScreen('screenJoin');
+  await joinRoom();
+}
+function saveRecentRoom(code, name) {
+  const recent = JSON.parse(localStorage.getItem('jam_recent') || '[]');
+  const filtered = recent.filter(r => r.code !== code);
+  filtered.unshift({ code, name, time: new Date().toLocaleDateString() });
+  localStorage.setItem('jam_recent', JSON.stringify(filtered.slice(0,5)));
+}
+
+// ── ROOM CODE ────────────────────────────────
+function genCode() {
+  const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+  return Array.from({length:6}, () => chars[Math.floor(Math.random()*chars.length)]).join('');
+}
+
+// ── CREATE ROOM ───────────────────────────────
+async function createRoom() {
+  const name = sanitize(document.getElementById('roomNameInput').value);
+  if (!name) { toast('⚠️ Enter a room name'); return; }
+  if (hasProfanity(name)) { toast('⚠️ Choose an appropriate name'); return; }
+
+  const btn = document.getElementById('createBtn');
+  btn.disabled = true; btn.innerHTML = '<span class="spinner"></span> Creating...';
+
+  const code = genCode();
+  const settings = {
+    reactions: document.getElementById('setReactions').checked,
+    uploads:   document.getElementById('setUploads').checked,
+    skips:     document.getElementById('setSkips').checked,
+    chat:      document.getElementById('setChat').checked,
+    radio:     document.getElementById('setRadio').checked,
+  };
+
+  try {
+    const ref = await fbDb.collection('jam_rooms').add({
+      code, name,
+      hostUid: jamUser.uid,
+      hostName: jamProfile.name,
+      settings,
+      createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+      active: true,
+      queue: [],
+      currentSong: null,
+      currentIndex: -1,
+      playing: false,
+      startedAt: null,
+      songsPlayed: 0,
+    });
+    currentRoomId = ref.id;
+    isHost = true;
+    await fbDb.collection('jam_rooms').doc(ref.id).collection('members').doc(jamUser.uid).set({
+      uid: jamUser.uid, name: jamProfile.name, emoji: jamProfile.emoji, mood: jamProfile.mood,
+      joinedAt: firebase.firestore.FieldValue.serverTimestamp(), isHost: true,
+    });
+    await enterRoom(ref.id);
+    btn.disabled = false; btn.textContent = '🎙️ Create Room';
+  } catch(err) {
+    console.error(err); toast('❌ Failed to create room');
+    btn.disabled = false; btn.textContent = '🎙️ Create Room';
+  }
+}
+
+// ── JOIN ROOM ─────────────────────────────────
+async function joinRoom() {
+  const code = document.getElementById('joinCode').value.trim().toUpperCase();
+  if (code.length !== 6) {
+    const el = document.getElementById('joinError');
+    el.textContent = 'Code must be 6 characters.'; el.style.display = 'block'; return;
+  }
+  const btn = document.getElementById('joinBtn');
+  btn.disabled = true; btn.innerHTML = '<span class="spinner"></span> Joining...';
+  document.getElementById('joinError').style.display = 'none';
+  try {
+    const snap = await fbDb.collection('jam_rooms').where('code','==',code).where('active','==',true).limit(1).get();
+    if (snap.empty) {
+      const el = document.getElementById('joinError');
+      el.textContent = 'Room not found or no longer active.'; el.style.display = 'block';
+      btn.disabled = false; btn.textContent = '🚪 Join Room'; return;
+    }
+    const doc = snap.docs[0];
+    currentRoomId = doc.id; isHost = false;
+    await fbDb.collection('jam_rooms').doc(doc.id).collection('members').doc(jamUser.uid).set({
+      uid: jamUser.uid, name: jamProfile.name, emoji: jamProfile.emoji, mood: jamProfile.mood,
+      joinedAt: firebase.firestore.FieldValue.serverTimestamp(), isHost: false,
+    });
+    await enterRoom(doc.id);
+    btn.disabled = false; btn.textContent = '🚪 Join Room';
+  } catch(err) {
+    console.error(err);
+    const el = document.getElementById('joinError');
+    el.textContent = 'Something went wrong. Try again.'; el.style.display = 'block';
+    btn.disabled = false; btn.textContent = '🚪 Join Room';
+  }
+}
+
+// ── ENTER ROOM ────────────────────────────────
+async function enterRoom(roomId) {
+  currentRoomId = roomId;
+  const snap = await fbDb.collection('jam_rooms').doc(roomId).get();
+  currentRoom = { id: roomId, ...snap.data() };
+
+  showScreen('screenRoom');
+
+  document.getElementById('roomCodeDisp').textContent = currentRoom.code;
+  document.getElementById('roomNameDisp').textContent = currentRoom.name;
+  document.getElementById('radioOnBadge').style.display = currentRoom.settings?.radio ? '' : 'none';
+
+  buildRoomNav();
+  buildRoomContent();
+  setupRoomListeners(roomId);
+  setupKickListener(roomId);
+  renderNowPlaying(currentRoom.currentSong);
+  renderQueue(currentRoom.queue || [], currentRoom.currentIndex);
+
+  if (currentRoom.settings?.reactions) document.getElementById('reactBar').style.display = 'flex';
+  if (!currentRoom.settings?.chat) document.getElementById('chatInputWrap').style.display = 'none';
+  if (!isHost && !currentRoom.settings?.uploads) document.getElementById('queueAddWrap').style.display = 'none';
+
+  saveRecentRoom(currentRoom.code, currentRoom.name);
+  toast(`🎸 Joined "${currentRoom.name}"!`);
+
+  // Load chat
+  setupChatListener(roomId);
+  // Load activity
+  setupActivityListener(roomId);
+}
+
+// ── ROOM NAV ──────────────────────────────────
+function buildRoomNav() {
+  const nc = document.getElementById('navCenter');
+  const nr = document.getElementById('navRight');
+
+  nc.innerHTML = `
+    <div class="room-search-wrap">
+      <span class="room-search-icon">⌕</span>
+      <input placeholder="Search YouTube to add..." onkeypress="if(event.key==='Enter')searchAndAdd(this.value)">
+    </div>
+  `;
+
+  nr.innerHTML = '';
+  if (jamProfile) {
+    const chip = document.createElement('div');
+    chip.className = 'nav-user-chip';
+    chip.innerHTML = `<span>${jamProfile.emoji}</span><span>${jamProfile.name}</span>`;
+    nr.appendChild(chip);
+  }
+  const backBtn = document.createElement('button');
+  backBtn.className = 'nav-btn-ghost';
+  backBtn.textContent = isHost ? '🔒 Close' : '🚪 Leave';
+  backBtn.onclick = isHost ? closeRoom : leaveRoom;
+  nr.appendChild(backBtn);
+}
+
+// ── ROOM CONTENT ──────────────────────────────
+function buildRoomContent() {
+  const c = document.getElementById('roomContent');
+  c.innerHTML = '';
+
+  // Stats bar
+  c.innerHTML += `
+    <div class="room-stats" style="margin-bottom:20px;">
+      <div class="room-stat"><div class="room-stat-val" id="statSongs">0</div><div class="room-stat-label">Songs Played</div></div>
+      <div class="room-stat"><div class="room-stat-val" id="statMembers">0</div><div class="room-stat-label">Members</div></div>
+      <div class="room-stat"><div class="room-stat-val" id="statQueue">0</div><div class="room-stat-label">In Queue</div></div>
+    </div>
+  `;
+
+  if (isHost) {
+    c.innerHTML += `
+      <div class="settings-panel">
+        <h3>⚙️ Room Settings</h3>
+        ${buildSettingsHTML()}
+      </div>
+    `;
+  }
+
+  if (isHost || currentRoom.settings?.uploads) {
+    c.innerHTML += `
+      <div class="upload-panel">
+        <h3>🎵 Add to Queue</h3>
+        <div id="playlistList"><div style="font-size:13px;color:var(--muted);padding:8px 0;">Loading playlists...</div></div>
+      </div>
+    `;
+    loadPlaylists();
+  }
+
+  // Activity feed
+  c.innerHTML += `
+    <div class="upload-panel">
+      <h3>📡 Live Activity</h3>
+      <div id="activityFeed" style="max-height:160px;overflow-y:auto;"></div>
+    </div>
+  `;
+}
+
+function buildSettingsHTML() {
+  const s = currentRoom.settings || {};
+  const rows = [
+    ['reactions','Allow reactions','Emoji reactions from members'],
+    ['uploads','Allow song uploads','Members can add to queue'],
+    ['skips','Allow vote-skip','Members can vote to skip'],
+    ['chat','Enable chat','Members can send messages'],
+    ['radio','Radio mode','Auto-play related songs when queue ends'],
+  ];
+  return rows.map(([k,l,d]) => `
+    <div class="setting-row">
+      <div><div class="setting-label">${l}</div><div class="setting-desc">${d}</div></div>
+      <label class="toggle"><input type="checkbox" ${s[k]?'checked':''} onchange="updateSetting('${k}',this.checked)"><span class="toggle-slider"></span></label>
+    </div>
+  `).join('');
+}
+
+// ── ROOM LISTENERS ────────────────────────────
+function setupRoomListeners(roomId) {
+  roomListeners.forEach(u => u());
+  roomListeners = [];
+
+  // Room doc
+  const roomUnsub = fbDb.collection('jam_rooms').doc(roomId).onSnapshot(snap => {
+    if (!snap.exists || !snap.data().active) { handleRoomClosed(); return; }
+    currentRoom = { id: roomId, ...snap.data() };
+
+    renderNowPlaying(currentRoom.currentSong);
+    renderQueue(currentRoom.queue || [], currentRoom.currentIndex);
+
+    // Update react bar
+    const rb = document.getElementById('reactBar');
+    if (rb) rb.style.display = currentRoom.settings?.reactions ? 'flex' : 'none';
+
+    // Update upload visibility
+    const qa = document.getElementById('queueAddWrap');
+    if (qa && !isHost) qa.style.display = currentRoom.settings?.uploads ? '' : 'none';
+
+    // Update radio badge
+    const rd = document.getElementById('radioOnBadge');
+    if (rd) rd.style.display = currentRoom.settings?.radio ? '' : 'none';
+
+    // Update stats
+    if (document.getElementById('statSongs')) document.getElementById('statSongs').textContent = currentRoom.songsPlayed || 0;
+    if (document.getElementById('statQueue')) document.getElementById('statQueue').textContent = (currentRoom.queue || []).length;
+
+    // Votes
+    renderVotePanel(currentRoom.votes || {}, currentRoom.queue?.length || 0);
+  });
+
+  // Members
+  const membersUnsub = fbDb.collection('jam_rooms').doc(roomId).collection('members').onSnapshot(snap => {
+    const members = snap.docs.map(d => d.data());
+    renderMembers(members);
+    renderMoodMeter(members);
+    if (document.getElementById('statMembers')) document.getElementById('statMembers').textContent = members.length;
+  });
+
+  // Reactions
+  const reactUnsub = fbDb.collection('jam_rooms').doc(roomId).collection('reactions')
+    .orderBy('at','desc').limit(1)
+    .onSnapshot(snap => {
+      snap.docChanges().forEach(c => {
+        if (c.type === 'added' && c.doc.data().uid !== jamUser.uid) {
+          spawnReaction(c.doc.data().emoji, c.doc.data().x || 50);
+        }
+      });
+    });
+
+  roomListeners = [roomUnsub, membersUnsub, reactUnsub];
+}
+
+// ── CHAT ──────────────────────────────────────
+function setupChatListener(roomId) {
+  const unsub = fbDb.collection('jam_rooms').doc(roomId).collection('chat')
+    .orderBy('at').limitToLast(50)
+    .onSnapshot(snap => {
+      snap.docChanges().forEach(c => {
+        if (c.type === 'added') appendChatMsg(c.doc.data());
+      });
+    });
+  roomListeners.push(unsub);
+}
+
+function appendChatMsg(data) {
+  const c = document.getElementById('chatMessages');
+  const isEmpty = c.querySelector('.empty-state');
+  if (isEmpty) c.innerHTML = '';
+
+  const div = document.createElement('div');
+  div.className = 'chat-msg';
+  const isMe = data.uid === jamUser.uid;
+  div.innerHTML = `
+    <div class="chat-msg-emoji">${data.emoji || '🎵'}</div>
+    <div class="chat-msg-body">
+      <div class="chat-msg-author">${escHtml(data.name)}</div>
+      <div class="chat-msg-text ${isMe?'is-me':''}">${escHtml(data.text)}</div>
+    </div>
+  `;
+  c.appendChild(div);
+  c.scrollTop = c.scrollHeight;
+}
+
+async function sendChat() {
+  if (!currentRoom?.settings?.chat && !isHost) return;
+  const input = document.getElementById('chatInput');
+  const text = input.value.trim();
+  if (!text || text.length > 200) return;
+  if (hasProfanity(text)) { toast('⚠️ Keep it clean!'); return; }
+  input.value = '';
+  await fbDb.collection('jam_rooms').doc(currentRoomId).collection('chat').add({
+    uid: jamUser.uid,
+    name: jamProfile.name,
+    emoji: jamProfile.emoji,
+    text,
+    at: firebase.firestore.FieldValue.serverTimestamp(),
+  });
+}
+
+// ── ACTIVITY FEED ─────────────────────────────
+function setupActivityListener(roomId) {
+  const unsub = fbDb.collection('jam_rooms').doc(roomId).collection('activity')
+    .orderBy('at','desc').limit(10)
+    .onSnapshot(snap => {
+      snap.docChanges().forEach(c => {
+        if (c.type === 'added') appendActivity(c.doc.data());
+      });
+    });
+  roomListeners.push(unsub);
+}
+
+function appendActivity(data) {
+  const feed = document.getElementById('activityFeed');
+  if (!feed) return;
+  const div = document.createElement('div');
+  div.className = 'activity-item';
+  div.innerHTML = `<span class="a-icon">${data.icon||'📢'}</span><span class="a-name">${escHtml(data.name)}</span> <span>${escHtml(data.msg)}</span>`;
+  feed.insertBefore(div, feed.firstChild);
+  if (feed.children.length > 10) feed.lastChild.remove();
+}
+
+async function logActivity(icon, msg) {
+  if (!currentRoomId) return;
+  try {
+    await fbDb.collection('jam_rooms').doc(currentRoomId).collection('activity').add({
+      name: jamProfile.name, icon, msg,
+      at: firebase.firestore.FieldValue.serverTimestamp(),
+    });
+  } catch(e) {}
+}
+
+// ── KICK LISTENER ─────────────────────────────
+function setupKickListener(roomId) {
+  const unsub = fbDb.collection('jam_rooms').doc(roomId).collection('kicked').doc(jamUser.uid)
+    .onSnapshot(snap => {
+      if (snap.exists) { unsub(); handleKicked(); }
+    });
+  roomListeners.push(unsub);
+}
+function handleKicked() {
+  roomListeners.forEach(u => u()); roomListeners = [];
+  currentRoom = null; currentRoomId = null; isHost = false;
+  stopProgress();
+  document.getElementById('reactBar').style.display = 'none';
+  showLobby(); toast('👢 You were removed from the room');
+}
+
+// ── PLAYLISTS ─────────────────────────────────
+function loadPlaylists() {
+  const el = document.getElementById('playlistList');
+  if (!el) return;
+  let playlists = {};
+  let recent = [];
+  try { playlists = JSON.parse(localStorage.getItem('playlists') || '{}'); } catch(e) {}
+  try { recent   = JSON.parse(localStorage.getItem('recent')    || '[]'); } catch(e) {}
+
+  const keys = Object.keys(playlists);
+  if (!keys.length && !recent.length) {
+    el.innerHTML = `<div style="font-size:13px;color:var(--muted);">No playlists found. <a href="full-tunes.html" style="color:var(--gradient-color);">Go to INDY Music →</a></div>`;
+    return;
+  }
+
+  el.innerHTML = '';
+  keys.forEach(name => {
+    const p = playlists[name];
+    const songs = p.songs || [];
+    if (!songs.length) return;
+    const item = document.createElement('div');
+    item.className = 'playlist-select-item';
+    item.innerHTML = `
+      <span style="font-size:22px;">${p.emoji||'🎵'}</span>
+      <div style="flex:1;min-width:0;">
+        <div style="font-size:14px;font-weight:600;">${escHtml(name)}</div>
+        <div style="font-size:12px;color:var(--muted);">${songs.length} songs</div>
+      </div>
+      <button class="btn btn-ghost btn-sm" onclick="event.stopPropagation();addPlaylist('${escHtml(name)}')">Add All</button>
+    `;
+    item.onclick = () => addPlaylist(name);
+    el.appendChild(item);
+  });
+
+  if (recent.length) {
+    const item = document.createElement('div');
+    item.className = 'playlist-select-item';
+    item.innerHTML = `
+      <span style="font-size:22px;">⏱️</span>
+      <div style="flex:1;min-width:0;">
+        <div style="font-size:14px;font-weight:600;">Recently Played</div>
+        <div style="font-size:12px;color:var(--muted);">${recent.length} songs</div>
+      </div>
+      <button class="btn btn-ghost btn-sm" onclick="event.stopPropagation();addSongs(JSON.parse(localStorage.getItem('recent')||'[]'))">Add All</button>
+    `;
+    item.onclick = () => addSongs(recent);
+    el.appendChild(item);
+  }
+}
+
+async function addPlaylist(name) {
+  let playlists = {};
+  try { playlists = JSON.parse(localStorage.getItem('playlists')||'{}'); } catch(e) {}
+  const songs = playlists[name]?.songs || [];
+  if (!songs.length) { toast('⚠️ Playlist is empty'); return; }
+  await addSongs(songs.slice(0,20));
+}
+
+async function addSongs(songs) {
+  if (!songs?.length) return;
+  const roomRef = fbDb.collection('jam_rooms').doc(currentRoomId);
+  const snap    = await roomRef.get();
+  const existing = snap.data()?.queue || [];
+  const newSongs = songs.map(s => ({
+    id: s.id, title: s.title || 'Unknown', artist: s.artist || '',
+    art: s.art || '', addedBy: jamProfile.name, addedByEmoji: jamProfile.emoji,
+  }));
+  const merged = [...existing, ...newSongs].slice(0, 100);
+  await roomRef.update({ queue: merged });
+  if (snap.data()?.currentIndex === -1 && merged.length > 0) await playSongAt(0, merged);
+  toast(`✅ Added ${newSongs.length} songs`);
+  await logActivity('🎵', `added ${newSongs.length} songs to the queue`);
+}
+
+// ── QUICK ADD (search/paste) ──────────────────
+async function quickAddSong() {
+  const inp = document.getElementById('queueAddInput');
+  const val = inp.value.trim();
+  if (!val) return;
+  inp.value = '';
+
+  // Check if it's a YouTube URL
+  const ytMatch = val.match(/(?:youtube\.com\/watch\?v=|youtu\.be\/)([a-zA-Z0-9_-]{11})/);
+  if (ytMatch) {
+    const id = ytMatch[1];
+    const song = { id, title: 'Loading...', artist: 'YouTube', art: `https://img.youtube.com/vi/${id}/mqdefault.jpg`, addedBy: jamProfile.name, addedByEmoji: jamProfile.emoji };
+    await addSongs([song]);
+    // Fetch real title async
+    fetchYTTitle(id).then(info => {
+      if (info) updateQueueSongInfo(id, info.title, info.artist);
+    });
+    return;
+  }
+
+  // Otherwise search
+  await searchAndAdd(val);
+}
+
+async function searchAndAdd(query) {
+  if (!query || query.length < 2) return;
+  toast('🔍 Searching...');
+  // Use the INDY Music YouTube key if available
+  const ytKey = 'AIzaSyB9U8rjG9bfvXk4Jvl3p8sGsNfL6p8wMCA'; // fallback
+  try {
+    const res = await fetch(`https://www.googleapis.com/youtube/v3/search?part=snippet&type=video&videoCategoryId=10&maxResults=5&q=${encodeURIComponent(query)}&key=${ytKey}`);
+    const data = await res.json();
+    if (!data.items?.length) { toast('No results found'); return; }
+    const item = data.items[0];
+    const song = {
+      id: item.id.videoId,
+      title: item.snippet.title,
+      artist: item.snippet.channelTitle,
+      art: item.snippet.thumbnails?.medium?.url || '',
+      addedBy: jamProfile.name,
+      addedByEmoji: jamProfile.emoji,
+    };
+    await addSongs([song]);
+  } catch(e) {
+    toast('⚠️ Search failed. Paste a YouTube URL instead.');
+  }
+}
+
+async function fetchYTTitle(id) {
+  const ytKey = 'AIzaSyB9U8rjG9bfvXk4Jvl3p8sGsNfL6p8wMCA';
+  try {
+    const res = await fetch(`https://www.googleapis.com/youtube/v3/videos?part=snippet&id=${id}&key=${ytKey}`);
+    const data = await res.json();
+    const s = data.items?.[0]?.snippet;
+    if (s) return { title: s.title, artist: s.channelTitle };
+  } catch(e) {}
+  return null;
+}
+
+async function updateQueueSongInfo(id, title, artist) {
+  if (!currentRoomId) return;
+  const snap = await fbDb.collection('jam_rooms').doc(currentRoomId).get();
+  let queue = snap.data()?.queue || [];
+  queue = queue.map(s => s.id === id && s.title === 'Loading...' ? {...s, title, artist} : s);
+  await fbDb.collection('jam_rooms').doc(currentRoomId).update({ queue });
+}
+
+// ── QUEUE MANAGEMENT ─────────────────────────
+async function playSongAt(index, queueArr) {
+  const song = queueArr[index];
+  if (!song) return;
+  await fbDb.collection('jam_rooms').doc(currentRoomId).update({
+    currentSong: song, currentIndex: index, playing: true,
+    startedAt: firebase.firestore.FieldValue.serverTimestamp(),
+    songsPlayed: firebase.firestore.FieldValue.increment(1),
+    votes: {},
+  });
+}
+
+async function skipSong() {
+  const snap = await fbDb.collection('jam_rooms').doc(currentRoomId).get();
+  const d = snap.data();
+  const q = d.queue || [];
+  const next = (d.currentIndex || 0) + 1;
+  if (next >= q.length) {
+    if (d.settings?.radio) {
+      toast('📻 Radio mode: finding related songs...');
+      await autoRadio(d.currentSong, q);
+    } else {
+      await fbDb.collection('jam_rooms').doc(currentRoomId).update({ currentSong: null, currentIndex: -1, playing: false });
+      toast('⏭️ Queue finished!');
+    }
+  } else {
+    await playSongAt(next, q);
+    await logActivity('⏭', `skipped to the next song`);
+  }
+}
+
+async function prevSong() {
+  const snap = await fbDb.collection('jam_rooms').doc(currentRoomId).get();
+  const d = snap.data();
+  const prev = (d.currentIndex || 0) - 1;
+  if (prev < 0) { toast('⏮ Already at the start'); return; }
+  await playSongAt(prev, d.queue || []);
+}
+
+async function removeFromQueue(i) {
+  const snap = await fbDb.collection('jam_rooms').doc(currentRoomId).get();
+  let q = snap.data()?.queue || [];
+  q.splice(i, 1);
+  let update = { queue: q };
+  const ci = snap.data()?.currentIndex || 0;
+  if (i === ci) {
+    if (!q.length) update = {...update, currentSong: null, currentIndex: -1, playing: false};
+    else update = {...update, currentSong: q[Math.min(i,q.length-1)], currentIndex: Math.min(i,q.length-1)};
+  } else if (i < ci) update.currentIndex = ci - 1;
+  await fbDb.collection('jam_rooms').doc(currentRoomId).update(update);
+}
+
+// ── RADIO MODE ────────────────────────────────
+async function autoRadio(lastSong, currentQueue) {
+  if (!lastSong?.id) return;
+  const ytKey = 'AIzaSyB9U8rjG9bfvXk4Jvl3p8sGsNfL6p8wMCA';
+  try {
+    const res = await fetch(`https://www.googleapis.com/youtube/v3/search?part=snippet&type=video&videoCategoryId=10&maxResults=5&relatedToVideoId=${lastSong.id}&key=${ytKey}`);
+    const data = await res.json();
+    const items = data.items?.filter(i => i.id?.videoId) || [];
+    if (!items.length) { toast('📻 No related songs found'); return; }
+    const snap = await fbDb.collection('jam_rooms').doc(currentRoomId).get();
+    const existing = snap.data()?.queue || [];
+    const newSongs = items.map(i => ({
+      id: i.id.videoId,
+      title: i.snippet.title,
+      artist: i.snippet.channelTitle,
+      art: i.snippet.thumbnails?.medium?.url || '',
+      addedBy: '📻 Radio',
+      addedByEmoji: '📻',
+    }));
+    const merged = [...existing, ...newSongs].slice(0,100);
+    const next = (snap.data()?.currentIndex || 0) + 1;
+    await fbDb.collection('jam_rooms').doc(currentRoomId).update({ queue: merged });
+    await playSongAt(next, merged);
+    toast('📻 Radio: added related songs!');
+  } catch(e) { console.error(e); }
+}
+
+// ── VOTE SKIP ─────────────────────────────────
+async function voteSkip() {
+  if (!currentRoom?.settings?.skips) return;
+  const votes = currentRoom.votes || {};
+  votes[jamUser.uid] = true;
+  await fbDb.collection('jam_rooms').doc(currentRoomId).update({ votes });
+  toast('👍 Voted to skip!');
+}
+
+function renderVotePanel(votesMap, memberCount) {
+  const panel = document.getElementById('votePanel');
+  if (!currentRoom?.settings?.skips || !currentRoom?.currentSong) { if (panel) panel.classList.remove('active'); return; }
+  const count = Object.keys(votesMap || {}).length;
+  const needed = Math.ceil((memberCount || 1) / 2);
+  if (panel) {
+    panel.classList.add('active');
+    const label = document.getElementById('voteLabel');
+    const fill = document.getElementById('voteFill');
+    if (label) label.textContent = `${count}/${needed} votes to skip`;
+    if (fill) fill.style.width = `${Math.min(100, (count/needed)*100)}%`;
+    if (count >= needed && isHost) { skipSong(); }
+  }
+}
+
+// ── RENDER FUNCTIONS ──────────────────────────
+function renderNowPlaying(song) {
+  const titleEl  = document.getElementById('npTitle');
+  const artistEl = document.getElementById('npArtist');
+
+  if (!song) {
+    titleEl.textContent  = 'No song playing';
+    artistEl.textContent = 'Add songs to get started';
+    loadSongInPlayer(null);
+    stopProgress();
+    return;
+  }
+
+  titleEl.textContent  = song.title  || 'Unknown';
+  artistEl.textContent = song.artist || '';
+
+  // Full lyrics header
+  const fullSong = document.getElementById('fullLyricsSong');
+  if (fullSong) fullSong.textContent = `${song.title} — ${song.artist}`;
+
+  loadSongInPlayer(song.id);
+  startProgress();
+  fetchLyrics(song.title, song.artist);
+}
+
+function loadSongInPlayer(videoId) {
+  const iframe = document.getElementById('ytPlayer');
+  if (!videoId) { iframe.src = ''; return; }
+  iframe.src = `https://www.youtube.com/embed/${videoId}?autoplay=1&controls=1&rel=0&enablejsapi=0&mute=0`;
+}
+
+function renderQueue(queue, currentIndex) {
+  const el = document.getElementById('queueList');
+  const cnt = document.getElementById('queueCount');
+  if (cnt) cnt.textContent = queue.length;
+
+  if (!queue.length) {
+    el.innerHTML = '<div class="empty-state"><div class="empty-state-icon">🎶</div><div class="empty-state-text">Queue is empty</div></div>';
+    return;
+  }
+
+  el.innerHTML = '';
+  queue.forEach((song, i) => {
+    const div = document.createElement('div');
+    div.className = 'queue-item' + (i === currentIndex ? ' playing' : '');
+
+    const thumbHTML = song.art
+      ? `<div class="queue-thumb"><img src="${song.art}" onerror="this.parentElement.textContent='🎵'"></div>`
+      : `<div class="queue-thumb">🎵</div>`;
+
+    const playingBars = i === currentIndex
+      ? `<div class="queue-playing-bar"><span></span><span></span><span></span></div>`
+      : (isHost ? `<button onclick="event.stopPropagation();removeFromQueue(${i})" style="background:transparent;border:none;color:var(--muted);cursor:pointer;font-size:16px;padding:2px;" onmouseover="this.style.color='#ff5f5f'" onmouseout="this.style.color='var(--muted)'">×</button>` : '');
+
+    div.innerHTML = `
+      ${thumbHTML}
+      <div class="queue-item-info">
+        <div class="queue-item-title">${escHtml(song.title)}</div>
+        <div class="queue-item-by">${escHtml(song.addedBy || '')} ${song.addedByEmoji || ''}</div>
+      </div>
+      ${playingBars}
+    `;
+    if (isHost) div.onclick = (e) => { if (e.target.tagName==='BUTTON') return; playSongAt(i, queue); };
+    el.appendChild(div);
+  });
+
+  el.querySelector('.playing')?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+}
+
+function renderMembers(members) {
+  const el  = document.getElementById('membersList');
+  const cnt = document.getElementById('memberCount');
+  if (cnt) cnt.textContent = members.length;
+  if (!el) return;
+
+  members.sort((a,b) => (b.isHost?1:0)-(a.isHost?1:0));
+  el.innerHTML = '';
+  members.forEach(m => {
+    const div = document.createElement('div');
+    div.className = 'member-item';
+    div.innerHTML = `
+      <div class="member-avatar">
+        ${m.emoji||'🎵'}
+        ${m.isHost ? '<div class="member-host-dot">★</div>' : ''}
+      </div>
+      <div style="flex:1;min-width:0;">
+        <div class="member-name">${escHtml(m.name)}</div>
+        <div class="member-mood">${m.mood||''}</div>
+      </div>
+      ${isHost && m.uid !== jamUser.uid ? `<button class="kick-btn" onclick="kickMember('${m.uid}','${escHtml(m.name)}')">✕</button>` : ''}
+    `;
+    el.appendChild(div);
+  });
+}
+
+function renderMoodMeter(members) {
+  const el = document.getElementById('moodMeterBars');
+  if (!el) return;
+  const counts = {};
+  members.forEach(m => { if (m.mood) counts[m.mood] = (counts[m.mood]||0)+1; });
+  const sorted = Object.entries(counts).sort((a,b) => b[1]-a[1]).slice(0,4);
+  const total = members.length || 1;
+  el.innerHTML = sorted.map(([mood, count]) => `
+    <div class="mood-bar-row">
+      <div class="mood-bar-label">${mood.split(' ')[0]} ${mood.split(' ').slice(1).join(' ')}</div>
+      <div class="mood-bar"><div class="mood-bar-fill" style="width:${(count/total*100).toFixed(0)}%"></div></div>
+      <div class="mood-count">${count}</div>
+    </div>
+  `).join('');
+}
+
+// ── ROOM ACTIONS ──────────────────────────────
+async function updateSetting(key, val) {
+  if (!isHost) return;
+  await fbDb.collection('jam_rooms').doc(currentRoomId).update({ [`settings.${key}`]: val });
+  if (key === 'radio' && val) { toast('📻 Radio mode on'); document.getElementById('radioOnBadge').style.display = ''; }
+  else if (key === 'radio') document.getElementById('radioOnBadge').style.display = 'none';
+}
+
+async function kickMember(uid, name) {
+  if (!isHost) return;
+  if (!confirm(`Kick ${name}?`)) return;
+  await fbDb.collection('jam_rooms').doc(currentRoomId).collection('members').doc(uid).delete();
+  await fbDb.collection('jam_rooms').doc(currentRoomId).collection('kicked').doc(uid).set({ at: firebase.firestore.FieldValue.serverTimestamp() });
+  await logActivity('👢', `kicked ${name}`);
+  toast(`👢 Kicked ${name}`);
+}
+
+async function closeRoom() {
+  if (!isHost) return;
+  if (!confirm('Close this room? Everyone will be disconnected.')) return;
+  await fbDb.collection('jam_rooms').doc(currentRoomId).update({ active: false });
+  await leaveRoom(true);
+}
+
+async function leaveRoom(wasHost = false) {
+  roomListeners.forEach(u => u()); roomListeners = [];
+  stopProgress();
+  if (currentRoomId && jamUser) {
+    try { await fbDb.collection('jam_rooms').doc(currentRoomId).collection('members').doc(jamUser.uid).delete(); } catch(e) {}
+  }
+  currentRoom = null; currentRoomId = null; isHost = false;
+  document.getElementById('reactBar').style.display = 'none';
+  document.getElementById('ytPlayer').src = '';
+  showLobby();
+  toast(wasHost ? '🔒 Room closed' : '👋 Left the room');
+}
+
+function handleRoomClosed() {
+  roomListeners.forEach(u => u()); roomListeners = [];
+  currentRoom = null; currentRoomId = null; isHost = false;
+  stopProgress();
+  document.getElementById('reactBar').style.display = 'none';
+  document.getElementById('ytPlayer').src = '';
+  showLobby(); toast('🔒 Room closed by host');
+}
+
+// ── REACTIONS ────────────────────────────────
+async function sendReaction(emoji) {
+  if (!currentRoomId || !currentRoom?.settings?.reactions) return;
+  const x = 20 + Math.random() * 60;
+  spawnReaction(emoji, x);
+  await fbDb.collection('jam_rooms').doc(currentRoomId).collection('reactions').add({
+    emoji, uid: jamUser.uid, name: jamProfile.name, x,
+    at: firebase.firestore.FieldValue.serverTimestamp(),
+  });
+}
+function spawnReaction(emoji, x) {
+  const el = document.createElement('div');
+  el.className = 'reaction-float';
+  el.textContent = emoji;
+  el.style.left = x + '%'; el.style.bottom = '80px';
+  document.body.appendChild(el);
+  setTimeout(() => el.remove(), 2600);
+}
+
+// ── PLAYER CONTROLS ───────────────────────────
+function togglePlay() {
+  // YouTube iframe controls autoplay — toggle is visual only here
+  isPlaying = !isPlaying;
+  document.getElementById('playBtn').textContent = isPlaying ? '⏸' : '▶';
+}
+
+function setVolume(val) {
+  currentVol = parseInt(val);
+  document.getElementById('volLabel').textContent = val + '%';
+  // Volume control works via YT iframe API if needed; for now visual only
+}
+
+function startProgress() {
+  stopProgress();
+  playStartTime = Date.now();
+  progressTimer = setInterval(updateProgress, 1000);
+}
+
+function stopProgress() {
+  if (progressTimer) { clearInterval(progressTimer); progressTimer = null; }
+  if (document.getElementById('progressFill')) document.getElementById('progressFill').style.width = '0%';
+  if (document.getElementById('progCurrent')) document.getElementById('progCurrent').textContent = '0:00';
+}
+
+function updateProgress() {
+  if (!playStartTime) return;
+  const elapsed = Math.floor((Date.now() - playStartTime) / 1000);
+  const mins = Math.floor(elapsed / 60);
+  const secs = elapsed % 60;
+  const timeStr = `${mins}:${secs.toString().padStart(2,'0')}`;
+  if (document.getElementById('progCurrent')) document.getElementById('progCurrent').textContent = timeStr;
+  // Progress bar moves up to ~5 min (300s) estimate
+  const pct = Math.min(100, (elapsed / 300) * 100);
+  if (document.getElementById('progressFill')) document.getElementById('progressFill').style.width = pct + '%';
+}
+
+function seekProgress(e) {
+  const bar = e.currentTarget;
+  const pct = e.offsetX / bar.offsetWidth;
+  const estimated = 300; // 5 min estimate
+  playStartTime = Date.now() - (pct * estimated * 1000);
+  if (document.getElementById('progressFill')) document.getElementById('progressFill').style.width = (pct*100) + '%';
+}
+
+// ── LYRICS ───────────────────────────────────
+async function fetchLyrics(title, artist) {
+  const el = document.getElementById('lyricsContent');
+  const full = document.getElementById('fullLyricsContent');
+  if (!el) return;
+  el.innerHTML = '<div style="color:var(--muted);font-style:italic;font-size:13px;">Loading lyrics...</div>';
+
+  try {
+    const query = encodeURIComponent(`${title} ${artist} lyrics`);
+    const res   = await fetch(`https://api.lyrics.ovh/v1/${encodeURIComponent(artist)}/${encodeURIComponent(title)}`);
+    if (res.ok) {
+      const data = await res.json();
+      if (data.lyrics) {
+        const lines = data.lyrics.trim().split('\n').filter(l => l.trim());
+        const html = lines.map((l,i) => `<div class="lyric-line" data-i="${i}">${escHtml(l)}</div>`).join('');
+        el.innerHTML = html;
+        if (full) full.innerHTML = html;
+        startLyricsSync(lines.length);
+        return;
+      }
+    }
+  } catch(e) {}
+
+  el.innerHTML = '<div style="color:var(--muted);font-style:italic;font-size:13px;">No lyrics found for this song.</div>';
+  if (full) full.innerHTML = '<div style="color:var(--muted);font-style:italic;font-size:24px;text-align:center;">No lyrics available</div>';
+}
+
+let lyricsTimer = null;
+function startLyricsSync(lineCount) {
+  if (lyricsTimer) clearInterval(lyricsTimer);
+  let currentLine = 0;
+  const interval = (300 / lineCount) * 1000; // distribute over 5 min
+  lyricsTimer = setInterval(() => {
+    document.querySelectorAll('.lyric-line').forEach((l,i) => {
+      l.classList.toggle('active', i === currentLine);
+    });
+    // Scroll active line into view
+    const active = document.querySelector('#lyricsContent .lyric-line.active');
+    active?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    const fullActive = document.querySelector('#fullLyricsContent .lyric-line.active');
+    fullActive?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    currentLine = (currentLine + 1) % lineCount;
+  }, interval);
+}
+
+// ── FULLSCREEN LYRICS ─────────────────────────
+function toggleFullLyrics() {
+  const overlay = document.getElementById('fullLyricsOverlay');
+  overlay.classList.toggle('open');
+}
+
+// ── ROOM TABS ─────────────────────────────────
+function switchRoomTab(tab, btn) {
+  document.querySelectorAll('.room-tab').forEach(b => b.classList.remove('active'));
+  document.querySelectorAll('.tab-pane').forEach(p => p.classList.remove('active'));
+  if (btn) btn.classList.add('active');
+  document.getElementById('tab' + tab.charAt(0).toUpperCase() + tab.slice(1))?.classList.add('active');
+}
+
+// ── COPY CODE ─────────────────────────────────
+function copyCode() {
+  if (!currentRoom) return;
+  navigator.clipboard.writeText(currentRoom.code).then(() => toast('📋 Code copied!'));
+}
+
+// ── UTILS ─────────────────────────────────────
+function escHtml(t) {
+  if (!t) return '';
+  const d = document.createElement('div');
+  d.textContent = t;
+  return d.innerHTML;
+}
+
+let toastTimer;
+function toast(msg) {
+  const el = document.getElementById('jamToast');
+  el.textContent = msg;
+  el.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => el.classList.remove('show'), 3200);
+}
+
+// ── BOOT ──────────────────────────────────────
+window.addEventListener('DOMContentLoaded', init);
+</script>
+</body>
+</html>
