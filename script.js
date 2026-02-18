@@ -4347,703 +4347,2201 @@ window.renderGenreBrowse = renderGenreBrowse;
 window.searchGenre = searchGenre;
 
 
-// ════════════════════════════════════════════════════════════
-// AI DJ FEATURE - Minimalist ✦ Button Design
-// Paste at the VERY END of script.js
-// ════════════════════════════════════════════════════════════
+// ============================================
+// AI DJ v4 - WITH SAVED SESSIONS + 5 NEW FEATURES
+// Full replacement — paste over your AI DJ section
+// ============================================
 
 let djMode = false;
 let djHistory = [];
-let djPlaylist = [];
-let djCurrentIndex = 0;
+let djSessions = load('dj_sessions', []); // Persisted sessions
+let currentSessionId = null;
 
-// Initialize AI DJ with elegant ✦ button
+// ─────────────────────────────────────────────
+// SESSION HELPERS
+// ─────────────────────────────────────────────
+
+function createDJSession(firstMessage = null) {
+    const session = {
+        id: Date.now().toString(),
+        createdAt: Date.now(),
+        label: firstMessage ? firstMessage.slice(0, 40) : 'New Session',
+        messages: []
+    };
+    djSessions.unshift(session);
+    if (djSessions.length > 10) djSessions = djSessions.slice(0, 10);
+    save('dj_sessions', djSessions);
+    currentSessionId = session.id;
+    return session;
+}
+
+function saveMessageToSession(role, content) {
+    if (!currentSessionId) createDJSession();
+    const session = djSessions.find(s => s.id === currentSessionId);
+    if (!session) return;
+    session.messages.push({ role, content, ts: Date.now() });
+    if (session.messages.length === 1 && role === 'user') {
+        session.label = content.slice(0, 40);
+    }
+    save('dj_sessions', djSessions);
+}
+
+function loadDJSession(sessionId) {
+    const session = djSessions.find(s => s.id === sessionId);
+    if (!session) return;
+    currentSessionId = sessionId;
+    djHistory = session.messages.map(m => ({ role: m.role, content: m.content }));
+
+    const messagesDiv = document.getElementById('djMessages');
+    if (!messagesDiv) return;
+    messagesDiv.innerHTML = '';
+
+    session.messages.forEach(m => renderDJMessage(m.role, m.content));
+    messagesDiv.scrollTop = messagesDiv.scrollHeight;
+
+    // Hide session list, show chat
+    document.getElementById('djSessionList')?.style.setProperty('display', 'none');
+    document.getElementById('djChatArea')?.style.setProperty('display', 'flex');
+    document.getElementById('djBackBtn')?.style.setProperty('display', 'flex');
+    document.getElementById('djQuickActions')?.style.setProperty('display', 'none');
+}
+
+function deleteDJSession(sessionId, e) {
+    e.stopPropagation();
+    djSessions = djSessions.filter(s => s.id !== sessionId);
+    save('dj_sessions', djSessions);
+    if (currentSessionId === sessionId) {
+        currentSessionId = null;
+        djHistory = [];
+    }
+    renderSessionList();
+}
+
+// ─────────────────────────────────────────────
+// INIT BUTTON
+// ─────────────────────────────────────────────
+
 function initAIDJ() {
-    // Add ✦ button next to "Recently Played" header
     const recentHeader = document.querySelector('#recentSection .section-header h2');
     if (recentHeader && !document.getElementById('aiDjSparkleBtn')) {
-        const sparkleBtn = document.createElement('button');
-        sparkleBtn.id = 'aiDjSparkleBtn';
-        sparkleBtn.innerHTML = '✦';
-        sparkleBtn.title = 'Open AI DJ';
-        sparkleBtn.style.cssText = `
-            width: 48px;
-            height: 48px;
-            background: linear-gradient(135deg, #667eea, #764ba2);
-            border: 2px solid rgba(255, 255, 255, 0.2);
-            border-radius: 50%;
-            color: white;
-            font-size: 24px;
+        const btn = document.createElement('button');
+        btn.id = 'aiDjSparkleBtn';
+        btn.innerHTML = '✦ AI DJ';
+        btn.style.cssText = `
+            background: rgba(255,255,255,0.06);
+            border: 1px solid rgba(255,255,255,0.12);
+            border-radius: 20px;
+            color: var(--text);
+            font-size: 13px;
+            font-weight: 700;
+            padding: 7px 16px;
             cursor: pointer;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
-            box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4);
-            margin-left: 16px;
-            animation: sparkleGlow 2s ease-in-out infinite;
+            margin-left: 14px;
+            letter-spacing: 0.5px;
+            transition: all 0.2s ease;
         `;
-        
-        sparkleBtn.onmouseover = () => {
-            sparkleBtn.style.transform = 'scale(1.15) rotate(90deg)';
-            sparkleBtn.style.boxShadow = '0 10px 30px rgba(102, 126, 234, 0.7)';
-        };
-        sparkleBtn.onmouseout = () => {
-            sparkleBtn.style.transform = 'scale(1) rotate(0deg)';
-            sparkleBtn.style.boxShadow = '0 6px 20px rgba(102, 126, 234, 0.4)';
-        };
-        
-        sparkleBtn.onclick = openAIDJ;
-        
-        // Insert button next to the heading
-        const headerContainer = recentHeader.parentElement;
-        headerContainer.style.display = 'flex';
-        headerContainer.style.alignItems = 'center';
-        headerContainer.appendChild(sparkleBtn);
-        
-        // Add sparkle animation
-        const sparkleStyle = document.createElement('style');
-        sparkleStyle.textContent = `
-            @keyframes sparkleGlow {
-                0%, 100% {
-                    box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4);
-                }
-                50% {
-                    box-shadow: 0 8px 30px rgba(102, 126, 234, 0.7), 0 0 20px rgba(102, 126, 234, 0.5);
-                }
-            }
-        `;
-        document.head.appendChild(sparkleStyle);
+        btn.onmouseover = () => { btn.style.background = 'rgba(255,255,255,0.1)'; btn.style.borderColor = 'rgba(255,255,255,0.22)'; };
+        btn.onmouseout  = () => { btn.style.background = 'rgba(255,255,255,0.06)'; btn.style.borderColor = 'rgba(255,255,255,0.12)'; };
+        btn.onclick = openAIDJ;
+        const hdr = recentHeader.parentElement;
+        hdr.style.display = 'flex';
+        hdr.style.alignItems = 'center';
+        hdr.appendChild(btn);
     }
 }
 
-// Open AI DJ interface
+// ─────────────────────────────────────────────
+// OPEN / CLOSE
+// ─────────────────────────────────────────────
+
 function openAIDJ() {
-    // Create fullscreen DJ interface
-    let djOverlay = document.getElementById('aiDjOverlay');
-    
-    if (djOverlay) {
-        djOverlay.remove();
-    }
-    
-    djOverlay = document.createElement('div');
-    djOverlay.id = 'aiDjOverlay';
-    djOverlay.style.cssText = `
-        position: fixed;
-        top: 0;
-        left: 0;
-        right: 0;
-        bottom: 0;
-        background: linear-gradient(135deg, #0a0a0a 0%, #1a1a2e 50%, #16213e 100%);
-        z-index: 99999;
-        display: flex;
-        flex-direction: column;
-        opacity: 0;
-        transition: opacity 0.4s ease;
-        overflow: hidden;
+    document.getElementById('aiDjOverlay')?.remove();
+
+    const overlay = document.createElement('div');
+    overlay.id = 'aiDjOverlay';
+    overlay.style.cssText = `
+        position:fixed;inset:0;z-index:99999;
+        background:rgba(0,0,0,0.85);
+        backdrop-filter:blur(16px);
+        display:flex;align-items:center;justify-content:center;
+        padding:20px;opacity:0;transition:opacity 0.3s ease;
     `;
-    
-    djOverlay.innerHTML = `
-        <!-- Animated Background -->
-        <div style="
-            position: absolute;
-            inset: 0;
-            background: radial-gradient(circle at 50% 50%, rgba(102, 126, 234, 0.15) 0%, transparent 70%);
-            animation: breathe 8s ease-in-out infinite;
-        "></div>
-        
-        <canvas id="djVisualizer" style="
-            position: absolute;
-            inset: 0;
-            opacity: 0.3;
-        "></canvas>
-        
-        <!-- Header -->
-        <div style="
-            position: relative;
-            z-index: 2;
-            padding: 32px 40px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            background: rgba(0, 0, 0, 0.5);
-            backdrop-filter: blur(20px);
-            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+
+    overlay.innerHTML = `
+        <div id="djPanel" style="
+            width:100%;max-width:680px;max-height:90vh;
+            background:rgba(18,18,18,0.98);
+            border:1px solid rgba(255,255,255,0.08);
+            border-radius:16px;display:flex;
+            flex-direction:column;overflow:hidden;
+            box-shadow:0 24px 64px rgba(0,0,0,0.8);
         ">
-            <div style="display: flex; align-items: center; gap: 16px;">
-                <div style="
-                    width: 52px;
-                    height: 52px;
-                    background: linear-gradient(135deg, #667eea, #764ba2);
-                    border-radius: 50%;
-                    display: flex;
-                    align-items: center;
-                    justify-content: center;
-                    font-size: 32px;
-                    animation: pulse 2s ease-in-out infinite;
-                ">✦</div>
-                <div>
-                    <h1 style="
-                        font-family: 'Syne', sans-serif;
-                        font-size: 28px;
-                        font-weight: 800;
-                        margin: 0;
-                        background: linear-gradient(135deg, #667eea, #764ba2);
-                        -webkit-background-clip: text;
-                        -webkit-text-fill-color: transparent;
-                        background-clip: text;
-                    ">AI DJ</h1>
-                    <p style="
-                        margin: 4px 0 0 0;
-                        color: rgba(255, 255, 255, 0.6);
-                        font-size: 14px;
-                    ">Powered by INDY ⚡ Ultra Fast</p>
-                </div>
-            </div>
-            <button id="closeDjBtn" style="
-                background: rgba(255, 255, 255, 0.1);
-                border: 1px solid rgba(255, 255, 255, 0.2);
-                color: white;
-                width: 44px;
-                height: 44px;
-                border-radius: 50%;
-                font-size: 24px;
-                cursor: pointer;
-                transition: all 0.3s ease;
-            ">×</button>
-        </div>
-        
-        <!-- Main Content -->
-        <div style="
-            position: relative;
-            z-index: 2;
-            flex: 1;
-            overflow-y: auto;
-            padding: 40px;
-        ">
-            <!-- Quick Actions -->
+
+            <!-- HEADER -->
             <div style="
-                display: grid;
-                grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-                gap: 20px;
-                margin-bottom: 40px;
+                display:flex;align-items:center;justify-content:space-between;
+                padding:18px 22px;
+                border-bottom:1px solid rgba(255,255,255,0.06);
+                flex-shrink:0;
             ">
-                <button onclick="startDJSession('vibe')" class="dj-action-card">
-                    <div class="dj-card-icon">🌊</div>
-                    <h3>Create a Vibe</h3>
-                    <p>AI builds the perfect mood playlist from your taste</p>
-                </button>
-                
-                <button onclick="startDJSession('discovery')" class="dj-action-card">
-                    <div class="dj-card-icon">🔍</div>
-                    <h3>Discover New Music</h3>
-                    <p>Find hidden gems you've never heard before</p>
-                </button>
-                
-                <button onclick="startDJSession('story')" class="dj-action-card">
-                    <div class="dj-card-icon">📖</div>
-                    <h3>Song Stories</h3>
-                    <p>Learn fascinating facts about your favorite tracks</p>
-                </button>
-                
-                <button onclick="startDJSession('custom')" class="dj-action-card">
-                    <div class="dj-card-icon">💭</div>
-                    <h3>Custom Request</h3>
-                    <p>Ask the DJ for anything music-related</p>
-                </button>
-            </div>
-            
-            <!-- DJ Chat/Response Area -->
-            <div id="djResponseArea" style="
-                background: rgba(0, 0, 0, 0.4);
-                backdrop-filter: blur(10px);
-                border: 1px solid rgba(255, 255, 255, 0.1);
-                border-radius: 20px;
-                padding: 32px;
-                min-height: 300px;
-                display: none;
-                flex-direction: column;
-                gap: 20px;
-            ">
-                <div id="djMessages" style="
-                    flex: 1;
-                    overflow-y: auto;
-                    display: flex;
-                    flex-direction: column;
-                    gap: 16px;
-                    max-height: 500px;
-                "></div>
-                
-                <div style="
-                    display: flex;
-                    gap: 12px;
-                    padding-top: 20px;
-                    border-top: 1px solid rgba(255, 255, 255, 0.1);
-                ">
-                    <input id="djInput" type="text" placeholder="Chat with your AI DJ..." style="
-                        flex: 1;
-                        background: rgba(255, 255, 255, 0.05);
-                        border: 1px solid rgba(255, 255, 255, 0.15);
-                        border-radius: 12px;
-                        padding: 14px 20px;
-                        color: white;
-                        font-size: 15px;
-                    ">
-                    <button onclick="sendDJMessage()" style="
-                        background: linear-gradient(135deg, #667eea, #764ba2);
-                        border: none;
-                        border-radius: 12px;
-                        padding: 14px 28px;
-                        color: white;
-                        font-weight: 600;
-                        cursor: pointer;
-                        transition: transform 0.2s ease;
-                    ">Send</button>
+                <div style="display:flex;align-items:center;gap:10px;">
+                    <!-- Back button (hidden by default) -->
+                    <button id="djBackBtn" onclick="showDJHome()" style="
+                        display:none;align-items:center;justify-content:center;
+                        background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.1);
+                        border-radius:8px;color:var(--text);width:32px;height:32px;
+                        cursor:pointer;font-size:16px;transition:all 0.2s ease;flex-shrink:0;
+                    " onmouseover="this.style.background='rgba(255,255,255,0.1)'" onmouseout="this.style.background='rgba(255,255,255,0.06)'">←</button>
+
+                    <span style="font-size:18px;">✦</span>
+                    <div>
+                        <div style="font-family:'Syne',sans-serif;font-size:17px;font-weight:800;letter-spacing:-0.5px;" id="djPanelTitle">AI DJ</div>
+                        <div style="font-size:11px;color:rgba(255,255,255,0.35);margin-top:1px;" id="djPanelSubtitle">Your personal music assistant</div>
+                    </div>
                 </div>
+
+                <div style="display:flex;gap:8px;align-items:center;">
+                    <button onclick="showDJSessions()" id="djHistoryBtn" title="Past sessions" style="
+                        background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.1);
+                        border-radius:8px;color:rgba(255,255,255,0.6);
+                        width:32px;height:32px;cursor:pointer;font-size:15px;
+                        display:flex;align-items:center;justify-content:center;
+                        transition:all 0.2s ease;
+                    " onmouseover="this.style.background='rgba(255,255,255,0.1)';this.style.color='white'" onmouseout="this.style.background='rgba(255,255,255,0.06)';this.style.color='rgba(255,255,255,0.6)'">⏱</button>
+
+                    <button onclick="closeAIDJ()" style="
+                        background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.1);
+                        color:var(--text);width:32px;height:32px;border-radius:50%;
+                        cursor:pointer;font-size:18px;
+                        display:flex;align-items:center;justify-content:center;
+                        transition:all 0.2s ease;
+                    " onmouseover="this.style.background='rgba(255,255,255,0.1)'" onmouseout="this.style.background='rgba(255,255,255,0.06)'">×</button>
+                </div>
+            </div>
+
+            <!-- SESSION LIST (hidden by default) -->
+            <div id="djSessionList" style="display:none;flex-direction:column;flex:1;overflow-y:auto;padding:16px 22px;gap:8px;"></div>
+
+            <!-- HOME: Quick Actions -->
+            <div id="djQuickActions" style="
+                padding:18px 22px;
+                border-bottom:1px solid rgba(255,255,255,0.06);
+                flex-shrink:0;
+            ">
+                <div style="font-size:11px;color:rgba(255,255,255,0.3);text-transform:uppercase;letter-spacing:1.5px;margin-bottom:12px;font-weight:600;">Quick Start</div>
+                <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
+                    ${[
+                        ['🌊','Create a Vibe','vibe'],
+                        ['🔍','Discover Music','discovery'],
+                        ['📖','Song Stories','story'],
+                        ['💭','Custom Request','custom'],
+                    ].map(([icon, label, type]) => `
+                        <button onclick="startDJSession('${type}')" style="
+                            background:rgba(255,255,255,0.04);
+                            border:1px solid rgba(255,255,255,0.08);
+                            border-radius:10px;padding:13px 15px;
+                            color:var(--text);cursor:pointer;text-align:left;
+                            display:flex;align-items:center;gap:10px;
+                            font-size:13px;font-weight:600;
+                            transition:all 0.2s ease;
+                        "
+                        onmouseover="this.style.background='rgba(255,255,255,0.08)';this.style.borderColor='rgba(255,255,255,0.14)'"
+                        onmouseout="this.style.background='rgba(255,255,255,0.04)';this.style.borderColor='rgba(255,255,255,0.08)'">
+                            <span style="font-size:17px;">${icon}</span>
+                            <span>${label}</span>
+                        </button>
+                    `).join('')}
+                </div>
+
+                <!-- Recent sessions preview -->
+                <div id="djRecentPreview" style="margin-top:14px;"></div>
+            </div>
+
+            <!-- CHAT AREA (hidden until session starts) -->
+            <div id="djChatArea" style="display:none;flex-direction:column;flex:1;overflow:hidden;">
+                <div id="djMessages" style="
+                    flex:1;overflow-y:auto;
+                    padding:18px 22px;
+                    display:flex;flex-direction:column;gap:12px;
+                    min-height:80px;max-height:360px;
+                "></div>
+            </div>
+
+            <!-- INPUT -->
+            <div style="
+                padding:14px 22px 18px;
+                border-top:1px solid rgba(255,255,255,0.06);
+                display:flex;gap:8px;flex-shrink:0;
+            ">
+                <input id="djInput" type="text" placeholder="Ask your DJ anything..." style="
+                    flex:1;
+                    background:rgba(255,255,255,0.05);
+                    border:1px solid rgba(255,255,255,0.1);
+                    border-radius:10px;padding:11px 15px;
+                    color:var(--text);font-size:14px;outline:none;
+                    transition:border-color 0.2s ease;
+                    font-family:'DM Sans',sans-serif;
+                "
+                onfocus="this.style.borderColor='rgba(255,255,255,0.25)'"
+                onblur="this.style.borderColor='rgba(255,255,255,0.1)'"
+                onkeypress="if(event.key==='Enter') sendDJMessage()">
+                <button onclick="sendDJMessage()" style="
+                    background:rgba(255,255,255,0.1);
+                    border:1px solid rgba(255,255,255,0.15);
+                    border-radius:10px;color:var(--text);
+                    padding:11px 18px;font-size:13px;font-weight:600;
+                    cursor:pointer;white-space:nowrap;transition:all 0.2s ease;
+                "
+                onmouseover="this.style.background='rgba(255,255,255,0.16)'"
+                onmouseout="this.style.background='rgba(255,255,255,0.1)'">Send ↵</button>
             </div>
         </div>
     `;
-    
-    document.body.appendChild(djOverlay);
-    
-    // Add styles
-    const style = document.createElement('style');
-    style.textContent = `
-        .dj-action-card {
-            background: rgba(255, 255, 255, 0.05);
-            backdrop-filter: blur(10px);
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            border-radius: 16px;
-            padding: 28px;
-            text-align: left;
-            cursor: pointer;
-            transition: all 0.3s ease;
-            color: white;
-        }
-        
-        .dj-action-card:hover {
-            transform: translateY(-4px);
-            background: rgba(255, 255, 255, 0.08);
-            border-color: rgba(102, 126, 234, 0.5);
-            box-shadow: 0 12px 32px rgba(102, 126, 234, 0.2);
-        }
-        
-        .dj-card-icon {
-            font-size: 48px;
-            margin-bottom: 16px;
-        }
-        
-        .dj-action-card h3 {
-            font-family: 'Syne', sans-serif;
-            font-size: 20px;
-            font-weight: 700;
-            margin: 0 0 8px 0;
-        }
-        
-        .dj-action-card p {
-            color: rgba(255, 255, 255, 0.6);
-            font-size: 14px;
-            line-height: 1.6;
-            margin: 0;
-        }
-        
-        .dj-message {
-            animation: slideInMessage 0.4s ease;
-        }
-        
-        @keyframes slideInMessage {
-            from {
-                opacity: 0;
-                transform: translateY(20px);
-            }
-            to {
-                opacity: 1;
-                transform: translateY(0);
-            }
-        }
-        
-        @keyframes pulse {
-            0%, 100% {
-                transform: scale(1);
-            }
-            50% {
-                transform: scale(1.05);
-            }
-        }
-        
-        @keyframes breathe {
-            0%, 100% {
-                transform: scale(1);
-                opacity: 0.3;
-            }
-            50% {
-                transform: scale(1.1);
-                opacity: 0.5;
-            }
-        }
-    `;
-    document.head.appendChild(style);
-    
-    // Animate in
-    setTimeout(() => {
-        djOverlay.style.opacity = '1';
-    }, 50);
-    
-    // Setup visualizer
-    setupDJVisualizer();
-    
-    // Event listeners
-    document.getElementById('closeDjBtn').onclick = closeAIDJ;
-    document.getElementById('closeDjBtn').onmouseover = function() {
-        this.style.background = 'rgba(255, 255, 255, 0.2)';
-        this.style.transform = 'rotate(90deg)';
-    };
-    document.getElementById('closeDjBtn').onmouseout = function() {
-        this.style.background = 'rgba(255, 255, 255, 0.1)';
-        this.style.transform = 'rotate(0deg)';
-    };
-    
-    document.getElementById('djInput').addEventListener('keypress', (e) => {
-        if (e.key === 'Enter') sendDJMessage();
-    });
-    
-    // Close on ESC key
-    const escHandler = (e) => {
-        if (e.key === 'Escape') {
-            closeAIDJ();
-            document.removeEventListener('keydown', escHandler);
-        }
-    };
-    document.addEventListener('keydown', escHandler);
+
+    document.body.appendChild(overlay);
+    setTimeout(() => { overlay.style.opacity = '1'; }, 20);
+    overlay.addEventListener('click', e => { if (e.target === overlay) closeAIDJ(); });
+
+    renderRecentSessionsPreview();
+    document.getElementById('djInput').focus();
+
+    // ESC to close
+    const escFn = e => { if (e.key === 'Escape') { closeAIDJ(); document.removeEventListener('keydown', escFn); } };
+    document.addEventListener('keydown', escFn);
 }
 
 function closeAIDJ() {
     const overlay = document.getElementById('aiDjOverlay');
-    if (overlay) {
-        overlay.style.opacity = '0';
-        setTimeout(() => overlay.remove(), 400);
+    if (!overlay) return;
+    overlay.style.opacity = '0';
+    setTimeout(() => overlay.remove(), 300);
+}
+
+// ─────────────────────────────────────────────
+// SESSION LIST UI
+// ─────────────────────────────────────────────
+
+function showDJSessions() {
+    document.getElementById('djQuickActions').style.display = 'none';
+    document.getElementById('djChatArea').style.display = 'none';
+    document.getElementById('djBackBtn').style.display = 'flex';
+    document.getElementById('djHistoryBtn').style.display = 'none';
+    document.getElementById('djPanelTitle').textContent = 'Past Sessions';
+    document.getElementById('djPanelSubtitle').textContent = 'Saved for this device';
+
+    const list = document.getElementById('djSessionList');
+    list.style.display = 'flex';
+    renderSessionList();
+}
+
+function showDJHome() {
+    document.getElementById('djSessionList').style.display = 'none';
+    document.getElementById('djChatArea').style.display = 'none';
+    document.getElementById('djBackBtn').style.display = 'none';
+    document.getElementById('djHistoryBtn').style.display = 'flex';
+    document.getElementById('djQuickActions').style.display = 'block';
+    document.getElementById('djPanelTitle').textContent = 'AI DJ';
+    document.getElementById('djPanelSubtitle').textContent = 'Your personal music assistant';
+    renderRecentSessionsPreview();
+}
+
+function renderSessionList() {
+    const list = document.getElementById('djSessionList');
+    if (!list) return;
+    list.innerHTML = '';
+
+    if (djSessions.length === 0) {
+        list.innerHTML = `<div style="text-align:center;color:rgba(255,255,255,0.25);font-size:14px;padding:40px 0;">No saved sessions yet</div>`;
+        return;
+    }
+
+    djSessions.forEach(session => {
+        const item = document.createElement('div');
+        item.style.cssText = `
+            display:flex;align-items:center;gap:12px;
+            padding:13px 15px;
+            background:rgba(255,255,255,0.04);
+            border:1px solid rgba(255,255,255,0.07);
+            border-radius:10px;cursor:pointer;
+            transition:all 0.2s ease;
+        `;
+        item.onmouseover = () => { item.style.background = 'rgba(255,255,255,0.08)'; item.style.borderColor = 'rgba(255,255,255,0.12)'; };
+        item.onmouseout  = () => { item.style.background = 'rgba(255,255,255,0.04)'; item.style.borderColor = 'rgba(255,255,255,0.07)'; };
+
+        const age = formatSessionAge(session.createdAt);
+        item.innerHTML = `
+            <div style="font-size:20px;flex-shrink:0;">💬</div>
+            <div style="flex:1;min-width:0;">
+                <div style="font-size:14px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${session.label}</div>
+                <div style="font-size:12px;color:rgba(255,255,255,0.35);margin-top:2px;">${session.messages.length} messages · ${age}</div>
+            </div>
+            <button onclick="deleteDJSession('${session.id}', event)" style="
+                background:transparent;border:none;
+                color:rgba(255,255,255,0.25);font-size:18px;
+                cursor:pointer;padding:4px 8px;border-radius:6px;
+                transition:all 0.2s ease;flex-shrink:0;
+            " onmouseover="this.style.color='#ff5555'" onmouseout="this.style.color='rgba(255,255,255,0.25)'">×</button>
+        `;
+        item.onclick = () => loadDJSession(session.id);
+        list.appendChild(item);
+    });
+
+    // Clear all button
+    if (djSessions.length > 0) {
+        const clearBtn = document.createElement('button');
+        clearBtn.textContent = 'Clear all sessions';
+        clearBtn.style.cssText = `
+            background:transparent;border:none;
+            color:rgba(255,255,255,0.25);font-size:13px;
+            cursor:pointer;padding:8px;margin-top:4px;
+            transition:color 0.2s ease;align-self:center;
+        `;
+        clearBtn.onmouseover = () => clearBtn.style.color = '#ff5555';
+        clearBtn.onmouseout  = () => clearBtn.style.color = 'rgba(255,255,255,0.25)';
+        clearBtn.onclick = () => {
+            djSessions = [];
+            save('dj_sessions', djSessions);
+            renderSessionList();
+        };
+        list.appendChild(clearBtn);
     }
 }
 
-// Setup audio visualizer
-function setupDJVisualizer() {
-    const canvas = document.getElementById('djVisualizer');
-    if (!canvas) return;
-    
-    const ctx = canvas.getContext('2d');
-    canvas.width = window.innerWidth;
-    canvas.height = window.innerHeight;
-    
-    const particles = [];
-    const particleCount = 50;
-    
-    for (let i = 0; i < particleCount; i++) {
-        particles.push({
-            x: Math.random() * canvas.width,
-            y: Math.random() * canvas.height,
-            radius: Math.random() * 3 + 1,
-            vx: (Math.random() - 0.5) * 0.5,
-            vy: (Math.random() - 0.5) * 0.5,
-            opacity: Math.random() * 0.5 + 0.2
-        });
-    }
-    
-    function animate() {
-        ctx.clearRect(0, 0, canvas.width, canvas.height);
-        
-        particles.forEach(p => {
-            ctx.beginPath();
-            ctx.arc(p.x, p.y, p.radius, 0, Math.PI * 2);
-            ctx.fillStyle = `rgba(102, 126, 234, ${p.opacity})`;
-            ctx.fill();
-            
-            p.x += p.vx;
-            p.y += p.vy;
-            
-            if (p.x < 0 || p.x > canvas.width) p.vx *= -1;
-            if (p.y < 0 || p.y > canvas.height) p.vy *= -1;
-        });
-        
-        requestAnimationFrame(animate);
-    }
-    
-    animate();
+function renderRecentSessionsPreview() {
+    const preview = document.getElementById('djRecentPreview');
+    if (!preview || djSessions.length === 0) return;
+
+    preview.innerHTML = `
+        <div style="font-size:11px;color:rgba(255,255,255,0.3);text-transform:uppercase;letter-spacing:1.5px;margin-bottom:10px;font-weight:600;">Recent</div>
+        <div style="display:flex;flex-direction:column;gap:6px;">
+            ${djSessions.slice(0, 3).map(s => `
+                <button onclick="loadDJSession('${s.id}')" style="
+                    background:rgba(255,255,255,0.03);
+                    border:1px solid rgba(255,255,255,0.06);
+                    border-radius:8px;padding:10px 13px;
+                    color:rgba(255,255,255,0.7);
+                    cursor:pointer;text-align:left;
+                    display:flex;align-items:center;gap:10px;
+                    font-size:13px;transition:all 0.2s ease;
+                "
+                onmouseover="this.style.background='rgba(255,255,255,0.07)';this.style.color='white'"
+                onmouseout="this.style.background='rgba(255,255,255,0.03)';this.style.color='rgba(255,255,255,0.7)'">
+                    <span style="opacity:0.5;font-size:14px;">💬</span>
+                    <span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex:1;">${s.label}</span>
+                    <span style="opacity:0.35;font-size:11px;flex-shrink:0;">${formatSessionAge(s.createdAt)}</span>
+                </button>
+            `).join('')}
+        </div>
+    `;
 }
 
-// Start a DJ session
+function formatSessionAge(ts) {
+    const diff = Date.now() - ts;
+    if (diff < 60000) return 'just now';
+    if (diff < 3600000) return `${Math.floor(diff/60000)}m ago`;
+    if (diff < 86400000) return `${Math.floor(diff/3600000)}h ago`;
+    return `${Math.floor(diff/86400000)}d ago`;
+}
+
+// ─────────────────────────────────────────────
+// CHAT LOGIC
+// ─────────────────────────────────────────────
+
+function openChatView() {
+    document.getElementById('djQuickActions').style.display = 'none';
+    document.getElementById('djSessionList').style.display = 'none';
+    document.getElementById('djChatArea').style.display = 'flex';
+    document.getElementById('djBackBtn').style.display = 'flex';
+    document.getElementById('djHistoryBtn').style.display = 'none';
+}
+
 async function startDJSession(type) {
-    const responseArea = document.getElementById('djResponseArea');
-    const messagesDiv = document.getElementById('djMessages');
-    
-    responseArea.style.display = 'flex';
-    messagesDiv.innerHTML = '<div style="text-align: center; color: rgba(255, 255, 255, 0.5);"><div style="font-size:48px;margin-bottom:16px;">✦</div>AI DJ is thinking...</div>';
-    
+    currentSessionId = null;
+    djHistory = [];
+    createDJSession(type);
+    openChatView();
+
+    document.getElementById('djMessages').innerHTML = '';
+    document.getElementById('djPanelTitle').textContent = 'AI DJ';
+    document.getElementById('djPanelSubtitle').textContent = 'Session started';
+
     let prompt = '';
-    let systemContext = buildMusicContext();
-    
+    const context = buildMusicContext();
+
     switch (type) {
         case 'vibe':
-            prompt = `Based on my listening history, create a perfect vibe playlist for right now. Analyze the mood, energy, and genres I enjoy, then suggest 8-10 songs that flow together perfectly. Explain why each song fits and how they connect.`;
+            prompt = `Based on my listening history, create a perfect vibe playlist for right now. Suggest 6-8 songs that flow together. Format each as "Song Title" by Artist Name and explain the mood briefly.`;
             break;
         case 'discovery':
-            prompt = `Look at my music taste and recommend 5 completely new artists or songs I've never heard but would love. For each recommendation, explain why it matches my taste and what makes it special.`;
+            prompt = `Look at my music taste and recommend 5 artists or songs I've never heard but would love. Format each as "Song Title" by Artist Name and explain why.`;
             break;
         case 'story':
-            prompt = `Pick 3 songs from my recent plays and tell me fascinating stories about them - the inspiration behind the song, interesting facts about the artist, or the cultural impact. Make it engaging and fun!`;
+            prompt = `Pick 2-3 songs from my recent plays and tell me a fascinating story about each. Keep it conversational and fun.`;
             break;
         case 'custom':
-            messagesDiv.innerHTML = '';
-            addDJMessage('assistant', "Hey! I'm Indy, a DJ powered by JVST's AI model: DART 1w⚡. What kind of music experience are you looking for today? I can create playlists, tell you about songs, find new discoveries, or anything else music-related!");
+            renderDJMessage('assistant', "Hey! I'm your INDY DJ. What are you in the mood for? I can build playlists, recommend artists, tell you song stories, or anything else music-related.");
+            saveMessageToSession('assistant', "Hey! I'm your INDY DJ. What are you in the mood for?");
+            document.getElementById('djInput')?.focus();
             return;
     }
-    
-    await callDJ(prompt, systemContext);
+
+    addDJLoadingMessage();
+    await callDJ(prompt, context);
 }
 
-// Build context about user's music taste
-function buildMusicContext() {
-    const recentSongs = recent.slice(0, 10).map(s => `"${s.title}" by ${s.artist}`).join(', ');
-    const likedSongs = (playlists["Liked Songs"]?.songs || []).slice(0, 5).map(s => `"${s.title}" by ${s.artist}`).join(', ');
-    const topArtists = [...new Set(recent.map(s => s.artist))].slice(0, 5).join(', ');
-    
-    return `
-User's Music Profile:
-- Recently played: ${recentSongs || 'No recent plays yet'}
-- Liked songs: ${likedSongs || 'No liked songs yet'}
-- Favorite artists: ${topArtists || 'No data yet'}
-- Total songs played: ${listeningStats.songsPlayed || 0}
-- Saved albums: ${Object.keys(savedAlbums).length}
+async function sendDJMessage() {
+    const input = document.getElementById('djInput');
+    const message = input?.value.trim();
+    if (!message) return;
 
-Current vibe: ${getCurrentTimeBasedMood()}
-    `.trim();
+    if (!currentSessionId) createDJSession(message);
+    openChatView();
+
+    renderDJMessage('user', message);
+    saveMessageToSession('user', message);
+    input.value = '';
+
+    addDJLoadingMessage();
+    await callDJ(message, buildMusicContext());
 }
 
-function getCurrentTimeBasedMood() {
-    const hour = new Date().getHours();
-    if (hour >= 5 && hour < 12) return 'Morning energy';
-    if (hour >= 12 && hour < 17) return 'Afternoon flow';
-    if (hour >= 17 && hour < 22) return 'Evening wind-down';
-    return 'Late night vibes';
-}
-
-// Call GROQ AI (super fast!)
 async function callDJ(userMessage, context = '') {
     try {
         const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
             method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'Authorization': `Bearer ${GROQ_API_KEY}`
-            },
+            headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${GROQ_API_KEY}` },
             body: JSON.stringify({
                 model: 'llama-3.3-70b-versatile',
                 messages: [
                     {
                         role: 'system',
-                        content: `You are an enthusiastic AI DJ for INDY Music app. You're knowledgeable, fun, and passionate about music. Your job is to:
-- Curate personalized playlists based on listening history
-- Recommend new music with compelling reasons
-- Share interesting stories and facts about songs and artists
-- Create seamless musical journeys
-- Be conversational and engaging, not robotic
-
-Keep responses concise but impactful. Use emojis sparingly. When suggesting songs, format them as: "Song Title" by Artist Name`
+                        content: `You are a knowledgeable music DJ for INDY Music. Be concise, conversational, and enthusiastic. When suggesting songs format them as "Song Title" by Artist Name. Keep responses under 200 words unless telling a story. No markdown headers.`
                     },
                     ...djHistory,
-                    {
-                        role: 'user',
-                        content: `${context}\n\n${userMessage}`
-                    }
+                    { role: 'user', content: `${context}\n\n${userMessage}` }
                 ],
                 temperature: 0.8,
-                max_tokens: 800
+                max_tokens: 600
             })
         });
-        
+
         const data = await response.json();
-        const djResponse = data.choices?.[0]?.message?.content || 'Sorry, I got a bit tongue-tied there!';
-        
-        // Update history
-        djHistory.push(
-            { role: 'user', content: userMessage },
-            { role: 'assistant', content: djResponse }
-        );
-        
-        // Display response
-        addDJMessage('assistant', djResponse);
-        
-        // Parse and create playlist if songs mentioned
-        parseSongsFromResponse(djResponse);
-        
-    } catch (error) {
-        console.error('DJ error:', error);
-        addDJMessage('assistant', "Oops! I'm having technical difficulties. Mind trying again? ✦");
+        const reply = data.choices?.[0]?.message?.content || 'Something went wrong, try again.';
+
+        djHistory.push({ role: 'user', content: userMessage }, { role: 'assistant', content: reply });
+        if (djHistory.length > 20) djHistory = djHistory.slice(-20);
+
+        removeDJLoadingMessage();
+        renderDJMessage('assistant', reply);
+        saveMessageToSession('assistant', reply);
+        parseSongsFromResponse(reply);
+
+    } catch (err) {
+        removeDJLoadingMessage();
+        renderDJMessage('assistant', "Couldn't reach the AI right now. Check your connection.");
+        console.error('DJ error:', err);
     }
 }
 
-// Send user message
-async function sendDJMessage() {
-    const input = document.getElementById('djInput');
-    const message = input.value.trim();
-    
-    if (!message) return;
-    
-    addDJMessage('user', message);
-    input.value = '';
-    
-    const context = buildMusicContext();
-    await callDJ(message, context);
+function buildMusicContext() {
+    const recentSongs = recent.slice(0, 8).map(s => `"${s.title}" by ${s.artist}`).join(', ');
+    const topArtists = [...new Set(recent.map(s => s.artist))].slice(0, 5).join(', ');
+    const hour = new Date().getHours();
+    const timeOfDay = hour < 12 ? 'morning' : hour < 17 ? 'afternoon' : hour < 22 ? 'evening' : 'late night';
+    return `User context: Recently played: ${recentSongs || 'nothing yet'}. Favourite artists: ${topArtists || 'none'}. Time of day: ${timeOfDay}.`;
 }
 
-// Add message to chat
-function addDJMessage(role, content) {
+// ─────────────────────────────────────────────
+// MESSAGE RENDERING
+// ─────────────────────────────────────────────
+
+function renderDJMessage(role, content) {
     const messagesDiv = document.getElementById('djMessages');
-    
-    const messageEl = document.createElement('div');
-    messageEl.className = 'dj-message';
-    messageEl.style.cssText = `
-        background: ${role === 'user' ? 'rgba(102, 126, 234, 0.2)' : 'rgba(255, 255, 255, 0.05)'};
-        border: 1px solid ${role === 'user' ? 'rgba(102, 126, 234, 0.3)' : 'rgba(255, 255, 255, 0.1)'};
-        border-radius: 16px;
-        padding: 16px 20px;
-        color: white;
-        line-height: 1.6;
-        ${role === 'user' ? 'margin-left: auto; max-width: 70%;' : 'margin-right: auto; max-width: 85%;'}
+    if (!messagesDiv) return;
+
+    const isUser = role === 'user';
+    const msg = document.createElement('div');
+    msg.style.cssText = `
+        display:flex;gap:9px;align-items:flex-start;
+        ${isUser ? 'flex-direction:row-reverse;' : ''}
+        animation:fadeInUp 0.3s ease;
     `;
-    
-    if (role === 'assistant') {
-        messageEl.innerHTML = `
-            <div style="display: flex; align-items: start; gap: 12px;">
-                <div style="
-                    width: 32px;
-                    height: 32px;
-                    background: linear-gradient(135deg, #667eea, #764ba2);
-                    border-radius: 50%;
-                    display: flex;
-                    align-items: center;
-                    justify-content: center;
-                    flex-shrink: 0;
-                    font-size: 20px;
-                ">✦</div>
-                <div style="flex: 1; padding-top: 4px;">
-                    ${formatDJMessage(content)}
-                </div>
-            </div>
-        `;
-    } else {
-        messageEl.textContent = content;
-    }
-    
-    messagesDiv.appendChild(messageEl);
+    msg.innerHTML = `
+        <div style="
+            width:26px;height:26px;border-radius:50%;flex-shrink:0;margin-top:2px;
+            background:${isUser ? 'rgba(255,255,255,0.08)' : 'rgba(255,255,255,0.05)'};
+            border:1px solid rgba(255,255,255,0.1);
+            display:flex;align-items:center;justify-content:center;font-size:12px;
+        ">${isUser ? '👤' : '✦'}</div>
+        <div style="
+            max-width:80%;
+            background:${isUser ? 'rgba(255,255,255,0.07)' : 'rgba(255,255,255,0.04)'};
+            border:1px solid rgba(255,255,255,${isUser ? '0.08' : '0.06'});
+            border-radius:${isUser ? '12px 4px 12px 12px' : '4px 12px 12px 12px'};
+            padding:11px 14px;
+            font-size:14px;line-height:1.6;
+            color:rgba(255,255,255,${isUser ? '0.85' : '0.9'});
+        ">${formatDJMessage(content)}</div>
+    `;
+    messagesDiv.appendChild(msg);
     messagesDiv.scrollTop = messagesDiv.scrollHeight;
 }
 
-// Format DJ message (markdown-like)
+function addDJLoadingMessage() {
+    const messagesDiv = document.getElementById('djMessages');
+    if (!messagesDiv) return;
+    const el = document.createElement('div');
+    el.id = 'djLoadingMsg';
+    el.style.cssText = 'display:flex;gap:9px;align-items:flex-start;animation:fadeInUp 0.3s ease;';
+    el.innerHTML = `
+        <div style="width:26px;height:26px;border-radius:50%;background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.1);display:flex;align-items:center;justify-content:center;font-size:12px;flex-shrink:0;">✦</div>
+        <div style="background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.06);border-radius:4px 12px 12px 12px;padding:13px 16px;display:flex;gap:5px;align-items:center;">
+            <span style="width:5px;height:5px;background:rgba(255,255,255,0.4);border-radius:50%;animation:djDot 1.2s infinite 0s;display:inline-block;"></span>
+            <span style="width:5px;height:5px;background:rgba(255,255,255,0.4);border-radius:50%;animation:djDot 1.2s infinite 0.2s;display:inline-block;"></span>
+            <span style="width:5px;height:5px;background:rgba(255,255,255,0.4);border-radius:50%;animation:djDot 1.2s infinite 0.4s;display:inline-block;"></span>
+        </div>
+    `;
+    messagesDiv.appendChild(el);
+    messagesDiv.scrollTop = messagesDiv.scrollHeight;
+}
+
+function removeDJLoadingMessage() { document.getElementById('djLoadingMsg')?.remove(); }
+
 function formatDJMessage(text) {
     return text
         .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
-        .replace(/\*(.*?)\*/g, '<em>$1</em>')
-        .replace(/\n/g, '<br>');
+        .replace(/\*(.*?)\*/g, '<em style="color:rgba(255,255,255,0.6)">$1</em>')
+        .replace(/\n/g, '<br>')
+        .replace(/"([^"]+)"\s+by\s+([^<,\n.]+)/g,
+            '<span style="background:rgba(255,255,255,0.07);border:1px solid rgba(255,255,255,0.1);border-radius:6px;padding:2px 8px;font-weight:600;white-space:nowrap;font-size:13px;">"$1" by $2</span>');
 }
 
-// Parse songs from DJ response and create actionable playlist
 function parseSongsFromResponse(text) {
-    const songPattern = /"([^"]+)"\s+by\s+([^,\n.]+)/gi;
-    const matches = [...text.matchAll(songPattern)];
-    
-    if (matches.length > 0) {
-        const songs = matches.map(m => ({
-            title: m[1].trim(),
-            artist: m[2].trim()
-        }));
-        
-        // Show playlist button
-        setTimeout(() => {
-            const messagesDiv = document.getElementById('djMessages');
-            const playlistBtn = document.createElement('button');
-            playlistBtn.style.cssText = `
-                background: linear-gradient(135deg, #667eea, #764ba2);
-                border: none;
-                border-radius: 12px;
-                padding: 14px 24px;
-                color: white;
-                font-weight: 600;
-                cursor: pointer;
-                margin-top: 12px;
-                transition: transform 0.2s ease;
-                display: flex;
-                align-items: center;
-                gap: 8px;
-                justify-content: center;
-            `;
-            playlistBtn.innerHTML = `<span style="font-size:20px;">✦</span> Play DJ Playlist (${songs.length} songs)`;
-            playlistBtn.onmouseover = () => {
-                playlistBtn.style.transform = 'scale(1.05)';
-            };
-            playlistBtn.onmouseout = () => {
-                playlistBtn.style.transform = 'scale(1)';
-            };
-            playlistBtn.onclick = () => searchAndPlayDJPlaylist(songs);
-            
-            messagesDiv.appendChild(playlistBtn);
-            messagesDiv.scrollTop = messagesDiv.scrollHeight;
-        }, 500);
-    }
+    const matches = [...text.matchAll(/"([^"]+)"\s+by\s+([^,\n.<]+)/gi)];
+    if (matches.length === 0) return;
+    const songs = matches.map(m => ({ title: m[1].trim(), artist: m[2].trim() }));
+    const messagesDiv = document.getElementById('djMessages');
+    if (!messagesDiv) return;
+    const bar = document.createElement('div');
+    bar.style.cssText = 'display:flex;gap:8px;padding-left:35px;flex-wrap:wrap;';
+    bar.innerHTML = `
+        <button onclick="searchAndPlayDJPlaylist(${JSON.stringify(songs).replace(/"/g,'&quot;')})" style="background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.14);border-radius:20px;color:var(--text);padding:7px 15px;font-size:13px;font-weight:600;cursor:pointer;transition:all 0.2s ease;" onmouseover="this.style.background='rgba(255,255,255,0.14)'" onmouseout="this.style.background='rgba(255,255,255,0.08)'">▶ Play ${songs.length} songs</button>
+        <button onclick="addDJSongsToQueue(${JSON.stringify(songs).replace(/"/g,'&quot;')})" style="background:transparent;border:1px solid rgba(255,255,255,0.1);border-radius:20px;color:rgba(255,255,255,0.6);padding:7px 15px;font-size:13px;font-weight:600;cursor:pointer;transition:all 0.2s ease;" onmouseover="this.style.borderColor='rgba(255,255,255,0.2)';this.style.color='white'" onmouseout="this.style.borderColor='rgba(255,255,255,0.1)';this.style.color='rgba(255,255,255,0.6)'">+ Queue</button>
+    `;
+    messagesDiv.appendChild(bar);
+    messagesDiv.scrollTop = messagesDiv.scrollHeight;
 }
 
-// Search and play DJ-recommended songs
 async function searchAndPlayDJPlaylist(songs) {
-    showNotification(`✦ DJ is preparing your playlist...`);
-    
-    const foundSongs = [];
-    
-    for (const song of songs.slice(0, 8)) { // Limit to 8 to save quota
+    closeAIDJ();
+    showNotification(`✦ Finding ${songs.length} songs...`);
+    const found = [];
+    for (const song of songs.slice(0, 8)) {
         try {
-            const query = `${song.title} ${song.artist}`;
-            const response = await fetch(
-                `https://www.googleapis.com/youtube/v3/search?part=snippet&type=video&videoCategoryId=10&maxResults=1&q=${encodeURIComponent(query)}&key=${getNextKey()}`
-            );
-            
-            const data = await response.json();
-            
-            if (data.items && data.items[0]) {
+            const res = await fetch(`https://www.googleapis.com/youtube/v3/search?part=snippet&type=video&videoCategoryId=10&maxResults=1&q=${encodeURIComponent(song.title + ' ' + song.artist)}&key=${getNextKey()}`);
+            const data = await res.json();
+            if (data.items?.[0]) {
                 const item = data.items[0];
-                foundSongs.push({
-                    id: item.id.videoId,
-                    title: item.snippet.title,
-                    artist: item.snippet.channelTitle,
-                    art: item.snippet.thumbnails.medium.url
-                });
+                found.push({ id: item.id.videoId, title: item.snippet.title, artist: item.snippet.channelTitle, art: item.snippet.thumbnails.medium.url });
             }
-        } catch (error) {
-            console.error(`Failed to find: ${song.title}`, error);
-        }
+        } catch(e) { console.error(e); }
     }
-    
-    if (foundSongs.length > 0) {
-        currentSongs = foundSongs;
-        currentIndex = 0;
-        currentPlaylist = null;
-        djMode = true;
-        
-        playSong(foundSongs[0]);
-        closeAIDJ();
-        showNotification(`✦ DJ Playlist started! ${foundSongs.length} songs queued`);
+    if (found.length > 0) {
+        currentSongs = found; currentIndex = 0; currentPlaylist = null;
+        playSong(found[0]);
+        showNotification(`✦ Playing DJ playlist — ${found.length} songs`);
     } else {
-        showNotification("Couldn't find those songs, try different ones!");
+        showNotification("Couldn't find those songs");
     }
 }
 
-// Initialize when app loads
-setTimeout(() => {
-    initAIDJ();
-    console.log('✦ AI DJ initialized (powered by GROQ ⚡)');
-}, 1000);
+async function addDJSongsToQueue(songs) {
+    showNotification(`✦ Adding ${songs.length} songs to queue...`);
+    for (const song of songs.slice(0, 6)) {
+        try {
+            const res = await fetch(`https://www.googleapis.com/youtube/v3/search?part=snippet&type=video&videoCategoryId=10&maxResults=1&q=${encodeURIComponent(song.title + ' ' + song.artist)}&key=${getNextKey()}`);
+            const data = await res.json();
+            if (data.items?.[0]) {
+                const item = data.items[0];
+                addToQueue({ id: item.id.videoId, title: item.snippet.title, artist: item.snippet.channelTitle, art: item.snippet.thumbnails.medium.url });
+            }
+        } catch(e) { console.error(e); }
+    }
+    showNotification(`✦ Added to queue!`);
+}
 
-// Export functions
+// ─────────────────────────────────────────────
+// INJECT STYLES
+// ─────────────────────────────────────────────
+
+const djStyle = document.createElement('style');
+djStyle.textContent = `
+    @keyframes djDot {
+        0%,100% { opacity:0.3; transform:translateY(0); }
+        50% { opacity:1; transform:translateY(-3px); }
+    }
+`;
+document.head.appendChild(djStyle);
+
+setTimeout(() => { initAIDJ(); }, 1000);
+
 window.openAIDJ = openAIDJ;
 window.closeAIDJ = closeAIDJ;
 window.startDJSession = startDJSession;
 window.sendDJMessage = sendDJMessage;
+window.showDJSessions = showDJSessions;
+window.showDJHome = showDJHome;
+window.loadDJSession = loadDJSession;
+window.deleteDJSession = deleteDJSession;
+window.searchAndPlayDJPlaylist = searchAndPlayDJPlaylist;
+window.addDJSongsToQueue = addDJSongsToQueue;
 
-console.log('✓ AI DJ feature loaded - Look for the ✦ button!');
+
+// ============================================
+// NEW FEATURE 1: MOOD DETECTOR
+// Analyzes recent plays and shows a mood card
+// ============================================
+
+function openMoodDetector() {
+    if (recent.length < 3) {
+        showNotification('Play a few songs first so I can read your mood!');
+        return;
+    }
+
+    const overlay = document.createElement('div');
+    overlay.id = 'moodOverlay';
+    overlay.style.cssText = `
+        position:fixed;inset:0;z-index:99999;
+        background:rgba(0,0,0,0.85);backdrop-filter:blur(16px);
+        display:flex;align-items:center;justify-content:center;
+        padding:20px;opacity:0;transition:opacity 0.3s ease;
+    `;
+
+    overlay.innerHTML = `
+        <div style="
+            width:100%;max-width:460px;
+            background:rgba(18,18,18,0.98);
+            border:1px solid rgba(255,255,255,0.08);
+            border-radius:16px;overflow:hidden;
+            box-shadow:0 24px 64px rgba(0,0,0,0.8);
+        ">
+            <div style="padding:22px 24px;border-bottom:1px solid rgba(255,255,255,0.06);display:flex;justify-content:space-between;align-items:center;">
+                <div>
+                    <div style="font-family:'Syne',sans-serif;font-size:17px;font-weight:800;">Mood Detector</div>
+                    <div style="font-size:12px;color:rgba(255,255,255,0.35);margin-top:1px;">Based on your recent plays</div>
+                </div>
+                <button onclick="document.getElementById('moodOverlay').remove()" style="background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.1);color:var(--text);width:32px;height:32px;border-radius:50%;cursor:pointer;font-size:18px;display:flex;align-items:center;justify-content:center;" onmouseover="this.style.background='rgba(255,255,255,0.1)'" onmouseout="this.style.background='rgba(255,255,255,0.06)'">×</button>
+            </div>
+
+            <div id="moodContent" style="padding:28px 24px;text-align:center;">
+                <div style="font-size:48px;margin-bottom:4px;">🔍</div>
+                <div style="color:rgba(255,255,255,0.4);font-size:14px;">Analyzing your vibe...</div>
+            </div>
+
+            <div style="padding:0 24px 22px;display:flex;gap:8px;" id="moodActions" style="display:none;"></div>
+        </div>
+    `;
+
+    document.body.appendChild(overlay);
+    setTimeout(() => { overlay.style.opacity = '1'; }, 20);
+    overlay.addEventListener('click', e => { if (e.target === overlay) overlay.remove(); });
+
+    // Analyze via AI
+    analyzeMoodWithAI();
+}
+
+async function analyzeMoodWithAI() {
+    const songs = recent.slice(0, 8).map(s => `"${s.title}" by ${s.artist}`).join(', ');
+
+    try {
+        const res = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${GROQ_API_KEY}` },
+            body: JSON.stringify({
+                model: 'llama-3.3-70b-versatile',
+                messages: [{
+                    role: 'user',
+                    content: `Analyze the mood of these recently played songs: ${songs}. 
+Reply ONLY as JSON: { "emoji": "one emoji", "mood": "2-3 word mood label", "description": "one sentence", "color": "a css hex color that matches the mood", "suggestion": "one short sentence suggestion for what to play next" }`
+                }],
+                temperature: 0.7,
+                max_tokens: 200
+            })
+        });
+
+        const data = await res.json();
+        let text = data.choices?.[0]?.message?.content || '';
+        text = text.replace(/```json|```/g, '').trim();
+        const mood = JSON.parse(text);
+
+        const content = document.getElementById('moodContent');
+        const actions = document.getElementById('moodActions');
+        if (!content) return;
+
+        content.innerHTML = `
+            <div style="
+                width:90px;height:90px;border-radius:50%;
+                background:${mood.color}22;
+                border:2px solid ${mood.color}55;
+                display:flex;align-items:center;justify-content:center;
+                font-size:44px;margin:0 auto 20px;
+            ">${mood.emoji}</div>
+            <div style="font-family:'Syne',sans-serif;font-size:26px;font-weight:800;margin-bottom:8px;">${mood.mood}</div>
+            <div style="font-size:14px;color:rgba(255,255,255,0.6);line-height:1.6;margin-bottom:16px;">${mood.description}</div>
+            <div style="background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.08);border-radius:10px;padding:12px 16px;font-size:13px;color:rgba(255,255,255,0.5);">
+                💡 ${mood.suggestion}
+            </div>
+        `;
+
+        actions.style.display = 'flex';
+        actions.innerHTML = `
+            <button onclick="document.getElementById('moodOverlay').remove(); openAIDJ(); setTimeout(() => startDJSession('vibe'), 400);" style="
+                flex:1;background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.12);
+                border-radius:10px;color:var(--text);padding:12px;font-size:14px;font-weight:600;
+                cursor:pointer;transition:all 0.2s ease;
+            " onmouseover="this.style.background='rgba(255,255,255,0.14)'" onmouseout="this.style.background='rgba(255,255,255,0.08)'">✦ Build Vibe Playlist</button>
+            <button onclick="document.getElementById('moodOverlay').remove()" style="
+                background:transparent;border:1px solid rgba(255,255,255,0.08);
+                border-radius:10px;color:rgba(255,255,255,0.5);padding:12px 20px;
+                font-size:14px;cursor:pointer;transition:all 0.2s ease;
+            " onmouseover="this.style.borderColor='rgba(255,255,255,0.15)';this.style.color='white'" onmouseout="this.style.borderColor='rgba(255,255,255,0.08)';this.style.color='rgba(255,255,255,0.5)'">Close</button>
+        `;
+
+    } catch (err) {
+        const content = document.getElementById('moodContent');
+        if (content) content.innerHTML = `<div style="color:rgba(255,255,255,0.4);font-size:14px;padding:20px 0;">Couldn't analyze mood right now.</div>`;
+        console.error('Mood error:', err);
+    }
+}
+
+window.openMoodDetector = openMoodDetector;
+console.log('✓ Mood Detector loaded');
+
+
+// ============================================
+// NEW FEATURE 2: LISTENING RECAP
+// A weekly summary modal — no AI needed
+// ============================================
+
+function openListeningRecap() {
+    const topArtists = {};
+    recent.forEach(s => {
+        if (s.artist) topArtists[s.artist] = (topArtists[s.artist] || 0) + 1;
+    });
+
+    const sortedArtists = Object.entries(topArtists)
+        .sort((a, b) => b[1] - a[1])
+        .slice(0, 5);
+
+    const totalSongs   = listeningStats.songsPlayed  || 0;
+    const totalMinutes = listeningStats.totalMinutes  || 0;
+    const totalAlbums  = Object.keys(savedAlbums).length;
+    const streak       = load('play_streak', { count: 0 }).count;
+
+const overlay = document.createElement('div');
+overlay.id = 'listeningRecapOverlay';   // ← add this line
+overlay.style.cssText = `
+    position:fixed;inset:0;z-index:99999;
+        background:rgba(0,0,0,0.85);backdrop-filter:blur(16px);
+        display:flex;align-items:center;justify-content:center;
+        padding:20px;opacity:0;transition:opacity 0.3s ease;
+    `;
+
+    overlay.innerHTML = `
+        <div style="
+            width:100%;max-width:500px;
+            background:rgba(18,18,18,0.98);
+            border:1px solid rgba(255,255,255,0.08);
+            border-radius:16px;overflow:hidden;
+            box-shadow:0 24px 64px rgba(0,0,0,0.8);
+        ">
+            <div style="padding:22px 24px;border-bottom:1px solid rgba(255,255,255,0.06);display:flex;justify-content:space-between;align-items:center;">
+                <div>
+                    <div style="font-family:'Syne',sans-serif;font-size:17px;font-weight:800;">Your Listening Recap</div>
+                    <div style="font-size:12px;color:rgba(255,255,255,0.35);margin-top:1px;">All time on this device</div>
+                </div>
+               <button onclick="this.closest('div[style*=position\\:fixed]').remove()" style="background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.1);color:var(--text);width:32px;height:32px;border-radius:50%;cursor:pointer;font-size:18px;display:flex;align-items:center;justify-content:center;" onmouseover="this.style.background='rgba(255,255,255,0.1)'" onmouseout="this.style.background='rgba(255,255,255,0.06)'">×</button>
+            </div>
+
+            <!-- Big stats -->
+            <div style="display:grid;grid-template-columns:1fr 1fr 1fr;border-bottom:1px solid rgba(255,255,255,0.06);">
+                ${[
+                    [totalSongs, 'Songs Played'],
+                    [Math.floor(totalMinutes / 60) + 'h', 'Listened'],
+                    [streak + ' day' + (streak !== 1 ? 's' : ''), 'Streak'],
+                ].map(([val, label]) => `
+                    <div style="padding:22px 16px;text-align:center;border-right:1px solid rgba(255,255,255,0.06);">
+                        <div style="font-family:'Syne',sans-serif;font-size:28px;font-weight:800;margin-bottom:4px;">${val}</div>
+                        <div style="font-size:12px;color:rgba(255,255,255,0.4);text-transform:uppercase;letter-spacing:1px;">${label}</div>
+                    </div>
+                `).join('')}
+            </div>
+
+            <!-- Top Artists -->
+            <div style="padding:20px 24px;">
+                <div style="font-size:11px;color:rgba(255,255,255,0.3);text-transform:uppercase;letter-spacing:1.5px;margin-bottom:14px;font-weight:600;">Top Artists</div>
+                ${sortedArtists.length === 0
+                    ? `<div style="color:rgba(255,255,255,0.3);font-size:14px;">No data yet — play some music!</div>`
+                    : sortedArtists.map(([artist, count], i) => `
+                        <div style="display:flex;align-items:center;gap:12px;margin-bottom:10px;">
+                            <span style="font-size:13px;color:rgba(255,255,255,0.3);min-width:18px;text-align:right;">${i + 1}</span>
+                            <div style="flex:1;background:rgba(255,255,255,0.04);border-radius:6px;height:36px;position:relative;overflow:hidden;">
+                                <div style="
+                                    position:absolute;left:0;top:0;bottom:0;
+                                    width:${Math.round((count / (sortedArtists[0][1] || 1)) * 100)}%;
+                                    background:rgba(255,255,255,0.07);
+                                    border-radius:6px;transition:width 0.8s ease;
+                                "></div>
+                                <span style="position:relative;padding:0 12px;line-height:36px;font-size:14px;font-weight:600;">${artist}</span>
+                            </div>
+                            <span style="font-size:12px;color:rgba(255,255,255,0.35);min-width:30px;text-align:right;">${count}x</span>
+                        </div>
+                    `).join('')
+                }
+            </div>
+
+            <!-- Footer -->
+            <div style="padding:0 24px 22px;">
+                <button onclick="shareSongCard(null); document.getElementById('listeningRecapOverlay').remove()" style="
+                    width:100%;background:rgba(255,255,255,0.06);
+                    border:1px solid rgba(255,255,255,0.1);
+                    border-radius:10px;color:var(--text);
+                    padding:12px;font-size:14px;font-weight:600;
+                    cursor:pointer;transition:all 0.2s ease;
+                " onmouseover="this.style.background='rgba(255,255,255,0.1)'" onmouseout="this.style.background='rgba(255,255,255,0.06)'">📋 Copy Stats to Clipboard</button>
+            </div>
+        </div>
+    `;
+
+    document.body.appendChild(overlay);
+    setTimeout(() => { overlay.style.opacity = '1'; }, 20);
+    overlay.addEventListener('click', e => { if (e.target === overlay) overlay.remove(); });
+}
+
+window.openListeningRecap = openListeningRecap;
+console.log('✓ Listening Recap loaded');
+
+
+// ============================================
+// NEW FEATURE 3: QUICK PLAYLIST BUILDER
+// Type a vibe, AI names and fills the playlist
+// ============================================
+
+function openQuickPlaylistBuilder() {
+    const overlay = document.createElement('div');
+    overlay.id = 'qpbOverlay';
+    overlay.style.cssText = `
+        position:fixed;inset:0;z-index:99999;
+        background:rgba(0,0,0,0.85);backdrop-filter:blur(16px);
+        display:flex;align-items:center;justify-content:center;
+        padding:20px;opacity:0;transition:opacity 0.3s ease;
+    `;
+
+    overlay.innerHTML = `
+        <div style="
+            width:100%;max-width:520px;
+            background:rgba(18,18,18,0.98);
+            border:1px solid rgba(255,255,255,0.08);
+            border-radius:16px;overflow:hidden;
+            box-shadow:0 24px 64px rgba(0,0,0,0.8);
+        ">
+            <div style="padding:22px 24px;border-bottom:1px solid rgba(255,255,255,0.06);display:flex;justify-content:space-between;align-items:center;">
+                <div>
+                    <div style="font-family:'Syne',sans-serif;font-size:17px;font-weight:800;">Quick Playlist Builder</div>
+                    <div style="font-size:12px;color:rgba(255,255,255,0.35);margin-top:1px;">Describe a vibe, AI does the rest</div>
+                </div>
+                <button onclick="document.getElementById('qpbOverlay').remove()" style="background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.1);color:var(--text);width:32px;height:32px;border-radius:50%;cursor:pointer;font-size:18px;display:flex;align-items:center;justify-content:center;" onmouseover="this.style.background='rgba(255,255,255,0.1)'" onmouseout="this.style.background='rgba(255,255,255,0.06)'">×</button>
+            </div>
+
+            <!-- Prompt suggestions -->
+            <div style="padding:20px 24px 0;">
+                <div style="font-size:11px;color:rgba(255,255,255,0.3);text-transform:uppercase;letter-spacing:1.5px;margin-bottom:10px;font-weight:600;">Try one of these</div>
+                <div style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:18px;">
+                    ${['Late night drive 🌙','Gym energy ⚡','Rainy afternoon ☔','Summer road trip 🚗','Focus & study 📚','Feel-good Friday 🎉'].map(v => `
+                        <button onclick="document.getElementById('qpbInput').value='${v}'" style="
+                            background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.08);
+                            border-radius:20px;padding:6px 14px;color:rgba(255,255,255,0.7);
+                            font-size:13px;cursor:pointer;transition:all 0.2s ease;
+                        " onmouseover="this.style.background='rgba(255,255,255,0.08)';this.style.color='white'" onmouseout="this.style.background='rgba(255,255,255,0.04)';this.style.color='rgba(255,255,255,0.7)'">${v}</button>
+                    `).join('')}
+                </div>
+
+                <input id="qpbInput" type="text" placeholder="Or describe your own vibe..." style="
+                    width:100%;background:rgba(255,255,255,0.05);
+                    border:1px solid rgba(255,255,255,0.1);
+                    border-radius:10px;padding:13px 16px;
+                    color:var(--text);font-size:14px;outline:none;
+                    transition:border-color 0.2s ease;
+                    font-family:'DM Sans',sans-serif;margin-bottom:10px;
+                " onfocus="this.style.borderColor='rgba(255,255,255,0.25)'" onblur="this.style.borderColor='rgba(255,255,255,0.1)'" onkeypress="if(event.key==='Enter') buildQuickPlaylist()">
+            </div>
+
+            <div id="qpbResult" style="padding:0 24px;min-height:0;transition:all 0.3s ease;"></div>
+
+            <div style="padding:14px 24px 22px;display:flex;gap:8px;">
+                <button onclick="buildQuickPlaylist()" id="qpbBuildBtn" style="
+                    flex:1;background:rgba(255,255,255,0.1);
+                    border:1px solid rgba(255,255,255,0.15);
+                    border-radius:10px;color:var(--text);
+                    padding:12px;font-size:14px;font-weight:600;
+                    cursor:pointer;transition:all 0.2s ease;
+                " onmouseover="this.style.background='rgba(255,255,255,0.16)'" onmouseout="this.style.background='rgba(255,255,255,0.1)'">✦ Build Playlist</button>
+            </div>
+        </div>
+    `;
+
+    document.body.appendChild(overlay);
+    setTimeout(() => { overlay.style.opacity = '1'; overlay.querySelector('#qpbInput').focus(); }, 20);
+    overlay.addEventListener('click', e => { if (e.target === overlay) overlay.remove(); });
+}
+
+async function buildQuickPlaylist() {
+    const input = document.getElementById('qpbInput');
+    const vibe = input?.value.trim();
+    if (!vibe) { showNotification('Describe a vibe first!'); return; }
+
+    const result = document.getElementById('qpbResult');
+    const btn = document.getElementById('qpbBuildBtn');
+    if (btn) btn.textContent = 'Building...';
+    if (result) result.innerHTML = `<div style="text-align:center;padding:20px 0;color:rgba(255,255,255,0.35);font-size:14px;">✦ Asking AI...</div>`;
+
+    try {
+        const res = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${GROQ_API_KEY}` },
+            body: JSON.stringify({
+                model: 'llama-3.3-70b-versatile',
+                messages: [{
+                    role: 'user',
+                    content: `Create a playlist for this vibe: "${vibe}". 
+Reply ONLY as JSON: { "name": "short playlist name", "emoji": "one emoji", "songs": [{"title": "...", "artist": "..."}] } 
+Include exactly 8 songs. No markdown, no extra text.`
+                }],
+                temperature: 0.9,
+                max_tokens: 400
+            })
+        });
+
+        const data = await res.json();
+        let text = data.choices?.[0]?.message?.content || '';
+        text = text.replace(/```json|```/g, '').trim();
+        const playlist = JSON.parse(text);
+
+        if (result) {
+            result.innerHTML = `
+                <div style="
+                    background:rgba(255,255,255,0.04);
+                    border:1px solid rgba(255,255,255,0.08);
+                    border-radius:10px;padding:16px;margin-bottom:14px;
+                ">
+                    <div style="font-size:22px;margin-bottom:6px;">${playlist.emoji}</div>
+                    <div style="font-family:'Syne',sans-serif;font-size:18px;font-weight:700;margin-bottom:12px;">${playlist.name}</div>
+                    <div style="display:flex;flex-direction:column;gap:6px;max-height:180px;overflow-y:auto;">
+                        ${playlist.songs.map((s, i) => `
+                            <div style="display:flex;align-items:center;gap:10px;font-size:13px;">
+                                <span style="color:rgba(255,255,255,0.25);min-width:18px;">${i + 1}</span>
+                                <span style="flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${s.title}</span>
+                                <span style="color:rgba(255,255,255,0.4);white-space:nowrap;">${s.artist}</span>
+                            </div>
+                        `).join('')}
+                    </div>
+                </div>
+                <div style="display:flex;gap:8px;margin-bottom:6px;">
+                    <button onclick="saveAndPlayQPBPlaylist(${JSON.stringify(playlist).replace(/"/g,'&quot;')})" style="flex:1;background:rgba(255,255,255,0.1);border:1px solid rgba(255,255,255,0.15);border-radius:10px;color:var(--text);padding:11px;font-size:13px;font-weight:600;cursor:pointer;transition:all 0.2s ease;" onmouseover="this.style.background='rgba(255,255,255,0.16)'" onmouseout="this.style.background='rgba(255,255,255,0.1)'">▶ Play Now</button>
+                    <button onclick="saveQPBToLibrary(${JSON.stringify(playlist).replace(/"/g,'&quot;')})" style="background:transparent;border:1px solid rgba(255,255,255,0.1);border-radius:10px;color:rgba(255,255,255,0.6);padding:11px 16px;font-size:13px;font-weight:600;cursor:pointer;transition:all 0.2s ease;" onmouseover="this.style.borderColor='rgba(255,255,255,0.2)';this.style.color='white'" onmouseout="this.style.borderColor='rgba(255,255,255,0.1)';this.style.color='rgba(255,255,255,0.6)'">+ Save</button>
+                </div>
+            `;
+        }
+        if (btn) btn.textContent = '✦ Rebuild';
+
+    } catch (err) {
+        if (result) result.innerHTML = `<div style="color:rgba(255,255,255,0.4);font-size:14px;padding:16px 0;">Couldn't build playlist right now.</div>`;
+        if (btn) btn.textContent = '✦ Build Playlist';
+        console.error('QPB error:', err);
+    }
+}
+
+async function saveAndPlayQPBPlaylist(playlist) {
+    document.getElementById('qpbOverlay')?.remove();
+    showNotification(`✦ Finding songs for "${playlist.name}"...`);
+    const found = [];
+    for (const song of playlist.songs.slice(0, 8)) {
+        try {
+            const res = await fetch(`https://www.googleapis.com/youtube/v3/search?part=snippet&type=video&videoCategoryId=10&maxResults=1&q=${encodeURIComponent(song.title + ' ' + song.artist)}&key=${getNextKey()}`);
+            const data = await res.json();
+            if (data.items?.[0]) {
+                const item = data.items[0];
+                found.push({ id: item.id.videoId, title: item.snippet.title, artist: item.snippet.channelTitle, art: item.snippet.thumbnails.medium.url });
+            }
+        } catch(e) { console.error(e); }
+    }
+    if (found.length > 0) {
+        currentSongs = found; currentIndex = 0; currentPlaylist = null;
+        playSong(found[0]);
+        showNotification(`${playlist.emoji} Playing "${playlist.name}"`);
+    }
+}
+
+function saveQPBToLibrary(playlist) {
+    const name = `${playlist.emoji} ${playlist.name}`;
+    if (playlists[name]) { showNotification('Playlist already saved!'); return; }
+    playlists[name] = { emoji: playlist.emoji, songs: [] };
+    save('playlists', playlists);
+    renderPlaylists();
+    showNotification(`Saved "${name}" to library — songs will load when you play it`);
+    document.getElementById('qpbOverlay')?.remove();
+}
+
+window.openQuickPlaylistBuilder = openQuickPlaylistBuilder;
+window.buildQuickPlaylist = buildQuickPlaylist;
+window.saveAndPlayQPBPlaylist = saveAndPlayQPBPlaylist;
+window.saveQPBToLibrary = saveQPBToLibrary;
+console.log('✓ Quick Playlist Builder loaded');
+
+
+// ============================================
+// NEW FEATURE 4: SONG RADIO INFO CARD
+// Right-click a song → "What is this?" card
+// Pulls AI-generated trivia about the track
+// ============================================
+
+function openSongInfoCard(song) {
+    if (!song) song = currentPlayingSong;
+    if (!song) { showNotification('Nothing playing right now'); return; }
+
+    const overlay = document.createElement('div');
+    overlay.id = 'songInfoOverlay';
+    overlay.style.cssText = `
+        position:fixed;inset:0;z-index:99999;
+        background:rgba(0,0,0,0.85);backdrop-filter:blur(16px);
+        display:flex;align-items:center;justify-content:center;
+        padding:20px;opacity:0;transition:opacity 0.3s ease;
+    `;
+
+    overlay.innerHTML = `
+        <div style="
+            width:100%;max-width:480px;
+            background:rgba(18,18,18,0.98);
+            border:1px solid rgba(255,255,255,0.08);
+            border-radius:16px;overflow:hidden;
+            box-shadow:0 24px 64px rgba(0,0,0,0.8);
+        ">
+            <!-- Song header -->
+            <div style="display:flex;align-items:center;gap:16px;padding:22px 24px;border-bottom:1px solid rgba(255,255,255,0.06);">
+                <img src="${song.art || ''}" style="width:56px;height:56px;border-radius:8px;object-fit:cover;flex-shrink:0;background:rgba(255,255,255,0.05);">
+                <div style="flex:1;min-width:0;">
+                    <div style="font-family:'Syne',sans-serif;font-size:16px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${song.title}</div>
+                    <div style="font-size:13px;color:rgba(255,255,255,0.4);margin-top:2px;">${song.artist}</div>
+                </div>
+                <button onclick="document.getElementById('songInfoOverlay').remove()" style="background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.1);color:var(--text);width:32px;height:32px;border-radius:50%;cursor:pointer;font-size:18px;display:flex;align-items:center;justify-content:center;flex-shrink:0;" onmouseover="this.style.background='rgba(255,255,255,0.1)'" onmouseout="this.style.background='rgba(255,255,255,0.06)'">×</button>
+            </div>
+
+            <div id="songInfoContent" style="padding:24px;text-align:center;">
+                <div style="color:rgba(255,255,255,0.3);font-size:14px;">Loading info...</div>
+            </div>
+        </div>
+    `;
+
+    document.body.appendChild(overlay);
+    setTimeout(() => { overlay.style.opacity = '1'; }, 20);
+    overlay.addEventListener('click', e => { if (e.target === overlay) overlay.remove(); });
+
+    fetchSongInfo(song);
+}
+
+async function fetchSongInfo(song) {
+    const content = document.getElementById('songInfoContent');
+
+    try {
+        const res = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${GROQ_API_KEY}` },
+            body: JSON.stringify({
+                model: 'llama-3.3-70b-versatile',
+                messages: [{
+                    role: 'user',
+                    content: `Tell me about the song "${song.title}" by ${song.artist}. 
+Reply ONLY as JSON: {
+  "year": "release year or decade",
+  "genre": "main genre",
+  "mood": "2-3 word mood",
+  "fact": "one genuinely interesting fact about the song or artist (1-2 sentences)",
+  "similar": ["Artist One", "Artist Two", "Artist Three"]
+}`
+                }],
+                temperature: 0.7,
+                max_tokens: 300
+            })
+        });
+
+        const data = await res.json();
+        let text = data.choices?.[0]?.message?.content || '';
+        text = text.replace(/```json|```/g, '').trim();
+        const info = JSON.parse(text);
+
+        if (!content) return;
+        content.style.textAlign = 'left';
+        content.innerHTML = `
+            <!-- Tags row -->
+            <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:20px;">
+                ${[info.year, info.genre, info.mood].filter(Boolean).map(tag => `
+                    <span style="background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.1);border-radius:20px;padding:5px 12px;font-size:13px;font-weight:500;">${tag}</span>
+                `).join('')}
+            </div>
+
+            <!-- Fact -->
+            <div style="margin-bottom:20px;">
+                <div style="font-size:11px;color:rgba(255,255,255,0.3);text-transform:uppercase;letter-spacing:1.5px;margin-bottom:8px;font-weight:600;">Did you know</div>
+                <div style="font-size:14px;color:rgba(255,255,255,0.8);line-height:1.7;">${info.fact}</div>
+            </div>
+
+            <!-- Similar artists -->
+            <div>
+                <div style="font-size:11px;color:rgba(255,255,255,0.3);text-transform:uppercase;letter-spacing:1.5px;margin-bottom:10px;font-weight:600;">You might also like</div>
+                <div style="display:flex;gap:8px;flex-wrap:wrap;">
+                    ${(info.similar || []).map(artist => `
+                        <button onclick="searchArtistSongs('${artist.replace(/'/g,"\\'")}'); document.getElementById('songInfoOverlay')?.remove();" style="
+                            background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.08);
+                            border-radius:20px;padding:7px 14px;color:rgba(255,255,255,0.7);
+                            font-size:13px;cursor:pointer;transition:all 0.2s ease;
+                        " onmouseover="this.style.background='rgba(255,255,255,0.1)';this.style.color='white'" onmouseout="this.style.background='rgba(255,255,255,0.04)';this.style.color='rgba(255,255,255,0.7)'">${artist}</button>
+                    `).join('')}
+                </div>
+            </div>
+        `;
+
+    } catch (err) {
+        if (content) content.innerHTML = `<div style="color:rgba(255,255,255,0.4);font-size:14px;">Couldn't load song info right now.</div>`;
+        console.error('Song info error:', err);
+    }
+}
+
+window.openSongInfoCard = openSongInfoCard;
+// Add to context menu — in contextMenuAction add: case 'info': openSongInfoCard(contextMenuTarget); break;
+// Add to context menu HTML: <div class="context-menu-item" onclick="contextMenuAction('info')"><span>ℹ️</span> Song Info</div>
+console.log('✓ Song Info Card loaded');
+
+
+// ============================================
+// NEW FEATURE 5: DAILY MIX GENERATOR
+// One tap → fresh daily mix, cached per day
+// ============================================
+
+function openDailyMix() {
+    const today = new Date().toDateString();
+    const cached = load('daily_mix_cache', null);
+
+    const overlay = document.createElement('div');
+    overlay.id = 'dailyMixOverlay';
+    overlay.style.cssText = `
+        position:fixed;inset:0;z-index:99999;
+        background:rgba(0,0,0,0.85);backdrop-filter:blur(16px);
+        display:flex;align-items:center;justify-content:center;
+        padding:20px;opacity:0;transition:opacity 0.3s ease;
+    `;
+
+    overlay.innerHTML = `
+        <div style="
+            width:100%;max-width:500px;
+            background:rgba(18,18,18,0.98);
+            border:1px solid rgba(255,255,255,0.08);
+            border-radius:16px;overflow:hidden;
+            box-shadow:0 24px 64px rgba(0,0,0,0.8);
+        ">
+            <div style="padding:22px 24px;border-bottom:1px solid rgba(255,255,255,0.06);display:flex;justify-content:space-between;align-items:center;">
+                <div>
+                    <div style="font-family:'Syne',sans-serif;font-size:17px;font-weight:800;">Daily Mix</div>
+                    <div style="font-size:12px;color:rgba(255,255,255,0.35);margin-top:1px;" id="dailyMixSubtitle">Fresh for ${today}</div>
+                </div>
+                <button onclick="document.getElementById('dailyMixOverlay').remove()" style="background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.1);color:var(--text);width:32px;height:32px;border-radius:50%;cursor:pointer;font-size:18px;display:flex;align-items:center;justify-content:center;" onmouseover="this.style.background='rgba(255,255,255,0.1)'" onmouseout="this.style.background='rgba(255,255,255,0.06)'">×</button>
+            </div>
+
+            <div id="dailyMixContent" style="padding:24px;">
+                <div style="text-align:center;color:rgba(255,255,255,0.3);font-size:14px;">Building your mix...</div>
+            </div>
+
+            <div style="padding:0 24px 22px;display:flex;gap:8px;" id="dailyMixActions"></div>
+        </div>
+    `;
+
+    document.body.appendChild(overlay);
+    setTimeout(() => { overlay.style.opacity = '1'; }, 20);
+    overlay.addEventListener('click', e => { if (e.target === overlay) overlay.remove(); });
+
+    if (cached && cached.date === today && cached.songs?.length > 0) {
+        renderDailyMixResult(cached.songs, cached.theme, true);
+    } else {
+        generateDailyMix();
+    }
+}
+
+async function generateDailyMix() {
+    const today = new Date().toDateString();
+    const context = buildMusicContext();
+
+    try {
+        const res = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${GROQ_API_KEY}` },
+            body: JSON.stringify({
+                model: 'llama-3.3-70b-versatile',
+                messages: [{
+                    role: 'user',
+                    content: `${context}
+
+Create a daily mix for today. Pick a theme based on the time of day and my taste.
+Reply ONLY as JSON: {
+  "theme": "short theme name",
+  "description": "one sentence",
+  "songs": [{"title": "...", "artist": "..."}]
+}
+Include exactly 10 songs. No markdown.`
+                }],
+                temperature: 0.9,
+                max_tokens: 500
+            })
+        });
+
+        const data = await res.json();
+        let text = data.choices?.[0]?.message?.content || '';
+        text = text.replace(/```json|```/g, '').trim();
+        const mix = JSON.parse(text);
+
+        save('daily_mix_cache', { date: today, songs: mix.songs, theme: mix.theme, description: mix.description });
+        renderDailyMixResult(mix.songs, mix.theme, false, mix.description);
+
+    } catch (err) {
+        const content = document.getElementById('dailyMixContent');
+        if (content) content.innerHTML = `<div style="color:rgba(255,255,255,0.4);font-size:14px;text-align:center;">Couldn't generate mix right now.</div>`;
+        console.error('Daily mix error:', err);
+    }
+}
+
+function renderDailyMixResult(songs, theme, fromCache, description = '') {
+    const content = document.getElementById('dailyMixContent');
+    const actions = document.getElementById('dailyMixActions');
+    if (!content) return;
+
+    content.innerHTML = `
+        ${description ? `<div style="font-size:14px;color:rgba(255,255,255,0.5);margin-bottom:18px;line-height:1.5;">${description}</div>` : ''}
+        ${fromCache ? `<div style="display:inline-block;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.08);border-radius:20px;padding:4px 12px;font-size:12px;color:rgba(255,255,255,0.35);margin-bottom:16px;">Cached today ·  refreshes tomorrow</div>` : ''}
+        <div style="display:flex;flex-direction:column;gap:7px;max-height:260px;overflow-y:auto;">
+            ${songs.map((s, i) => `
+                <div style="
+                    display:flex;align-items:center;gap:12px;
+                    padding:10px 12px;
+                    background:rgba(255,255,255,0.03);
+                    border:1px solid rgba(255,255,255,0.06);
+                    border-radius:8px;font-size:14px;
+                ">
+                    <span style="color:rgba(255,255,255,0.25);font-size:12px;min-width:18px;">${i + 1}</span>
+                    <div style="flex:1;min-width:0;">
+                        <div style="font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${s.title}</div>
+                        <div style="font-size:12px;color:rgba(255,255,255,0.4);">${s.artist}</div>
+                    </div>
+                </div>
+            `).join('')}
+        </div>
+    `;
+
+    if (actions) {
+        actions.innerHTML = `
+            <button onclick="playDailyMix()" style="flex:1;background:rgba(255,255,255,0.1);border:1px solid rgba(255,255,255,0.15);border-radius:10px;color:var(--text);padding:12px;font-size:14px;font-weight:600;cursor:pointer;transition:all 0.2s ease;" onmouseover="this.style.background='rgba(255,255,255,0.16)'" onmouseout="this.style.background='rgba(255,255,255,0.1)'">▶ Play Mix</button>
+            <button onclick="save('daily_mix_cache', null); generateDailyMix();" style="background:transparent;border:1px solid rgba(255,255,255,0.1);border-radius:10px;color:rgba(255,255,255,0.5);padding:12px 16px;font-size:13px;cursor:pointer;transition:all 0.2s ease;" onmouseover="this.style.borderColor='rgba(255,255,255,0.2)';this.style.color='white'" onmouseout="this.style.borderColor='rgba(255,255,255,0.1)';this.style.color='rgba(255,255,255,0.5)'" title="Regenerate">↺</button>
+        `;
+    }
+}
+
+async function playDailyMix() {
+    const cached = load('daily_mix_cache', null);
+    if (!cached?.songs) return;
+    document.getElementById('dailyMixOverlay')?.remove();
+    showNotification(`✦ Loading Daily Mix...`);
+    const found = [];
+    for (const song of cached.songs.slice(0, 10)) {
+        try {
+            const res = await fetch(`https://www.googleapis.com/youtube/v3/search?part=snippet&type=video&videoCategoryId=10&maxResults=1&q=${encodeURIComponent(song.title + ' ' + song.artist)}&key=${getNextKey()}`);
+            const data = await res.json();
+            if (data.items?.[0]) {
+                const item = data.items[0];
+                found.push({ id: item.id.videoId, title: item.snippet.title, artist: item.snippet.channelTitle, art: item.snippet.thumbnails.medium.url });
+            }
+        } catch(e) { console.error(e); }
+    }
+    if (found.length > 0) {
+        currentSongs = found; currentIndex = 0; currentPlaylist = null;
+        playSong(found[0]);
+        showNotification(`🎵 Daily Mix — ${found.length} songs`);
+    }
+}
+
+window.openDailyMix = openDailyMix;
+window.generateDailyMix = generateDailyMix;
+window.playDailyMix = playDailyMix;
+console.log('✓ Daily Mix loaded');
+
+
+// ============================================
+// INDY MUSIC - FIREBASE AUTH & SYNC MODULE
+// Drop this at the bottom of script.js
+// ============================================
+
+// ── CONFIG ──────────────────────────────────
+// Replace these with your own Firebase project config
+// (Firebase Console → Project Settings → Your Apps → SDK setup)
+const FIREBASE_CONFIG = {
+  apiKey: "AIzaSyC50_wBK3TfERX1gm35puugCD324SxHJR8",
+  authDomain: "tunesandindy.firebaseapp.com",
+  projectId: "tunesandindy",
+  storageBucket: "tunesandindy.firebasestorage.app",
+  messagingSenderId: "335192973371",
+  appId: "1:335192973371:web:ce69d4b67c765d6aaf7c1e",
+  measurementId: "G-5MQG01VZ6H"
+};
+
+// ── STATE ────────────────────────────────────
+let fbApp = null;
+let fbAuth = null;
+let fbDb = null;
+let currentUser = null;
+let syncDebounceTimer = null;
+
+// Keys that get synced to Firebase
+const SYNC_KEYS = [
+    { local: 'playlists',        fb: 'playlists' },
+    { local: 'recent',           fb: 'recent' },
+    { local: 'indy_saved_albums',fb: 'savedAlbums' },
+    { local: 'indy_saved_artists',fb: 'savedArtists' },
+    { local: 'listening_stats',  fb: 'listeningStats' },
+    { local: 'queue',            fb: 'queue' },
+    { local: 'dj_sessions',      fb: 'djSessions' },
+];
+
+// ── INIT ─────────────────────────────────────
+
+async function initFirebase() {
+    // Dynamically load Firebase SDKs (no bundler needed)
+    await loadScript('https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js');
+    await loadScript('https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js');
+    await loadScript('https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js');
+
+    if (!firebase.apps.length) {
+        fbApp = firebase.initializeApp(FIREBASE_CONFIG);
+    } else {
+        fbApp = firebase.apps[0];
+    }
+
+    fbAuth = firebase.auth();
+    fbDb   = firebase.firestore();
+
+    // Listen for auth state changes
+    fbAuth.onAuthStateChanged(user => {
+        currentUser = user;
+        if (user) {
+            onUserSignedIn(user);
+        } else {
+            onUserSignedOut();
+        }
+    });
+
+    // Inject UI
+    injectAuthUI();
+
+    console.log('✓ Firebase initialized');
+}
+
+function loadScript(src) {
+    return new Promise((resolve, reject) => {
+        if (document.querySelector(`script[src="${src}"]`)) { resolve(); return; }
+        const s = document.createElement('script');
+        s.src = src;
+        s.onload = resolve;
+        s.onerror = reject;
+        document.head.appendChild(s);
+    });
+}
+
+// ── AUTH HANDLERS ────────────────────────────
+
+async function onUserSignedIn(user) {
+    console.log('Signed in:', user.email || user.uid);
+    updateAuthButton();
+
+    // Pull data from Firebase and merge into localStorage
+    try {
+        const doc = await fbDb.collection('users').doc(user.uid).get();
+        if (doc.exists) {
+            const data = doc.data();
+            mergeFirebaseDataIntoLocal(data);
+        } else {
+            // First sign-in: push existing localStorage to Firebase
+            await pushLocalToFirebase();
+            showNotification(`Account created! Your data is now synced ☁️`);
+        }
+    } catch (err) {
+        console.error('Error loading user data:', err);
+    }
+
+    // Start auto-sync: patch localStorage.setItem to trigger sync on writes
+    patchLocalStorageForSync();
+}
+
+function onUserSignedOut() {
+    console.log('Signed out');
+    updateAuthButton();
+    unpatchLocalStorage();
+}
+
+// ── DATA SYNC ────────────────────────────────
+
+async function pushLocalToFirebase() {
+    if (!currentUser) return;
+    const payload = {};
+    SYNC_KEYS.forEach(({ local, fb }) => {
+        const val = localStorage.getItem(local);
+        if (val) {
+            try { payload[fb] = JSON.parse(val); }
+            catch(e) { /* skip malformed */ }
+        }
+    });
+    await fbDb.collection('users').doc(currentUser.uid).set(payload, { merge: true });
+    console.log('✓ Pushed local data to Firebase');
+}
+
+function mergeFirebaseDataIntoLocal(fbData) {
+    SYNC_KEYS.forEach(({ local, fb }) => {
+        if (!fbData[fb]) return;
+        const remote = fbData[fb];
+        let merged;
+
+        if (Array.isArray(remote)) {
+            // Arrays: merge by id, remote wins for conflicts
+            const local_arr = JSON.parse(localStorage.getItem(local) || '[]');
+            const localIds = new Set(local_arr.map(i => i?.id || JSON.stringify(i)));
+            merged = [...local_arr, ...remote.filter(i => !localIds.has(i?.id || JSON.stringify(i)))];
+        } else if (typeof remote === 'object') {
+            // Objects: deep merge, remote wins
+            const local_obj = JSON.parse(localStorage.getItem(local) || '{}');
+            merged = deepMerge(local_obj, remote);
+        } else {
+            merged = remote;
+        }
+
+        localStorage.setItem(local, JSON.stringify(merged));
+    });
+
+    // Reload app state from updated localStorage
+    reloadAppState();
+}
+
+function deepMerge(local, remote) {
+    const result = { ...local };
+    for (const key in remote) {
+        if (key in local && typeof local[key] === 'object' && !Array.isArray(local[key])) {
+            result[key] = deepMerge(local[key], remote[key]);
+        } else {
+            result[key] = remote[key];
+        }
+    }
+    return result;
+}
+
+// Debounced push so rapid writes don't spam Firestore
+function scheduleSyncToFirebase() {
+    if (!currentUser) return;
+    clearTimeout(syncDebounceTimer);
+    syncDebounceTimer = setTimeout(() => {
+        pushLocalToFirebase().catch(console.error);
+    }, 2000); // 2s debounce
+}
+
+// Monkey-patch localStorage.setItem so any write auto-syncs
+const _origSetItem = localStorage.setItem.bind(localStorage);
+let _patchActive = false;
+
+function patchLocalStorageForSync() {
+    if (_patchActive) return;
+    _patchActive = true;
+    localStorage.setItem = function(key, value) {
+        _origSetItem(key, value);
+        const syncKey = SYNC_KEYS.find(k => k.local === key);
+        if (syncKey && currentUser) scheduleSyncToFirebase();
+    };
+}
+
+function unpatchLocalStorage() {
+    localStorage.setItem = _origSetItem;
+    _patchActive = false;
+}
+
+// Reload all app global variables from localStorage after merge
+function reloadAppState() {
+    // These reference the globals defined in script.js
+    try { recent = JSON.parse(localStorage.getItem('recent') || '[]'); } catch(e) {}
+    try { playlists = JSON.parse(localStorage.getItem('playlists') || '{}'); } catch(e) {}
+    try { liked = playlists['Liked Songs']?.songs || []; } catch(e) {}
+    try { savedAlbums = JSON.parse(localStorage.getItem('indy_saved_albums') || '{}'); } catch(e) {}
+    try { savedArtists = JSON.parse(localStorage.getItem('indy_saved_artists') || '{}'); } catch(e) {}
+    try { listeningStats = JSON.parse(localStorage.getItem('listening_stats') || '{}'); } catch(e) {}
+    try { queue = JSON.parse(localStorage.getItem('queue') || '[]'); } catch(e) {}
+
+    // Re-render UI
+    try { renderRecent(); } catch(e) {}
+    try { renderPlaylists(); } catch(e) {}
+    try { renderLibrary(); } catch(e) {}
+    try { updateLikedCount(); } catch(e) {}
+    try { updateFilterCounts(); } catch(e) {}
+    try { updateStats(); } catch(e) {}
+}
+
+// ── AUTH UI ──────────────────────────────────
+
+function injectAuthUI() {
+    const linkBtn = document.getElementById('linkBtn');
+    if (!linkBtn) return;
+
+    // Force nav-right to be a horizontal row
+    const navRight = linkBtn.parentNode;
+    navRight.style.display = 'flex';
+    navRight.style.flexDirection = 'row';
+    navRight.style.alignItems = 'center';
+
+    const authBtn = document.createElement('button');
+    authBtn.id = 'authNavBtn';
+    authBtn.onclick = openAuthModal;
+    authBtn.style.cssText = `
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        background: rgba(255, 255, 255, 0.05);
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        color: var(--text);
+        padding: 10px 22px;
+        border-radius: 40px;
+        font-size: 15px;
+        font-weight: 500;
+        cursor: pointer;
+        transition: all 0.2s ease;
+        margin-right: 8px;
+        font-family: 'DM Sans', sans-serif;
+    `;
+    authBtn.onmouseover = () => { authBtn.style.background = 'rgba(255,255,255,0.1)'; };
+    authBtn.onmouseout  = () => { authBtn.style.background = 'rgba(255,255,255,0.05)'; };
+
+    linkBtn.parentNode.insertBefore(authBtn, linkBtn);
+    updateAuthButton();
+}
+
+function updateAuthButton() {
+    const btn = document.getElementById('authNavBtn');
+    if (!btn) return;
+    if (currentUser) {
+        const initial = (currentUser.email || '?').charAt(0).toUpperCase();
+        btn.innerHTML = `
+            <span style="
+                width:24px;height:24px;border-radius:50%;
+                background:rgba(255,255,255,0.15);
+                display:inline-flex;align-items:center;justify-content:center;
+                font-size:12px;font-weight:700;
+            ">${initial}</span>
+            <span>${currentUser.email?.split('@')[0] || 'Account'}</span>
+        `;
+        btn.title = 'Account settings';
+        btn.onclick = openAccountModal;
+    } else {
+        btn.innerHTML = `<span>☁</span> Sign In`;
+        btn.title = 'Sign in to sync your data';
+        btn.onclick = openAuthModal;
+    }
+}
+
+// ── AUTH MODAL ───────────────────────────────
+
+function openAuthModal() {
+    closeAuthModal();
+
+    const overlay = document.createElement('div');
+    overlay.id = 'authOverlay';
+    overlay.style.cssText = `
+        position:fixed;inset:0;z-index:999999;
+        background:rgba(0,0,0,0.85);backdrop-filter:blur(16px);
+        display:flex;align-items:center;justify-content:center;
+        padding:20px;opacity:0;transition:opacity 0.3s ease;
+    `;
+
+    overlay.innerHTML = `
+        <div style="
+            width:100%;max-width:420px;
+            background:rgba(18,18,18,0.99);
+            border:1px solid rgba(255,255,255,0.1);
+            border-radius:20px;overflow:hidden;
+            box-shadow:0 24px 64px rgba(0,0,0,0.9);
+            font-family:'DM Sans',sans-serif;
+        ">
+            <!-- Header -->
+            <div style="padding:28px 28px 20px;text-align:center;border-bottom:1px solid rgba(255,255,255,0.06);">
+                <div style="font-size:32px;margin-bottom:10px;">✦</div>
+                <div style="font-family:'Syne',sans-serif;font-size:22px;font-weight:800;letter-spacing:-0.5px;margin-bottom:6px;">
+                    Sync Your Music
+                </div>
+                <div style="font-size:14px;color:rgba(255,255,255,0.4);line-height:1.5;">
+                    Sign in to back up your playlists, liked songs,<br>and listening history across devices.
+                </div>
+            </div>
+
+            <!-- Tab switcher -->
+            <div style="display:flex;border-bottom:1px solid rgba(255,255,255,0.06);">
+                <button id="authTabSignIn" onclick="switchAuthTab('signin')" style="
+                    flex:1;padding:14px;background:transparent;border:none;
+                    color:rgba(255,255,255,0.9);font-size:14px;font-weight:600;
+                    cursor:pointer;border-bottom:2px solid white;
+                    transition:all 0.2s;font-family:'DM Sans',sans-serif;
+                ">Sign In</button>
+                <button id="authTabSignUp" onclick="switchAuthTab('signup')" style="
+                    flex:1;padding:14px;background:transparent;border:none;
+                    color:rgba(255,255,255,0.4);font-size:14px;font-weight:600;
+                    cursor:pointer;border-bottom:2px solid transparent;
+                    transition:all 0.2s;font-family:'DM Sans',sans-serif;
+                ">Sign Up</button>
+            </div>
+
+            <!-- Form -->
+            <div style="padding:24px 28px;">
+                <div id="authError" style="
+                    display:none;background:rgba(255,80,80,0.15);
+                    border:1px solid rgba(255,80,80,0.3);border-radius:10px;
+                    padding:10px 14px;font-size:13px;color:#ff8080;
+                    margin-bottom:16px;
+                "></div>
+
+                <div style="margin-bottom:14px;">
+                    <label style="font-size:12px;color:rgba(255,255,255,0.4);text-transform:uppercase;letter-spacing:1px;font-weight:600;display:block;margin-bottom:6px;">Email</label>
+                    <input id="authEmail" type="email" placeholder="you@example.com" autocomplete="email" style="
+                        width:100%;padding:13px 15px;
+                        background:rgba(255,255,255,0.05);
+                        border:1px solid rgba(255,255,255,0.1);
+                        border-radius:10px;color:white;font-size:14px;outline:none;
+                        transition:border-color 0.2s;box-sizing:border-box;
+                        font-family:'DM Sans',sans-serif;
+                    " onfocus="this.style.borderColor='rgba(255,255,255,0.3)'" onblur="this.style.borderColor='rgba(255,255,255,0.1)'" onkeypress="if(event.key==='Enter')document.getElementById('authPassword').focus()">
+                </div>
+
+                <div style="margin-bottom:20px;">
+                    <label style="font-size:12px;color:rgba(255,255,255,0.4);text-transform:uppercase;letter-spacing:1px;font-weight:600;display:block;margin-bottom:6px;">Password</label>
+                    <input id="authPassword" type="password" placeholder="••••••••" autocomplete="current-password" style="
+                        width:100%;padding:13px 15px;
+                        background:rgba(255,255,255,0.05);
+                        border:1px solid rgba(255,255,255,0.1);
+                        border-radius:10px;color:white;font-size:14px;outline:none;
+                        transition:border-color 0.2s;box-sizing:border-box;
+                        font-family:'DM Sans',sans-serif;
+                    " onfocus="this.style.borderColor='rgba(255,255,255,0.3)'" onblur="this.style.borderColor='rgba(255,255,255,0.1)'" onkeypress="if(event.key==='Enter')submitAuth()">
+                </div>
+
+                <button id="authSubmitBtn" onclick="submitAuth()" style="
+                    width:100%;padding:14px;
+                    background:linear-gradient(135deg, #ffffff, #e0e0e0);
+                    border:none;border-radius:10px;color:#000;
+                    font-size:15px;font-weight:700;cursor:pointer;
+                    transition:all 0.2s ease;margin-bottom:14px;
+                    font-family:'DM Sans',sans-serif;
+                " onmouseover="this.style.opacity='0.9'" onmouseout="this.style.opacity='1'">
+                    Sign In
+                </button>
+
+                <button onclick="submitForgotPassword()" id="forgotPasswordBtn" style="
+                    width:100%;padding:10px;background:transparent;
+                    border:none;color:rgba(255,255,255,0.35);font-size:13px;
+                    cursor:pointer;transition:color 0.2s;font-family:'DM Sans',sans-serif;
+                " onmouseover="this.style.color='rgba(255,255,255,0.7)'" onmouseout="this.style.color='rgba(255,255,255,0.35)'">
+                    Forgot password?
+                </button>
+            </div>
+
+            <!-- Footer -->
+            <div style="padding:0 28px 24px;display:flex;justify-content:center;">
+                <button onclick="closeAuthModal()" style="
+                    background:transparent;border:none;
+                    color:rgba(255,255,255,0.25);font-size:13px;
+                    cursor:pointer;transition:color 0.2s;font-family:'DM Sans',sans-serif;
+                " onmouseover="this.style.color='rgba(255,255,255,0.5)'" onmouseout="this.style.color='rgba(255,255,255,0.25)'">
+                    Not now
+                </button>
+            </div>
+        </div>
+    `;
+
+    document.body.appendChild(overlay);
+    setTimeout(() => {
+        overlay.style.opacity = '1';
+        document.getElementById('authEmail')?.focus();
+    }, 20);
+
+    overlay.addEventListener('click', e => { if (e.target === overlay) closeAuthModal(); });
+    document.addEventListener('keydown', authEscHandler);
+}
+
+function authEscHandler(e) {
+    if (e.key === 'Escape') {
+        closeAuthModal();
+        document.removeEventListener('keydown', authEscHandler);
+    }
+}
+
+function closeAuthModal() {
+    const overlay = document.getElementById('authOverlay');
+    if (!overlay) return;
+    overlay.style.opacity = '0';
+    setTimeout(() => overlay.remove(), 300);
+    document.removeEventListener('keydown', authEscHandler);
+}
+
+let authMode = 'signin'; // 'signin' | 'signup'
+
+function switchAuthTab(mode) {
+    authMode = mode;
+    const isSignUp = mode === 'signup';
+
+    const tabSignIn = document.getElementById('authTabSignIn');
+    const tabSignUp = document.getElementById('authTabSignUp');
+    const submitBtn = document.getElementById('authSubmitBtn');
+    const forgotBtn = document.getElementById('forgotPasswordBtn');
+
+    if (tabSignIn) {
+        tabSignIn.style.color = isSignUp ? 'rgba(255,255,255,0.4)' : 'rgba(255,255,255,0.9)';
+        tabSignIn.style.borderBottom = isSignUp ? '2px solid transparent' : '2px solid white';
+    }
+    if (tabSignUp) {
+        tabSignUp.style.color = isSignUp ? 'rgba(255,255,255,0.9)' : 'rgba(255,255,255,0.4)';
+        tabSignUp.style.borderBottom = isSignUp ? '2px solid white' : '2px solid transparent';
+    }
+    if (submitBtn) submitBtn.textContent = isSignUp ? 'Create Account & Sync Data' : 'Sign In';
+    if (forgotBtn) forgotBtn.style.display = isSignUp ? 'none' : 'block';
+
+    clearAuthError();
+}
+
+function clearAuthError() {
+    const err = document.getElementById('authError');
+    if (err) { err.style.display = 'none'; err.textContent = ''; }
+}
+
+function showAuthError(msg) {
+    const err = document.getElementById('authError');
+    if (err) { err.style.display = 'block'; err.textContent = msg; }
+}
+
+async function submitAuth() {
+    const email    = document.getElementById('authEmail')?.value.trim();
+    const password = document.getElementById('authPassword')?.value;
+    const btn      = document.getElementById('authSubmitBtn');
+
+    if (!email || !password) { showAuthError('Please fill in both fields.'); return; }
+    if (password.length < 6) { showAuthError('Password must be at least 6 characters.'); return; }
+
+    clearAuthError();
+    if (btn) { btn.textContent = 'Please wait...'; btn.disabled = true; }
+
+    try {
+        if (authMode === 'signup') {
+            await fbAuth.createUserWithEmailAndPassword(email, password);
+        } else {
+            await fbAuth.signInWithEmailAndPassword(email, password);
+        }
+        closeAuthModal();
+    } catch (err) {
+        const messages = {
+            'auth/user-not-found':      'No account found with that email.',
+            'auth/wrong-password':      'Incorrect password.',
+            'auth/email-already-in-use':'An account already exists with this email.',
+            'auth/invalid-email':       'Please enter a valid email address.',
+            'auth/weak-password':       'Password must be at least 6 characters.',
+            'auth/too-many-requests':   'Too many attempts. Please try again later.',
+            'auth/network-request-failed': 'Network error. Check your connection.',
+        };
+        showAuthError(messages[err.code] || err.message || 'Something went wrong.');
+        if (btn) { btn.textContent = authMode === 'signup' ? 'Create Account & Sync Data' : 'Sign In'; btn.disabled = false; }
+    }
+}
+
+async function submitForgotPassword() {
+    const email = document.getElementById('authEmail')?.value.trim();
+    if (!email) { showAuthError('Enter your email above first.'); return; }
+    try {
+        await fbAuth.sendPasswordResetEmail(email);
+        showAuthError(''); // Clear error box
+        const err = document.getElementById('authError');
+        if (err) {
+            err.style.display = 'block';
+            err.style.background = 'rgba(80,200,80,0.15)';
+            err.style.borderColor = 'rgba(80,200,80,0.3)';
+            err.style.color = '#80e080';
+            err.textContent = 'Password reset email sent! Check your inbox.';
+        }
+    } catch (e) {
+        showAuthError(e.message);
+    }
+}
+
+// ── ACCOUNT MODAL (signed-in state) ──────────
+
+function openAccountModal() {
+    closeAuthModal();
+
+    const overlay = document.createElement('div');
+    overlay.id = 'authOverlay';
+    overlay.style.cssText = `
+        position:fixed;inset:0;z-index:999999;
+        background:rgba(0,0,0,0.85);backdrop-filter:blur(16px);
+        display:flex;align-items:center;justify-content:center;
+        padding:20px;opacity:0;transition:opacity 0.3s ease;
+    `;
+
+    const email    = currentUser?.email || '';
+    const initial  = email.charAt(0).toUpperCase() || '?';
+    const lastSync = load('_last_firebase_sync', null);
+    const syncText = lastSync ? `Last synced ${new Date(lastSync).toLocaleString()}` : 'Syncing...';
+
+    overlay.innerHTML = `
+        <div style="
+            width:100%;max-width:400px;
+            background:rgba(18,18,18,0.99);
+            border:1px solid rgba(255,255,255,0.1);
+            border-radius:20px;overflow:hidden;
+            box-shadow:0 24px 64px rgba(0,0,0,0.9);
+            font-family:'DM Sans',sans-serif;
+        ">
+            <!-- Profile header -->
+            <div style="padding:28px;text-align:center;border-bottom:1px solid rgba(255,255,255,0.06);">
+                <div style="
+                    width:64px;height:64px;border-radius:50%;
+                    background:rgba(255,255,255,0.08);
+                    border:2px solid rgba(255,255,255,0.15);
+                    display:flex;align-items:center;justify-content:center;
+                    font-size:26px;font-weight:700;margin:0 auto 14px;
+                ">${initial}</div>
+                <div style="font-family:'Syne',sans-serif;font-size:18px;font-weight:700;">${email}</div>
+                <div style="font-size:12px;color:rgba(255,255,255,0.3);margin-top:4px;">☁ ${syncText}</div>
+            </div>
+
+            <!-- Stats preview -->
+            <div style="display:grid;grid-template-columns:1fr 1fr 1fr;border-bottom:1px solid rgba(255,255,255,0.06);">
+                ${[
+                    [Object.keys(playlists).filter(n=>n!=='Liked Songs').length, 'Playlists'],
+                    [playlists['Liked Songs']?.songs?.length || 0, 'Liked'],
+                    [Object.keys(savedAlbums).length, 'Albums'],
+                ].map(([v, l]) => `
+                    <div style="padding:16px;text-align:center;border-right:1px solid rgba(255,255,255,0.06);">
+                        <div style="font-family:'Syne',sans-serif;font-size:22px;font-weight:800;">${v}</div>
+                        <div style="font-size:11px;color:rgba(255,255,255,0.35);text-transform:uppercase;letter-spacing:1px;margin-top:2px;">${l}</div>
+                    </div>
+                `).join('')}
+            </div>
+
+            <!-- Actions -->
+            <div style="padding:20px 24px;display:flex;flex-direction:column;gap:10px;">
+                <button onclick="manualSyncToFirebase()" style="
+                    width:100%;padding:12px;
+                    background:rgba(255,255,255,0.06);
+                    border:1px solid rgba(255,255,255,0.1);
+                    border-radius:10px;color:var(--text);
+                    font-size:14px;font-weight:600;cursor:pointer;
+                    transition:all 0.2s;font-family:'DM Sans',sans-serif;
+                " onmouseover="this.style.background='rgba(255,255,255,0.1)'" onmouseout="this.style.background='rgba(255,255,255,0.06)'">
+                    ↑ Sync Now
+                </button>
+
+                <button onclick="pullFromFirebase()" style="
+                    width:100%;padding:12px;
+                    background:rgba(255,255,255,0.06);
+                    border:1px solid rgba(255,255,255,0.1);
+                    border-radius:10px;color:var(--text);
+                    font-size:14px;font-weight:600;cursor:pointer;
+                    transition:all 0.2s;font-family:'DM Sans',sans-serif;
+                " onmouseover="this.style.background='rgba(255,255,255,0.1)'" onmouseout="this.style.background='rgba(255,255,255,0.06)'">
+                    ↓ Pull from Cloud
+                </button>
+
+                <button onclick="signOut()" style="
+                    width:100%;padding:12px;
+                    background:rgba(255,60,60,0.1);
+                    border:1px solid rgba(255,60,60,0.2);
+                    border-radius:10px;color:#ff8080;
+                    font-size:14px;font-weight:600;cursor:pointer;
+                    transition:all 0.2s;font-family:'DM Sans',sans-serif;
+                " onmouseover="this.style.background='rgba(255,60,60,0.18)'" onmouseout="this.style.background='rgba(255,60,60,0.1)'">
+                    Sign Out
+                </button>
+            </div>
+
+            <div style="padding:0 24px 20px;display:flex;justify-content:center;">
+                <button onclick="closeAuthModal()" style="
+                    background:transparent;border:none;
+                    color:rgba(255,255,255,0.25);font-size:13px;
+                    cursor:pointer;font-family:'DM Sans',sans-serif;
+                " onmouseover="this.style.color='rgba(255,255,255,0.5)'" onmouseout="this.style.color='rgba(255,255,255,0.25)'">
+                    Close
+                </button>
+            </div>
+        </div>
+    `;
+
+    document.body.appendChild(overlay);
+    setTimeout(() => { overlay.style.opacity = '1'; }, 20);
+    overlay.addEventListener('click', e => { if (e.target === overlay) closeAuthModal(); });
+    document.addEventListener('keydown', authEscHandler);
+}
+
+// ── PUBLIC ACTIONS ───────────────────────────
+
+async function signOut() {
+    closeAuthModal();
+    await fbAuth.signOut();
+    showNotification('Signed out. Data still saved locally.');
+}
+
+async function manualSyncToFirebase() {
+    closeAuthModal();
+    if (!currentUser) { showNotification('Sign in first to sync'); return; }
+    showNotification('Syncing to cloud...');
+    try {
+        await pushLocalToFirebase();
+        save('_last_firebase_sync', Date.now());
+        showNotification('✓ Synced to cloud!');
+    } catch (err) {
+        showNotification('Sync failed — check connection');
+        console.error(err);
+    }
+}
+
+async function pullFromFirebase() {
+    closeAuthModal();
+    if (!currentUser) { showNotification('Sign in first'); return; }
+    showNotification('Pulling from cloud...');
+    try {
+        const doc = await fbDb.collection('users').doc(currentUser.uid).get();
+        if (doc.exists) {
+            mergeFirebaseDataIntoLocal(doc.data());
+            showNotification('✓ Data pulled from cloud!');
+        } else {
+            showNotification('No cloud data found yet');
+        }
+    } catch (err) {
+        showNotification('Pull failed — check connection');
+        console.error(err);
+    }
+}
+
+// ── BOOT ─────────────────────────────────────
+
+// Auto-init after a short delay so the main app loads first
+setTimeout(() => {
+    initFirebase()
+        .then(() => setTimeout(maybePromptSignIn, 2500))
+        .catch(err => console.warn('Firebase init failed:', err));
+}, 800);
+
+// Exports
+window.openAuthModal = openAuthModal;
+window.closeAuthModal = closeAuthModal;
+window.openAccountModal = openAccountModal;
+window.submitAuth = submitAuth;
+window.submitForgotPassword = submitForgotPassword;
+window.switchAuthTab = switchAuthTab;
+window.signOut = signOut;
+window.manualSyncToFirebase = manualSyncToFirebase;
+window.pullFromFirebase = pullFromFirebase;
+
+console.log('✓ INDY Firebase Auth & Sync module loaded');
+
+// ── PROMPT UNAUTHENTICATED USERS ─────────────
+
+function maybePromptSignIn() {
+    // Don't prompt if already signed in
+    if (currentUser) return;
+
+    // Don't prompt more than once per session
+    if (sessionStorage.getItem('auth_prompt_shown')) return;
+    sessionStorage.setItem('auth_prompt_shown', 'true');
+
+    const banner = document.createElement('div');
+    banner.id = 'authPromptBanner';
+    banner.style.cssText = `
+        position: fixed;
+        bottom: 24px;
+        left: 50%;
+        transform: translateX(-50%) translateY(120px);
+        background: rgba(18, 18, 18, 0.98);
+        border: 1px solid rgba(255, 255, 255, 0.12);
+        border-radius: 14px;
+        padding: 16px 20px;
+        display: flex;
+        align-items: center;
+        gap: 16px;
+        z-index: 9000;
+        box-shadow: 0 12px 40px rgba(0,0,0,0.7);
+        backdrop-filter: blur(20px);
+        transition: transform 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
+        max-width: 440px;
+        width: calc(100vw - 48px);
+        font-family: 'DM Sans', sans-serif;
+    `;
+
+    banner.innerHTML = `
+        <div style="font-size: 28px; flex-shrink: 0;">☁</div>
+        <div style="flex: 1; min-width: 0;">
+            <div style="font-size: 14px; font-weight: 600; margin-bottom: 3px;">
+                Sync your music across devices
+            </div>
+            <div style="font-size: 12px; color: rgba(255,255,255,0.4); line-height: 1.4;">
+                Sign in to back up playlists, liked songs & history
+            </div>
+        </div>
+        <div style="display: flex; gap: 8px; flex-shrink: 0;">
+            <button onclick="
+                document.getElementById('authPromptBanner').style.transform='translateX(-50%) translateY(120px)';
+                setTimeout(() => document.getElementById('authPromptBanner')?.remove(), 500);
+                sessionStorage.setItem('auth_prompt_dismissed', 'true');
+            " style="
+                background: transparent;
+                border: 1px solid rgba(255,255,255,0.12);
+                border-radius: 8px;
+                color: rgba(255,255,255,0.4);
+                padding: 8px 14px;
+                font-size: 13px;
+                cursor: pointer;
+                transition: all 0.2s;
+                font-family: 'DM Sans', sans-serif;
+            " onmouseover="this.style.borderColor='rgba(255,255,255,0.25)';this.style.color='rgba(255,255,255,0.7)'"
+               onmouseout="this.style.borderColor='rgba(255,255,255,0.12)';this.style.color='rgba(255,255,255,0.4)'">
+                Not now
+            </button>
+            <button onclick="
+                document.getElementById('authPromptBanner').style.transform='translateX(-50%) translateY(120px)';
+                setTimeout(() => document.getElementById('authPromptBanner')?.remove(), 400);
+                openAuthModal();
+            " style="
+                background: linear-gradient(135deg, #ffffff, #e0e0e0);
+                border: none;
+                border-radius: 8px;
+                color: #000;
+                padding: 8px 16px;
+                font-size: 13px;
+                font-weight: 700;
+                cursor: pointer;
+                transition: all 0.2s;
+                font-family: 'DM Sans', sans-serif;
+            " onmouseover="this.style.opacity='0.9'" onmouseout="this.style.opacity='1'">
+                Sign In
+            </button>
+        </div>
+    `;
+
+    document.body.appendChild(banner);
+
+    // Slide up after a 3 second delay
+    setTimeout(() => {
+        banner.style.transform = 'translateX(-50%) translateY(0)';
+    }, 3000);
+
+    // Auto-dismiss after 12 seconds
+    setTimeout(() => {
+        if (document.getElementById('authPromptBanner')) {
+            banner.style.transform = 'translateX(-50%) translateY(120px)';
+            setTimeout(() => banner.remove(), 500);
+        }
+    }, 12000);
+}
+
+// Hook into onUserSignedOut so banner also shows if they sign out mid-session
+const _origOnUserSignedOut = onUserSignedOut;
+onUserSignedOut = function() {
+    _origOnUserSignedOut();
+    sessionStorage.removeItem('auth_prompt_shown');
+    setTimeout(maybePromptSignIn, 2000);
+};
+
+// ── PATCH IMPORT FUNCTIONS TO ALSO SYNC ──────
+
+// Wait for the main app's functions to exist, then override them
+setTimeout(() => {
+
+    // Patch importData (used by the JSON file import in the Link menu)
+    const _origImportData = window.importData;
+    window.importData = async function(data) {
+        _origImportData(data); // runs the original, saves to localStorage
+        // After the original finishes (it reloads after 1s), push to Firebase
+        if (currentUser) {
+            try {
+                await pushLocalToFirebase();
+                save('_last_firebase_sync', Date.now());
+                console.log('✓ Imported data synced to Firebase');
+            } catch (err) {
+                console.error('Firebase sync after import failed:', err);
+            }
+        }
+    };
+
+    // Patch mergePastedData (used by the Transfer/paste JSON feature)
+    const _origMergePastedData = window.mergePastedData;
+    window.mergePastedData = async function() {
+        _origMergePastedData(); // runs the original, merges into localStorage
+        // Give it a moment to finish writing to localStorage before pushing
+        setTimeout(async () => {
+            if (currentUser) {
+                try {
+                    await pushLocalToFirebase();
+                    save('_last_firebase_sync', Date.now());
+                    showNotification('✓ Merged data synced to cloud!');
+                    console.log('✓ Merged data synced to Firebase');
+                } catch (err) {
+                    console.error('Firebase sync after merge failed:', err);
+                }
+            }
+        }, 1500);
+    };
+
+    console.log('✓ Import/merge functions patched for Firebase sync');
+
+}, 2000); // Wait 2s so the original functions are definitely defined
+
+// ── JAM BUTTON ───────────────────────────────
+
+setTimeout(() => {
+    const authBtn = document.getElementById('authNavBtn');
+    if (!authBtn) return;
+
+    const jamBtn = document.createElement('button');
+    jamBtn.id = 'jamNavBtn';
+    jamBtn.innerHTML = `<span>Jam</span>`;
+    jamBtn.style.cssText = `
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        background: rgba(255, 255, 255, 0.05);
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        color: var(--text);
+        padding: 10px 22px;
+        border-radius: 40px;
+        font-size: 15px;
+        font-weight: 500;
+        cursor: pointer;
+        transition: all 0.2s ease;
+        margin-right: 8px;
+        font-family: 'DM Sans', sans-serif;
+    `;
+    jamBtn.onmouseover = () => {
+        jamBtn.style.background = 'rgba(255,255,255,0.1)';
+        jamBtn.style.borderColor = 'rgba(255,255,255,0.15)';
+    };
+    jamBtn.onmouseout = () => {
+        jamBtn.style.background = 'rgba(255,255,255,0.05)';
+        jamBtn.style.borderColor = 'rgba(255,255,255,0.08)';
+    };
+    jamBtn.onclick = () => window.location.href = 'jam.html';
+
+    // Insert before the auth button so order is: Jam → Sign In → Link
+    authBtn.parentNode.insertBefore(jamBtn, authBtn);
+
+    console.log('✓ Jam button added');
+}, 2500); // Slightly after auth button renders
