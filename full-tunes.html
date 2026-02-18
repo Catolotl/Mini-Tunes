@@ -4236,6 +4236,120 @@ body {
 .lyrics-section > .lyrics {
     pointer-events: auto !important;
 }
+
+/* ============================================
+   AI FEATURE BUTTONS — inside .filter-chips
+   Styled to match chips but with a subtle ✦ accent
+   ============================================ */
+
+/* Target the 5 feature buttons specifically */
+.filter-chips > button:not(.filter-chip) {
+    padding: 7px 14px;
+    background: rgba(255, 255, 255, 0.04);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 30px;
+    color: rgba(255, 255, 255, 0.65);
+    font-size: 13px;
+    font-weight: 500;
+    font-family: 'DM Sans', sans-serif;
+    cursor: pointer;
+    transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    white-space: nowrap;
+    letter-spacing: 0.2px;
+    /* Visually separated from filter chips with a left margin on the first one */
+    position: relative;
+}
+
+/* Divider before the first feature button */
+.filter-chips > button:not(.filter-chip):first-of-type {
+    margin-left: 8px;
+}
+
+.filter-chips > button:not(.filter-chip):first-of-type::before {
+    content: '';
+    position: absolute;
+    left: -12px;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 1px;
+    height: 18px;
+    background: rgba(255, 255, 255, 0.12);
+}
+
+/* Hover state */
+.filter-chips > button:not(.filter-chip):hover {
+    background: rgba(255, 255, 255, 0.09);
+    border-color: rgba(255, 255, 255, 0.18);
+    color: rgba(255, 255, 255, 0.9);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 14px rgba(0, 0, 0, 0.3);
+}
+
+/* Active/press state */
+.filter-chips > button:not(.filter-chip):active {
+    transform: translateY(0);
+    box-shadow: none;
+}
+
+/* Individual accent colors on hover for each button */
+
+/* 🎭 Mood — warm amber */
+.filter-chips > button:not(.filter-chip):nth-of-type(1):hover {
+    border-color: rgba(255, 180, 60, 0.35);
+    color: rgba(255, 210, 120, 0.95);
+    background: rgba(255, 180, 60, 0.08);
+}
+
+/* 📊 Recap — cool blue */
+.filter-chips > button:not(.filter-chip):nth-of-type(2):hover {
+    border-color: rgba(100, 180, 255, 0.35);
+    color: rgba(150, 210, 255, 0.95);
+    background: rgba(100, 180, 255, 0.08);
+}
+
+/* ✦ Build Playlist — white/neutral (matches the ✦ brand) */
+.filter-chips > button:not(.filter-chip):nth-of-type(3):hover {
+    border-color: rgba(255, 255, 255, 0.28);
+    color: #ffffff;
+    background: rgba(255, 255, 255, 0.1);
+}
+
+/* ℹ️ Song Info — soft green */
+.filter-chips > button:not(.filter-chip):nth-of-type(4):hover {
+    border-color: rgba(100, 220, 160, 0.35);
+    color: rgba(140, 240, 190, 0.95);
+    background: rgba(100, 220, 160, 0.08);
+}
+
+/* 🎵 Daily Mix — soft purple */
+.filter-chips > button:not(.filter-chip):nth-of-type(5):hover {
+    border-color: rgba(180, 140, 255, 0.35);
+    color: rgba(210, 185, 255, 0.95);
+    background: rgba(180, 140, 255, 0.08);
+}
+
+/* Wrap gracefully on smaller screens */
+@media (max-width: 1200px) {
+    .filter-chips > button:not(.filter-chip) {
+        font-size: 12px;
+        padding: 6px 12px;
+    }
+}
+
+@media (max-width: 900px) {
+    /* Stack into a second row naturally — hide text labels, keep emoji */
+    .filter-chips > button:not(.filter-chip) span {
+        display: none;
+    }
+    
+    .filter-chips > button:not(.filter-chip) {
+        padding: 8px 10px;
+        font-size: 16px; /* emoji size */
+    }
+}
 </style>
 
 <div class="app-container">
@@ -4287,6 +4401,13 @@ body {
     <button class="filter-chip" onclick="filterContent('library')" data-filter="library" id="filterLibrary">
         <span></span> My Library <span class="count" id="filterLibraryCount"></span>
     </button>
+
+
+    <button onclick="openMoodDetector()">🎭 Mood</button>
+<button onclick="openListeningRecap()">📊 Recap</button>
+<button onclick="openQuickPlaylistBuilder()">✦ Build Playlist</button>
+<button onclick="openSongInfoCard()">ℹ️ Song Info</button>
+<button onclick="openDailyMix()">🎵 Daily Mix</button>
 </div>
 
         <!-- NEW: Stats Card -->
@@ -4950,6 +5071,9 @@ body {
     z-index: 3;
     pointer-events: auto;
 }
+
+
+
 </style>
 </script>
 
@@ -5127,6 +5251,7 @@ body {
     <div class="context-menu-item" onclick="contextMenuAction('share')">
         <span>🔗</span> Copy Link
     </div>
+    <div class="context-menu-item" onclick="addToQueueNext(contextMenuTarget)"><span>⚡</span> Play Next</div>
 </div>
 
 <script src="script.js"></script>
