@@ -5073,6 +5073,213 @@ body {
 }
 
 
+.sticky-nav-full {
+  overflow: hidden;          /* no horizontal scroll on the bar itself */
+}
+
+.sticky-nav-container {
+  display: flex;
+  align-items: center;
+  /* Respect actual viewport — no fixed max-width that causes overflow */
+  max-width: 100%;
+  width: 100%;
+  padding: 6px 16px 6px 8px !important;
+  gap: 8px;
+  box-sizing: border-box;
+  overflow: hidden;
+}
+
+/* ── Logo (left) ──────────────────────────────
+   Never grows, never shrinks past its content  */
+.nav-left {
+  flex: 0 0 auto;
+  min-width: 0;
+}
+
+.nav-logo {
+  padding: 4px 6px;
+  gap: 6px;
+  white-space: nowrap;
+}
+
+.nav-logo-icon {
+  font-size: 22px;
+}
+
+.nav-logo-text {
+  font-size: 18px;
+}
+
+/* ── Search (center) ──────────────────────────
+   Takes all remaining space but can shrink     */
+.nav-center {
+  flex: 1 1 0;
+  min-width: 0;          /* key: allows flex child to shrink below content size */
+  max-width: none;       /* override any fixed max-width */
+  margin: 0 8px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.nav-search-container {
+  flex: 1 1 0;
+  min-width: 0;
+  padding: 2px 2px 2px 14px;
+}
+
+.nav-search-input {
+  min-width: 0;
+  width: 100%;
+  font-size: 14px;
+  padding: 6px 0;
+}
+
+.nav-search-input::placeholder {
+  /* Shorten placeholder on small screens */
+  font-size: 13px;
+}
+
+.nav-search-btn {
+  flex-shrink: 0;
+  padding: 7px 16px;
+  font-size: 13px;
+  white-space: nowrap;
+}
+
+/* Home button inside nav-center */
+.nav-center .nav-home-btn,
+.nav-center a.nav-home-btn {
+  flex-shrink: 0;
+  width: 38px;
+  height: 38px;
+  padding: 0;
+  border-radius: 50%;
+}
+
+/* ── Right buttons ────────────────────────────
+   Shrink but never wrap onto a new line        */
+.nav-right {
+  flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+  white-space: nowrap;
+}
+
+.nav-right .nav-btn,
+.nav-right button {
+  flex-shrink: 0;
+  white-space: nowrap;
+  padding: 8px 14px;
+  font-size: 13px;
+}
+
+/* ── Breakpoints ──────────────────────────────
+   Progressive hiding so buttons never wrap     */
+
+/* ~1100 px — tighten everything slightly */
+@media (max-width: 1100px) {
+  .sticky-nav-container {
+    padding: 6px 12px 6px 6px !important;
+    gap: 6px;
+  }
+
+  .nav-center {
+    margin: 0 6px;
+  }
+
+  .nav-search-btn {
+    padding: 7px 12px;
+  }
+
+  .nav-right .nav-btn,
+  .nav-right button {
+    padding: 7px 10px;
+    font-size: 12px;
+  }
+}
+
+/* ~900 px (typical Chromebook) — hide logo text, shrink search */
+@media (max-width: 900px) {
+  .nav-logo-text {
+    display: none;          /* keep icon, drop text */
+  }
+
+  .nav-logo-icon {
+    font-size: 24px;
+  }
+
+  /* Shorten placeholder to save space */
+  .nav-search-input::placeholder {
+    content: '';            /* CSS can't change HTML placeholder, but font-size helps */
+    font-size: 12px;
+  }
+
+  .nav-search-btn {
+    padding: 7px 10px;
+    font-size: 12px;
+  }
+
+  /* Collapse any text-only labels in nav-right */
+  .nav-right .nav-btn-text {
+    display: none;
+  }
+}
+
+/* ~750 px — icon-only right buttons */
+@media (max-width: 750px) {
+  .nav-right .nav-btn span:not(:first-child),
+  .nav-right button span:not(:first-child) {
+    display: none;          /* hide label, keep emoji/icon */
+  }
+
+  .nav-right .nav-btn,
+  .nav-right button {
+    padding: 8px;
+    min-width: 36px;
+    justify-content: center;
+  }
+
+  .nav-search-btn {
+    display: none;          /* rely on Enter key at this width */
+  }
+
+  .nav-center {
+    margin: 0 4px;
+  }
+}
+
+/* ~560 px — very small screens */
+@media (max-width: 560px) {
+  .sticky-nav-container {
+    padding: 4px 8px !important;
+    gap: 4px;
+  }
+
+  .nav-center {
+    margin: 0 2px;
+  }
+
+  .nav-search-input {
+    font-size: 12px;
+  }
+
+  .nav-logo {
+    padding: 4px;
+  }
+}
+
+.nav-center {
+  flex: 1;
+  max-width: 620px;  /* THIS is the problem on Chromebook */
+  margin: 0 auto;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
 
 </style>
 </script>
@@ -5429,6 +5636,330 @@ function triggerConfetti() {
     }
 }
 </script>
+
+<style>
+
+/* ============================================
+   NAV BAR - SEARCH BAR LOCKED IN CENTER
+   ============================================ */
+
+/* Main container - three-column layout */
+.sticky-nav-container {
+    display: flex !important;
+    align-items: center !important;
+    justify-content: space-between !important;
+    padding: 8px 20px !important;
+    gap: 20px !important;
+    max-width: 100% !important;
+}
+
+/* Left section - fixed width */
+.nav-left {
+    flex: 0 0 120px !important; /* Fixed width, won't shrink or grow */
+    display: flex !important;
+    justify-content: flex-start !important;
+}
+
+.nav-logo {
+    padding: 4px 0 !important;
+}
+
+.nav-logo-icon {
+    font-size: 24px !important;
+}
+
+.nav-logo-text {
+    font-size: 18px !important;
+    white-space: nowrap !important;
+}
+
+/* Center section - fixed position, won't move */
+.nav-center {
+    flex: 0 1 auto !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    gap: 12px !important;
+    min-width: 400px !important; /* Fixed minimum width */
+    max-width: 600px !important; /* Maximum width */
+    margin: 0 auto !important; /* Center it */
+}
+
+/* Home button - fixed */
+.nav-center .nav-home-btn {
+    flex: 0 0 auto !important;
+    width: 40px !important;
+    height: 40px !important;
+    padding: 0 !important;
+}
+
+/* Search container - fixed width */
+.nav-search-container {
+    flex: 1 1 auto !important;
+    min-width: 280px !important; /* Never smaller than this */
+    max-width: 400px !important; /* Never larger than this */
+    height: 40px !important;
+    padding: 2px 2px 2px 16px !important;
+    border-radius: 30px !important;
+}
+
+.nav-search-icon {
+    font-size: 18px !important;
+    margin-right: 6px !important;
+    flex-shrink: 0 !important;
+}
+
+.nav-search-input {
+    font-size: 14px !important;
+    padding: 6px 0 !important;
+    min-width: 150px !important;
+}
+
+.nav-search-input::placeholder {
+    font-size: 13px !important;
+}
+
+.nav-search-btn {
+    flex-shrink: 0 !important;
+    padding: 5px 16px !important;
+    font-size: 13px !important;
+    height: 32px !important;
+    margin-left: 4px !important;
+}
+
+/* Right section - fixed width */
+.nav-right {
+    flex: 0 0 280px !important; /* Fixed width, won't shrink or grow */
+    display: flex !important;
+    align-items: center !important;
+    justify-content: flex-end !important;
+    gap: 8px !important;
+}
+
+/* All right buttons */
+.nav-right .nav-btn,
+.nav-right button,
+#authNavBtn,
+#jamNavBtn,
+#linkBtn {
+    flex: 0 0 auto !important;
+    padding: 8px 16px !important;
+    font-size: 14px !important;
+    height: 40px !important;
+    border-radius: 30px !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    gap: 6px !important;
+    white-space: nowrap !important;
+}
+
+/* Keep all text visible by default */
+#jamNavBtn span:not(:first-child),
+#authNavBtn span:not(:first-child),
+#linkBtn span:not(:first-child) {
+    display: inline !important;
+}
+
+/* ============================================
+   RESPONSIVE ADJUSTMENTS - ONLY SHRINK SIDES
+   ============================================ */
+
+/* At 1400px - slightly smaller side sections */
+@media (max-width: 1400px) {
+    .nav-left {
+        flex: 0 0 100px !important;
+    }
+    
+    .nav-right {
+        flex: 0 0 260px !important;
+    }
+}
+
+/* At 1300px - shrink button padding */
+@media (max-width: 1300px) {
+    .nav-right .nav-btn,
+    .nav-right button,
+    #authNavBtn,
+    #jamNavBtn,
+    #linkBtn {
+        padding: 8px 12px !important;
+        font-size: 13px !important;
+    }
+    
+    .nav-search-btn {
+        padding: 5px 12px !important;
+    }
+    
+    .nav-right {
+        flex: 0 0 240px !important;
+    }
+}
+
+/* At 1200px - hide search button */
+@media (max-width: 1200px) {
+    .nav-search-btn {
+        display: none !important;
+    }
+    
+    .nav-search-container {
+        padding-right: 16px !important;
+    }
+    
+    /* Center section stays the same width */
+    .nav-center {
+        min-width: 350px !important;
+    }
+    
+    .nav-search-container {
+        min-width: 250px !important;
+    }
+}
+
+/* At 1100px - shrink left more, hide logo text */
+@media (max-width: 1100px) {
+    .nav-logo-text {
+        display: none !important;
+    }
+    
+    .nav-left {
+        flex: 0 0 50px !important;
+    }
+    
+    .nav-logo-icon {
+        font-size: 24px !important;
+    }
+    
+    .nav-right {
+        flex: 0 0 220px !important;
+    }
+    
+    /* Center section stays the same */
+    .nav-center {
+        min-width: 320px !important;
+    }
+    
+    .nav-search-container {
+        min-width: 220px !important;
+    }
+}
+
+/* At 1000px - start hiding right button labels */
+@media (max-width: 1000px) {
+    /* Hide Jam text */
+    #jamNavBtn span:not(:first-child) {
+        display: none !important;
+    }
+    
+    #jamNavBtn {
+        padding: 8px 10px !important;
+        min-width: 40px !important;
+    }
+    
+    .nav-right {
+        flex: 0 0 180px !important;
+    }
+    
+    /* Center section still fixed */
+    .nav-center {
+        min-width: 300px !important;
+    }
+    
+    .nav-search-container {
+        min-width: 200px !important;
+    }
+}
+
+/* At 950px - hide Sign In text */
+@media (max-width: 950px) {
+    #authNavBtn span:not(:first-child) {
+        display: none !important;
+    }
+    
+    #authNavBtn {
+        padding: 8px 10px !important;
+        min-width: 40px !important;
+    }
+    
+    .nav-right {
+        flex: 0 0 140px !important;
+    }
+}
+
+/* At 900px - hide Link text */
+@media (max-width: 900px) {
+    #linkBtn span:not(:first-child) {
+        display: none !important;
+    }
+    
+    #linkBtn {
+        padding: 8px 10px !important;
+        min-width: 40px !important;
+    }
+    
+    .nav-right {
+        flex: 0 0 100px !important;
+        gap: 4px !important;
+    }
+    
+    /* Center section stays put */
+    .nav-center {
+        min-width: 280px !important;
+    }
+    
+    .nav-search-container {
+        min-width: 180px !important;
+    }
+}
+
+/* At 800px - shrink everything but keep search centered */
+@media (max-width: 800px) {
+    .sticky-nav-container {
+        padding: 6px 12px !important;
+        gap: 10px !important;
+    }
+    
+    .nav-center {
+        min-width: 240px !important;
+        gap: 6px !important;
+    }
+    
+    .nav-center .nav-home-btn {
+        width: 36px !important;
+        height: 36px !important;
+    }
+    
+    .nav-search-container {
+        height: 36px !important;
+        min-width: 160px !important;
+        padding-left: 10px !important;
+    }
+    
+    .nav-search-input {
+        font-size: 12px !important;
+    }
+    
+    .nav-search-input::placeholder {
+        font-size: 11px !important;
+    }
+    
+    .nav-right .nav-btn,
+    .nav-right button,
+    #authNavBtn,
+    #jamNavBtn,
+    #linkBtn {
+        height: 36px !important;
+        padding: 6px 8px !important;
+        min-width: 36px !important;
+    }
+    
+    .nav-right {
+        flex: 0 0 90px !important;
+    }
+}
+    
+</style>
+
 
 </body>
 </html>
