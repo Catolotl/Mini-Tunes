@@ -367,11 +367,6 @@ body{
     border:none;
 }
 
-#player {
-    width: 100%;
-    height: 100%;
-}
-
 .now-playing-info{
     padding:20px;
 }
@@ -1479,7 +1474,8 @@ body::before {
     z-index: 2;
 }
 
-/* Ensure iframe covers the entire container */
+/* Ensure album art or iframe covers the entire container */
+.video-container img,
 .video-container iframe {
     position: absolute;
     top: 0;
@@ -5343,17 +5339,45 @@ body {
 
     <!-- RIGHT SIDEBAR -->
     <aside class="right-sidebar" id="rightSidebar">
-        <div class="video-container">
-            <div id="player"></div>
-            
-            <!-- NEW: Video Error Overlay -->
+        <!-- Hidden SoundCloud Widget -->
+        <iframe id="scWidget"
+            src="https://w.soundcloud.com/player/?url=https%3A//soundcloud.com&amp;auto_play=false&amp;hide_related=true&amp;show_comments=false&amp;show_user=false&amp;show_reposts=false&amp;show_teaser=false&amp;visual=false"
+            style="display:none; width:1px; height:1px; border:none;"
+            allow="autoplay">
+        </iframe>
+
+        <div class="video-container" id="videoContainer">
+            <!-- Album Art Display (replaces video) -->
+            <img id="nowPlayingArt"
+                 src=""
+                 alt="Album Art"
+                 style="
+                     position:absolute; inset:0; width:100%; height:100%;
+                     object-fit:cover; z-index:1;
+                     transition: opacity 0.5s ease, src 0.3s;
+                     opacity: 0;
+                 ">
+            <div id="npArtPlaceholder" style="
+                position:absolute; inset:0; z-index:1;
+                display:flex; flex-direction:column; align-items:center; justify-content:center;
+                background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+                font-size:64px;
+            ">🎵</div>
+
+            <!-- Dark gradient overlay for readability -->
+            <div style="
+                position:absolute; inset:0; z-index:2; pointer-events:none;
+                background: linear-gradient(180deg, rgba(0,0,0,0.4) 0%, rgba(0,0,0,0.3) 40%, rgba(0,0,0,0.7) 100%);
+            "></div>
+
+            <!-- SoundCloud Error Overlay -->
             <div class="video-error-overlay" id="videoError">
-                <div class="video-error-icon">⚠️</div>
+                <div class="video-error-icon">🔇</div>
                 <div class="video-error-text">
-                    Video unavailable or restricted<br>
-                    <small style="opacity:0.7;">This might be due to copyright or regional restrictions</small>
+                    Track unavailable on SoundCloud<br>
+                    <small style="opacity:0.7;">This track may not be available for streaming</small>
                 </div>
-                <button class="retry-video-btn" onclick="retryVideo()">Try Another Source</button>
+                <button class="retry-video-btn" onclick="retryVideo()">Try Again</button>
                 <button class="retry-video-btn" onclick="skipToNext()" style="margin-top:8px;background:transparent;">
                     Skip to Next →
                 </button>
@@ -5466,6 +5490,8 @@ body {
     <div class="context-menu-item" onclick="addToQueueNext(contextMenuTarget)"><span>⚡</span> Play Next</div>
 </div>
 
+<!-- SoundCloud Widget API -->
+<script src="https://w.soundcloud.com/player/api.js"></script>
 <script src="script.js"></script>
 
 <script>
@@ -5540,7 +5566,78 @@ function filterContent(type) {
     console.log("Filter applied successfully");
 }
 
-// performNavSearch and handleNavSearchKeyPress are defined in script.js
+// Function to handle nav bar search
+function performNavSearch() {
+    const navSearchInput = document.getElementById('navSearchInput');
+    const searchQuery = navSearchInput.value.trim();
+    
+    if (searchQuery) {
+        // Switch to search view
+        showSearch();
+        
+        // Directly trigger the search without populating the input
+        const videoId = extractYouTubeVideoId(searchQuery);
+        
+        if (videoId) {
+            // It's a YouTube URL, play it directly
+            navSearchInput.value = '';
+            showNotification("Loading video...");
+            
+            const song = {
+                id: videoId,
+                title: "Loading...",
+                artist: "YouTube",
+                art: `https://img.youtube.com/vi/${videoId}/mqdefault.jpg`
+            };
+            
+            fetch(`https://www.googleapis.com/youtube/v3/videos?part=snippet&id=${videoId}&key=${getNextKey()}`)
+                .then(r => r.json())
+                .then(data => {
+                    const item = data.items?.[0];
+                    if (item?.snippet) {
+                        song.title = item.snippet.title;
+                        song.artist = item.snippet.channelTitle;
+                        saveMetadataToCache(videoId, song.title, song.artist);
+                    }
+                    playSong(song);
+                    showNotification("Playing pasted video!");
+                })
+                .catch(err => {
+                    console.error("Error fetching video details:", err);
+                    playSong(song);
+                    showNotification("Playing video (couldn't fetch title)");
+                });
+        } else if (searchQuery.length >= 3) {
+            // Regular search query
+            Promise.all([
+                fetch(`https://www.googleapis.com/youtube/v3/search?part=snippet&type=video&videoCategoryId=10&maxResults=10&q=${encodeURIComponent(searchQuery)}&key=${getNextKey()}`).then(r => r.json()),
+                fetch(`https://www.googleapis.com/youtube/v3/search?part=snippet&type=playlist&maxResults=4&q=${encodeURIComponent(searchQuery + ' album')}&key=${getNextKey()}`).then(r => r.json())
+            ])
+            .then(([videos, playlists]) => {
+                renderSearchResults(videos, playlists);
+            })
+            .catch(error => {
+                console.error("Search error:", error);
+                showNotification("Search failed");
+            });
+        }
+        
+        // Clear the nav search input
+        navSearchInput.value = '';
+    } else {
+        // If empty, just open search view
+        showSearch();
+        const searchInput = document.getElementById('searchInput');
+        if (searchInput) searchInput.focus();
+    }
+}
+
+// Function to handle Enter key in nav search
+function handleNavSearchKeyPress(event) {
+    if (event.key === 'Enter') {
+        performNavSearch();
+    }
+}
 
 
 let konamiCode = [];
@@ -5891,7 +5988,16 @@ function triggerConfetti() {
         flex: 0 0 90px !important;
     }
 }
-    
+
+/* ── HITBOX FIX: containers are invisible, only children are clickable ── */
+.now-playing-info,
+.lyrics-section {
+    pointer-events: none !important;
+}
+.now-playing-info > *,
+.lyrics-section > * {
+    pointer-events: auto !important;
+}
 </style>
 
 
