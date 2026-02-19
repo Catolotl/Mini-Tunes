@@ -1,12 +1,13 @@
 // ========================================
-// INDY MUSIC PLAYER - DEBUGGED & ENHANCED
+// INDY MUSIC PLAYER - SOUNDCLOUD EDITION
 // ========================================
 
 // ────────────────────────────────────────
 // CONFIGURATION & CONSTANTS
 // ────────────────────────────────────────
 const GROQ_API_KEY = "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";
-const YOUTUBE_API_KEY = "AIzaSyDNd7dwB1rZEpJzpyRrVZQwSKHvnt3Q7vQ";
+const SC_CLIENT_ID = 'iycHGVy3rFNzH4on4nXXEp20PzwDGlZR';
+const SC_CLIENT_SECRET = '6HuXB4Z8q0YLoNhm6ZA8gQrtKMkUrO3n';
 const CACHE_TTL = 24 * 60 * 60 * 1000; // 24 hours
 const UPDATE_KEY = "tunes_datasaving_update_v1";
 
@@ -19,11 +20,12 @@ let liked = [];
 let currentPlaylist = null;
 let currentSongs = [];
 let currentIndex = -1;
-let ytPlayer = null;
+let scWidget = null;        // SoundCloud Widget API instance
+let scPlayerReady = false;  // SoundCloud player ready flag
 let searchTimeout = null;
-let lastPlayedVideoId = null;
+let lastPlayedTrackId = null;
 let playerReady = false;
-let pendingVideo = null;
+let pendingTrack = null;    // Pending SC track URL to play
 let currentPlayingSong = null;
 let isFullscreenLyrics = false;
 
@@ -44,7 +46,54 @@ const titleCleanCache = new Map();
 // ────────────────────────────────────────
 
 function getNextKey() {
-    return YOUTUBE_API_KEY;
+    return SC_CLIENT_ID; // kept for any legacy references
+}
+
+// ── SOUNDCLOUD SEARCH ─────────────────────────
+async function searchSoundCloud(query, limit = 10) {
+    const url = `https://api.soundcloud.com/tracks?q=${encodeURIComponent(query)}&client_id=${SC_CLIENT_ID}&limit=${limit}&linked_partitioning=1`;
+    try {
+        const res = await fetch(url);
+        if (!res.ok) throw new Error(`SC API ${res.status}`);
+        const data = await res.json();
+        const tracks = data.collection || data;
+        return tracks.map(t => ({
+            id: `sc_${t.id}`,
+            scId: t.id,
+            scStreamUrl: t.stream_url || null,
+            scPermalinkUrl: t.permalink_url,
+            title: t.title,
+            artist: t.user?.username || 'Unknown',
+            art: (t.artwork_url || '').replace('-large', '-t500x500') || '',
+            album: '',
+            duration: Math.round((t.duration || 0) / 1000),
+            _isSoundCloud: true
+        }));
+    } catch (err) {
+        console.error('SoundCloud search failed:', err);
+        return [];
+    }
+}
+
+async function searchSoundCloudAlbums(query, limit = 6) {
+    // SC doesn't have an albums endpoint; search playlists as proxy
+    const url = `https://api.soundcloud.com/playlists?q=${encodeURIComponent(query)}&client_id=${SC_CLIENT_ID}&limit=${limit}`;
+    try {
+        const res = await fetch(url);
+        if (!res.ok) return [];
+        const data = await res.json();
+        const playlists = data.collection || data;
+        return playlists.map(p => ({
+            deezerAlbumId: null,
+            scPlaylistId: p.id,
+            title: p.title,
+            artist: p.user?.username || 'Unknown',
+            art: (p.artwork_url || '').replace('-large', '-t500x500') || '',
+            _isSCPlaylist: true
+        }));
+    } catch (err) {
+        return [];
+    }
 }
 
 // ── DEEZER SEARCH (free, no key needed) ──────
@@ -89,30 +138,32 @@ async function searchDeezer(query, type = 'track', limit = 10) {
     }));
 }
 
-const youtubeIdCache = new Map();
+const scTrackCache = new Map();
 
-async function resolveYouTubeId(song) {
-    if (song.youtubeId) return song.youtubeId;
-    if (!song._isDeezer) return song.id; // already a real YouTube ID
+async function resolveSoundCloudTrack(song) {
+    // Already resolved
+    if (song.scId && song.scPermalinkUrl) return song.scPermalinkUrl;
+    if (song._isSoundCloud && song.scPermalinkUrl) return song.scPermalinkUrl;
 
-    const cacheKey = `yt_dz_${song.deezerTrackId}`;
-    if (youtubeIdCache.has(cacheKey)) return youtubeIdCache.get(cacheKey);
+    const cacheKey = `sc_${song.deezerTrackId || song.title + song.artist}`;
+    if (scTrackCache.has(cacheKey)) return scTrackCache.get(cacheKey);
 
-    const query = `${song.title} ${song.artist} official audio`;
+    const query = `${song.title} ${song.artist}`;
     try {
-        const res = await fetch(
-            `https://www.googleapis.com/youtube/v3/search?part=snippet&type=video&videoCategoryId=10&maxResults=1&q=${encodeURIComponent(query)}&key=${getNextKey()}`
-        );
-        const data = await res.json();
-        const videoId = data.items?.[0]?.id?.videoId;
-        if (videoId) {
-            youtubeIdCache.set(cacheKey, videoId);
-            song.youtubeId = videoId;
-            song.id = videoId; // update so rest of app works
+        const tracks = await searchSoundCloud(query, 1);
+        if (tracks.length > 0) {
+            const track = tracks[0];
+            scTrackCache.set(cacheKey, track.scPermalinkUrl);
+            // Copy SC data onto song
+            song.scId = track.scId;
+            song.scPermalinkUrl = track.scPermalinkUrl;
+            song.id = track.id;
+            if (!song.art && track.art) song.art = track.art;
+            return track.scPermalinkUrl;
         }
-        return videoId || null;
+        return null;
     } catch (err) {
-        console.error('YouTube resolve failed:', err);
+        console.error('SC resolve failed:', err);
         return null;
     }
 }
@@ -285,71 +336,48 @@ async function getCleanSongTitle(videoId, rawTitle) {
     return fallback;
 }
 // ────────────────────────────────────────
-// YOUTUBE URL EXTRACTION
+// SOUNDCLOUD URL EXTRACTION
 // ────────────────────────────────────────
 
-function extractYouTubeVideoId(input) {
+function extractSoundCloudUrl(input) {
     if (!input) return null;
     input = input.trim();
-
-    if (/^[a-zA-Z0-9_-]{11}$/.test(input)) return input;
-
-    const patterns = [
-        /(?:youtube(?:-nocookie)?\.com\/(?:[^\/\n\s]+\/\S+\/|(?:v|e(?:mbed)?)\/|\S*?[?&]v=))([a-zA-Z0-9_-]{11})/i,
-        /youtu\.be\/([a-zA-Z0-9_-]{11})/i,
-        /youtube\.com\/shorts\/([a-zA-Z0-9_-]{11})/i,
-        /(?:v|embed)\/([a-zA-Z0-9_-]{11})/i,
-        /[?&]v=([a-zA-Z0-9_-]{11})/i
-    ];
-
-    for (const regex of patterns) {
-        const match = input.match(regex);
-        if (match && match[1]) return match[1];
-    }
-
+    // Direct SC URL
+    if (/soundcloud\.com\/.+\/.+/.test(input)) return input;
     return null;
 }
 
+// Legacy YouTube extractor kept for any stored video IDs
+function extractYouTubeVideoId(input) {
+    if (!input) return null;
+    return null; // YouTube disabled — always return null
+}
 
-async function fetchVideoDetails(videoId, song) {
-    if (!videoId) return;
 
-    // 1. Try cache first → instant!
-    const cached = getCachedMetadata(videoId);
+async function fetchSCTrackDetails(scId, song) {
+    if (!scId) return;
+    const cached = getCachedMetadata(`sc_${scId}`);
     if (cached) {
-        console.log(`Cache hit for ${videoId}: "${cached.title}"`);
-        applyMetadata(videoId, song, cached.title, cached.artist);
+        applyMetadata(`sc_${scId}`, song, cached.title, cached.artist);
         return;
     }
-
-    // 2. Fetch from API
     try {
-        const url = `https://www.googleapis.com/youtube/v3/videos?part=snippet&id=${videoId}&key=${getNextKey()}`;
-        const res = await fetch(url);
-        if (!res.ok) throw new Error(`API ${res.status}`);
-
+        const res = await fetch(`https://api.soundcloud.com/tracks/${scId}?client_id=${SC_CLIENT_ID}`);
+        if (!res.ok) throw new Error(`SC API ${res.status}`);
         const data = await res.json();
-        const item = data.items?.[0];
-
-        if (item?.snippet) {
-            const realTitle = item.snippet.title;
-            const realArtist = item.snippet.channelTitle;
-
-            // Save to persistent cache
-            saveMetadataToCache(videoId, realTitle, realArtist);
-
-            // Apply to UI and song object
-            applyMetadata(videoId, song, realTitle, realArtist);
-        }
+        const title = data.title || song.title;
+        const artist = data.user?.username || song.artist;
+        const art = (data.artwork_url || '').replace('-large', '-t500x500') || song.art;
+        saveMetadataToCache(`sc_${scId}`, title, artist);
+        applyMetadata(`sc_${scId}`, song, title, artist);
+        if (art && song) song.art = art;
     } catch (err) {
-        console.warn("Metadata fetch failed:", err);
-        // Fallback: use regex guess from original title if available
-        if (song?.title && song.title !== "[couldn't fetch title]") {
-            const guessed = shortenSongTitle(song.title);
-            applyMetadata(videoId, song, guessed, "YouTube");
-        }
+        console.warn('SC metadata fetch failed:', err);
     }
 }
+
+// Alias for legacy calls
+const fetchVideoDetails = fetchSCTrackDetails;
 
 // ────────────────────────────────────────
 // INITIALIZATION
@@ -436,8 +464,8 @@ function initializeApp() {
     updateFilterCounts();
     updateStats();
 
-    // Setup YouTube API
-    loadYouTubeAPI();
+    // Setup SoundCloud Widget API
+    initSoundCloudWidget();
 
     // Setup animations CSS
     injectAnimationStyles();
@@ -579,77 +607,75 @@ function injectAnimationStyles() {
 }
 
 // ────────────────────────────────────────
-// YOUTUBE PLAYER SETUP
+// SOUNDCLOUD WIDGET SETUP
 // ────────────────────────────────────────
 
-function loadYouTubeAPI() {
-    if (!window.YT) {
-        const tag = document.createElement('script');
-        tag.src = "https://www.youtube.com/iframe_api";
-        const first = document.getElementsByTagName('script')[0];
-        if (first && first.parentNode) {
-            first.parentNode.insertBefore(tag, first);
-        }
+function initSoundCloudWidget() {
+    const iframe = document.getElementById('scWidget');
+    if (!iframe || typeof SC === 'undefined') {
+        // SC Widget API not loaded yet, retry
+        setTimeout(initSoundCloudWidget, 500);
+        return;
     }
-}
-window.onYouTubeIframeAPIReady = function() {
-    console.log('YouTube IFrame API fully ready');
-    playerReady = true;
 
-    ytPlayer = new YT.Player('player', {
-        height: '100%',
-        width: '100%',
-        playerVars: {
-            'autoplay': 1,
-            'controls': 1,
-            'rel': 0,
-            'modestbranding': 1,
-            'iv_load_policy': 3,
-            'fs': 1,
-            'playsinline': 1,
-            'enablejsapi': 1,
-            'disablekb': 0,
-            'origin': window.location.origin
-        },
-        events: {
-            'onReady': () => {
-                console.log('Player ready');
-                if (pendingVideo) {
-                    ytPlayer.loadVideoById(pendingVideo);
-                    pendingVideo = null;
-                }
-            },
-            'onStateChange': onPlayerStateChange,
-            'onError': (e) => {
-                console.error('YT Player error:', e.data);
-                // On error, try next song automatically
-                if (e.data === 150 || e.data === 101 || e.data === 5) {
-                    showNotification("Video unavailable, skipping...");
-                    setTimeout(handleNextSong, 1000);
-                } else {
-                    showVideoError();
-                }
-            }
+    scWidget = SC.Widget(iframe);
+
+    scWidget.bind(SC.Widget.Events.READY, () => {
+        console.log('SoundCloud Widget ready');
+        scPlayerReady = true;
+        playerReady = true;
+        if (pendingTrack) {
+            playScTrack(pendingTrack);
+            pendingTrack = null;
         }
     });
-};
 
-function onPlayerStateChange(event) {
-    if (event.data === window.YT.PlayerState.ENDED) {
-        console.log("Song ended, handling next track...");
-
-        // Immediately stop to prevent YouTube showing recommendations
-        if (ytPlayer && typeof ytPlayer.stopVideo === 'function') {
-            ytPlayer.stopVideo();
-        }
-
+    scWidget.bind(SC.Widget.Events.FINISH, () => {
+        console.log('SC track finished');
         if (repeatMode === 'one') {
             setTimeout(() => playSong(currentPlayingSong), 100);
         } else {
             setTimeout(() => handleNextSong(), 100);
         }
+    });
+
+    scWidget.bind(SC.Widget.Events.ERROR, (e) => {
+        console.error('SC Widget error:', e);
+        showVideoError();
+    });
+}
+
+function playScTrack(permalinkUrl) {
+    if (!scWidget || !scPlayerReady) {
+        pendingTrack = permalinkUrl;
+        return;
+    }
+    try {
+        scWidget.load(permalinkUrl, {
+            auto_play: true,
+            hide_related: true,
+            show_comments: false,
+            show_user: false,
+            show_reposts: false,
+            show_teaser: false,
+            visual: false
+        });
+        console.log('SC Widget loading:', permalinkUrl);
+    } catch (err) {
+        console.error('SC load error:', err);
+        showVideoError();
     }
 }
+
+// Expose play/pause/seek for any controls that might use ytPlayer API
+const ytPlayer = {
+    playVideo: () => scWidget?.play(),
+    pauseVideo: () => scWidget?.pause(),
+    stopVideo: () => scWidget?.pause(),
+    loadVideoById: () => {}, // no-op
+    getCurrentTime: () => new Promise(res => scWidget?.getPosition(pos => res((pos || 0) / 1000))),
+    seekTo: (secs) => scWidget?.seekTo(secs * 1000)
+};
 
 // Add this new function
 function handleNextSong() {
@@ -885,6 +911,11 @@ async function updateLyrics(song) {
             const fullscreenText = document.getElementById('fullscreenLyricsText');
             if (fullscreenText) fullscreenText.innerHTML = formatted;
         }
+        
+        // Start synced lyrics if available
+        if (lyricsData.syncedLyrics) {
+            setupLyricsSync();
+        }
     } else {
         lyricsContainer.innerHTML = '<div class="lyrics-placeholder">No lyrics found</div>';
     }
@@ -912,15 +943,16 @@ function highlightLyricLine(currentTimeSeconds) {
     }
 }
 
-// Set up lyrics sync interval
+// Set up lyrics sync interval using SoundCloud position
 function setupLyricsSync() {
     if (window.lyricsInterval) clearInterval(window.lyricsInterval);
     
     window.lyricsInterval = setInterval(() => {
-        if (ytPlayer && typeof ytPlayer.getCurrentTime === 'function' && 
-            document.querySelector('.synced-lyrics')) {
-            const currentTime = ytPlayer.getCurrentTime();
-            highlightLyricLine(currentTime);
+        if (scWidget && scPlayerReady && document.querySelector('.synced-lyrics')) {
+            scWidget.getPosition(pos => {
+                const currentTime = (pos || 0) / 1000;
+                highlightLyricLine(currentTime);
+            });
         }
     }, 500);
 }
@@ -936,29 +968,34 @@ async function playSong(song, fromPlaylist = null) {
         return;
     }
 
-    // Resolve YouTube ID for Deezer songs before doing anything else
-    if (song._isDeezer && !song.youtubeId) {
-        showNotification("Finding video...");
-        const resolvedId = await resolveYouTubeId(song);
-        if (!resolvedId) {
-            showNotification("Couldn't find a video for this song");
+    // Resolve SoundCloud track URL for Deezer songs
+    if (song._isDeezer && !song.scPermalinkUrl) {
+        showNotification("Finding track on SoundCloud...");
+        const scUrl = await resolveSoundCloudTrack(song);
+        if (!scUrl) {
+            showNotification("Couldn't find this track on SoundCloud");
             return;
         }
-        song.id = resolvedId;
-        song.youtubeId = resolvedId;
     }
 
-    if (!song.id) {
-        console.error("Invalid song object", song);
+    // Also resolve if it's just a plain song with no SC data
+    if (!song._isSoundCloud && !song.scPermalinkUrl && song.title && song.artist) {
+        showNotification("Finding track...");
+        await resolveSoundCloudTrack(song);
+    }
+
+    if (!song.scPermalinkUrl && !song._isSoundCloud) {
+        showNotification("Track not available");
         return;
     }
 
-    if (lastPlayedVideoId === song.id) {
-        console.log("Already playing this exact video — skipping duplicate call");
+    const trackKey = song.scId || song.scPermalinkUrl || song.id;
+    if (lastPlayedTrackId === trackKey) {
+        console.log("Already playing this track — skipping duplicate call");
         return;
     }
 
-    lastPlayedVideoId = song.id;
+    lastPlayedTrackId = trackKey;
     currentPlayingSong = { ...song };
 
     // Update playback context - IMPORTANT: Check if we're playing from queue
@@ -1034,49 +1071,44 @@ if (fromPlaylist === 'queue' || queue.some(s => s.id === song.id)) {
     // Update queue display
     renderQueue();
 
-    // Load video
-    const params = new URLSearchParams({
-        autoplay: 1,
-        enablejsapi: 1,
-        origin: window.location.origin,
-        rel: 0,
-        modestbranding: 1,
-        showinfo: 0,
-        iv_load_policy: 3,
-        playsinline: 1,
-        fs: 1
-    });
-
-if (ytPlayer && typeof ytPlayer.loadVideoById === 'function') {
-    try {
-        ytPlayer.loadVideoById({ videoId: song.id, startSeconds: 0 });
-        console.log(`Playing "${cleanTitle}" via ytPlayer.loadVideoById`);
-    } catch (err) {
-        console.error("loadVideoById failed:", err);
-        pendingVideo = song.id;
+    // Update album art display
+    const artImg = document.getElementById('nowPlayingArt');
+    const artPlaceholder = document.getElementById('npArtPlaceholder');
+    if (artImg) {
+        if (song.art) {
+            artImg.src = song.art;
+            artImg.style.opacity = '1';
+            if (artPlaceholder) artPlaceholder.style.display = 'none';
+        } else {
+            artImg.style.opacity = '0';
+            if (artPlaceholder) artPlaceholder.style.display = 'flex';
+        }
     }
-} else {
-    // Player not ready yet, queue it
-    pendingVideo = song.id;
-    console.log(`Player not ready, queued "${cleanTitle}"`);
-}
+
+    // Load and play SoundCloud track
+    const permalinkUrl = song.scPermalinkUrl;
+    if (permalinkUrl) {
+        if (scPlayerReady && scWidget) {
+            try {
+                playScTrack(permalinkUrl);
+                console.log(`Playing "${cleanTitle}" via SoundCloud`);
+            } catch (err) {
+                console.error("SC playback failed:", err);
+                pendingTrack = permalinkUrl;
+            }
+        } else {
+            pendingTrack = permalinkUrl;
+            console.log(`SC not ready, queued "${cleanTitle}"`);
+        }
+    } else {
+        console.warn('No SoundCloud URL for track:', song.title);
+        showVideoError();
+    }
 
     // Fetch lyrics for the new song
     setTimeout(() => {
-        if (song && song.id) {
+        if (song && song.title) {
             updateLyrics(song);
-            
-            // Set up lyrics sync if we have the player
-            if (ytPlayer && typeof ytPlayer.getCurrentTime === 'function') {
-                if (window.lyricsInterval) clearInterval(window.lyricsInterval);
-                
-                window.lyricsInterval = setInterval(() => {
-                    if (ytPlayer && ytPlayer.getCurrentTime && document.querySelector('.synced-lyrics')) {
-                        const currentTime = ytPlayer.getCurrentTime();
-                        highlightLyricLine(currentTime);
-                    }
-                }, 500);
-            }
         }
     }, 1000);
 }
@@ -1299,38 +1331,21 @@ function setupSearchInput() {
         }
 
         searchTimeout = setTimeout(async () => {
-            const videoId = extractYouTubeVideoId(value);
+            const scUrl = extractSoundCloudUrl(value);
 
-if (videoId) {
+if (scUrl) {
     e.target.value = '';
-    showNotification("Loading video...");
-    
-    // Fetch metadata BEFORE playing
+    showNotification("Loading SoundCloud track...");
     const song = {
-        id: videoId,
-        title: "Loading...",
-        artist: "YouTube",
-        art: `https://img.youtube.com/vi/${videoId}/mqdefault.jpg`
+        id: 'sc_paste',
+        scPermalinkUrl: scUrl,
+        title: "SoundCloud Track",
+        artist: "SoundCloud",
+        art: '',
+        _isSoundCloud: true
     };
-    
-    // Fetch the real title first
-    fetch(`https://www.googleapis.com/youtube/v3/videos?part=snippet&id=${videoId}&key=${getNextKey()}`)
-        .then(r => r.json())
-        .then(data => {
-            const item = data.items?.[0];
-            if (item?.snippet) {
-                song.title = item.snippet.title;
-                song.artist = item.snippet.channelTitle;
-                saveMetadataToCache(videoId, song.title, song.artist);
-            }
-            playSong(song);
-            showNotification("Playing pasted video!");
-        })
-        .catch(err => {
-            console.error("Error fetching video details:", err);
-            playSong(song);
-            showNotification("Playing video (couldn't fetch title)");
-        });
+    playSong(song);
+    showNotification("Playing SoundCloud track!");
 } else if (value.length >= 3) {
                 try {
                     const [tracks, albums] = await Promise.all([
@@ -1350,38 +1365,20 @@ if (videoId) {
         if (e.key === 'Enter') {
             clearTimeout(searchTimeout);
             const value = searchInput.value.trim();
-            const videoId = extractYouTubeVideoId(value);
+            const scUrl = extractSoundCloudUrl(value);
 
-if (videoId) {
+if (scUrl) {
     e.target.value = '';
-    showNotification("Loading video...");
-    
-    // Fetch metadata BEFORE playing
+    showNotification("Loading SoundCloud track...");
     const song = {
-        id: videoId,
-        title: "Loading...",
-        artist: "YouTube",
-        art: `https://img.youtube.com/vi/${videoId}/mqdefault.jpg`
+        id: 'sc_paste',
+        scPermalinkUrl: scUrl,
+        title: "SoundCloud Track",
+        artist: "SoundCloud",
+        art: '',
+        _isSoundCloud: true
     };
-    
-    // Fetch the real title first
-    fetch(`https://www.googleapis.com/youtube/v3/videos?part=snippet&id=${videoId}&key=${getNextKey()}`)
-        .then(r => r.json())
-        .then(data => {
-            const item = data.items?.[0];
-            if (item?.snippet) {
-                song.title = item.snippet.title;
-                song.artist = item.snippet.channelTitle;
-                saveMetadataToCache(videoId, song.title, song.artist);
-            }
-            playSong(song);
-            showNotification("Playing pasted video!");
-        })
-        .catch(err => {
-            console.error("Error fetching video details:", err);
-            playSong(song);
-            showNotification("Playing video (couldn't fetch title)");
-        });
+    playSong(song);
 }
         }
     });
@@ -1902,42 +1899,49 @@ function renderPlaylists() {
 // ────────────────────────────────────────
 
 async function playPlaylist(playlistId, isAlbum = false) {
+    // playlistId may be a Deezer album ID or SC playlist ID
     try {
-        const response = await fetch(`https://www.googleapis.com/youtube/v3/playlistItems?part=snippet&maxResults=50&playlistId=${playlistId}&key=${getNextKey()}`);
-        
-        if (!response.ok) throw new Error('API error');
-        
-        const data = await response.json();
-        
-        if (data.items && data.items.length > 0) {
-            currentSongs = data.items
-                .map(item => ({
-                    id: item.snippet.resourceId?.videoId,
-                    title: item.snippet.title,
-                    artist: item.snippet.channelTitle,
-                    art: item.snippet.thumbnails?.medium?.url || ''
-                }))
-                .filter(song => song.id && song.title !== 'Private video' && song.title !== 'Deleted video');
-            
-            currentIndex = 0;
-            currentPlaylist = null;
-            
-            if (isAlbum) {
-                try {
-                    const playlistResponse = await fetch(`https://www.googleapis.com/youtube/v3/playlists?part=snippet&id=${playlistId}&key=${getNextKey()}`);
-                    const playlistData = await playlistResponse.json();
-                    const albumName = playlistData.items?.[0]?.snippet?.title || data.items[0].snippet.channelTitle;
-                    
-                    showAlbumView(currentSongs, albumName, playlistId);
-                } catch (err) {
-                    console.error("Error fetching playlist details:", err);
-                    showAlbumView(currentSongs, data.items[0].snippet.channelTitle, playlistId);
-                }
-            } else {
-                if (currentSongs.length > 0) {
-                    playSong(currentSongs[0]);
+        let songs = [];
+        let albumName = 'Playlist';
+
+        // Try Deezer album
+        if (playlistId && !String(playlistId).startsWith('sc_')) {
+            const proxyUrl = `https://corsproxy.io/?${encodeURIComponent(`https://api.deezer.com/album/${playlistId}/tracks`)}`;
+            const res = await fetch(proxyUrl);
+            if (res.ok) {
+                const data = await res.json();
+                if (data.data?.length > 0) {
+                    // Get album details for name
+                    const albumRes = await fetch(`https://corsproxy.io/?${encodeURIComponent(`https://api.deezer.com/album/${playlistId}`)}`);
+                    const albumData = albumRes.ok ? await albumRes.json() : null;
+                    albumName = albumData?.title || 'Album';
+                    const albumArt = albumData?.cover_medium || '';
+
+                    songs = data.data.map(track => ({
+                        id: `dz_${track.id}`,
+                        deezerTrackId: track.id,
+                        title: track.title,
+                        artist: track.artist?.name || albumData?.artist?.name || 'Unknown',
+                        art: albumArt,
+                        _isDeezer: true
+                    }));
                 }
             }
+        }
+
+        if (songs.length === 0) {
+            showNotification("Couldn't load playlist tracks");
+            return;
+        }
+
+        currentSongs = songs;
+        currentIndex = 0;
+        currentPlaylist = null;
+
+        if (isAlbum) {
+            showAlbumView(songs, albumName, playlistId);
+        } else {
+            playSong(currentSongs[0]);
         }
     } catch (error) {
         console.error("Playlist error:", error);
@@ -2086,25 +2090,10 @@ async function openMix(seedSong) {
 }
 
 async function generateMix(seedSong) {
-    const query = `${seedSong.artist} official audio`;
-    
+    const query = `${seedSong.artist}`;
     try {
-        const res = await fetch(
-            `https://www.googleapis.com/youtube/v3/search?part=snippet&type=video&videoCategoryId=10&maxResults=15&q=${encodeURIComponent(query)}&key=${getNextKey()}`
-        );
-        
-        if (!res.ok) throw new Error('API error');
-        
-        const data = await res.json();
-
-        return (data.items || [])
-            .map(item => ({
-                id: item.id.videoId,
-                title: item.snippet.title,
-                artist: item.snippet.channelTitle,
-                art: item.snippet.thumbnails.medium.url
-            }))
-            .filter(song => song.id);
+        const tracks = await searchDeezer(query, 'track', 15);
+        return tracks;
     } catch (err) {
         console.error("Mix generation error:", err);
         return [];
@@ -2554,7 +2543,7 @@ window.shareCurrentSong = function() {
         return;
     }
     
-    const url = `https://youtube.com/watch?v=${currentPlayingSong.id}`;
+    const url = currentPlayingSong.scPermalinkUrl || `https://soundcloud.com/search?q=${encodeURIComponent((currentPlayingSong.title || '') + ' ' + (currentPlayingSong.artist || ''))}`;
     navigator.clipboard.writeText(url).then(() => {
         showNotification('🔗 Link copied to clipboard!');
         closeLinkModal();
@@ -3453,7 +3442,7 @@ function contextMenuAction(action) {
             showArtistQuickMenu(contextMenuTarget.artist);
             break;
         case 'share':
-            const url = `https://youtube.com/watch?v=${contextMenuTarget.id}`;
+            const url = contextMenuTarget.scPermalinkUrl || `https://soundcloud.com/search?q=${encodeURIComponent((contextMenuTarget.title || '') + ' ' + (contextMenuTarget.artist || ''))}`;
             navigator.clipboard.writeText(url).then(() => {
                 showNotification("Link copied! 🔗");
             }).catch(() => {
@@ -4021,30 +4010,19 @@ async function fetchArtistDataBackground(artistId) {
     }
     
     try {
-        // Fetch top tracks (limited to 10 to save quota)
-        const tracksUrl = `https://www.googleapis.com/youtube/v3/search?part=snippet&type=video&videoCategoryId=10&maxResults=10&q=${encodeURIComponent(artist.name + ' official audio')}&key=${getNextKey()}`;
-        const tracksRes = await fetch(tracksUrl);
-        const tracksData = await tracksRes.json();
-        
-        if (tracksData.items) {
-            artist.topTracks = tracksData.items.map(item => ({
-                id: item.id.videoId,
-                title: item.snippet.title,
-                artist: item.snippet.channelTitle,
-                art: item.snippet.thumbnails.medium.url
-            }));
+        // Fetch top tracks via Deezer (free, no key)
+        const tracks = await searchDeezer(artist.name, 'track', 10);
+        if (tracks.length > 0) {
+            artist.topTracks = tracks;
         }
         
-        // Fetch albums (limited to 6 to save quota)
-        const albumsUrl = `https://www.googleapis.com/youtube/v3/search?part=snippet&type=playlist&maxResults=6&q=${encodeURIComponent(artist.name + ' album')}&key=${getNextKey()}`;
-        const albumsRes = await fetch(albumsUrl);
-        const albumsData = await albumsRes.json();
-        
-        if (albumsData.items) {
-            artist.albums = albumsData.items.map(item => ({
-                id: item.id.playlistId,
-                name: item.snippet.title,
-                art: item.snippet.thumbnails.medium.url
+        // Fetch albums via Deezer
+        const albums = await searchDeezer(artist.name + ' album', 'album', 6);
+        if (albums.length > 0) {
+            artist.albums = albums.map(a => ({
+                id: a.deezerAlbumId,
+                name: a.title,
+                art: a.art
             }));
         }
         
@@ -4518,36 +4496,13 @@ function setupSearchInput() {
         if (searchResults) searchResults.style.display = 'block';
 
         searchTimeout = setTimeout(async () => {
-            const videoId = extractYouTubeVideoId(value);
+            const scUrl = extractSoundCloudUrl(value);
 
-            if (videoId) {
+            if (scUrl) {
                 e.target.value = '';
-                showNotification("Loading video...");
-                
-                const song = {
-                    id: videoId,
-                    title: "Loading...",
-                    artist: "YouTube",
-                    art: `https://img.youtube.com/vi/${videoId}/mqdefault.jpg`
-                };
-                
-                fetch(`https://www.googleapis.com/youtube/v3/videos?part=snippet&id=${videoId}&key=${getNextKey()}`)
-                    .then(r => r.json())
-                    .then(data => {
-                        const item = data.items?.[0];
-                        if (item?.snippet) {
-                            song.title = item.snippet.title;
-                            song.artist = item.snippet.channelTitle;
-                            saveMetadataToCache(videoId, song.title, song.artist);
-                        }
-                        playSong(song);
-                        showNotification("Playing pasted video!");
-                    })
-                    .catch(err => {
-                        console.error("Error fetching video details:", err);
-                        playSong(song);
-                        showNotification("Playing video (couldn't fetch title)");
-                    });
+                const song = { id: 'sc_paste', scPermalinkUrl: scUrl, title: "SoundCloud Track", artist: "SoundCloud", art: '', _isSoundCloud: true };
+                playSong(song);
+                showNotification("Playing SoundCloud track!");
 } else if (value.length >= 3) {
                 try {
                     const [tracks, albums] = await Promise.all([
@@ -4567,36 +4522,13 @@ function setupSearchInput() {
         if (e.key === 'Enter') {
             clearTimeout(searchTimeout);
             const value = searchInput.value.trim();
-            const videoId = extractYouTubeVideoId(value);
+            const scUrl = extractSoundCloudUrl(value);
 
-            if (videoId) {
+            if (scUrl) {
                 e.target.value = '';
-                showNotification("Loading video...");
-                
-                const song = {
-                    id: videoId,
-                    title: "Loading...",
-                    artist: "YouTube",
-                    art: `https://img.youtube.com/vi/${videoId}/mqdefault.jpg`
-                };
-                
-                fetch(`https://www.googleapis.com/youtube/v3/videos?part=snippet&id=${videoId}&key=${getNextKey()}`)
-                    .then(r => r.json())
-                    .then(data => {
-                        const item = data.items?.[0];
-                        if (item?.snippet) {
-                            song.title = item.snippet.title;
-                            song.artist = item.snippet.channelTitle;
-                            saveMetadataToCache(videoId, song.title, song.artist);
-                        }
-                        playSong(song);
-                        showNotification("Playing pasted video!");
-                    })
-                    .catch(err => {
-                        console.error("Error fetching video details:", err);
-                        playSong(song);
-                        showNotification("Playing video (couldn't fetch title)");
-                    });
+                const song = { id: 'sc_paste', scPermalinkUrl: scUrl, title: "SoundCloud Track", artist: "SoundCloud", art: '', _isSoundCloud: true };
+                playSong(song);
+                showNotification("Playing SoundCloud track!");
             }
         }
     });
@@ -5228,16 +5160,12 @@ function parseSongsFromResponse(text) {
 
 async function searchAndPlayDJPlaylist(songs) {
     closeAIDJ();
-    showNotification(`✦ Finding ${songs.length} songs...`);
+    showNotification(`✦ Finding ${songs.length} songs on SoundCloud...`);
     const found = [];
     for (const song of songs.slice(0, 8)) {
         try {
-            const res = await fetch(`https://www.googleapis.com/youtube/v3/search?part=snippet&type=video&videoCategoryId=10&maxResults=1&q=${encodeURIComponent(song.title + ' ' + song.artist)}&key=${getNextKey()}`);
-            const data = await res.json();
-            if (data.items?.[0]) {
-                const item = data.items[0];
-                found.push({ id: item.id.videoId, title: item.snippet.title, artist: item.snippet.channelTitle, art: item.snippet.thumbnails.medium.url });
-            }
+            const tracks = await searchDeezer(`${song.title} ${song.artist}`, 'track', 1);
+            if (tracks.length > 0) found.push(tracks[0]);
         } catch(e) { console.error(e); }
     }
     if (found.length > 0) {
@@ -5253,12 +5181,8 @@ async function addDJSongsToQueue(songs) {
     showNotification(`✦ Adding ${songs.length} songs to queue...`);
     for (const song of songs.slice(0, 6)) {
         try {
-            const res = await fetch(`https://www.googleapis.com/youtube/v3/search?part=snippet&type=video&videoCategoryId=10&maxResults=1&q=${encodeURIComponent(song.title + ' ' + song.artist)}&key=${getNextKey()}`);
-            const data = await res.json();
-            if (data.items?.[0]) {
-                const item = data.items[0];
-                addToQueue({ id: item.id.videoId, title: item.snippet.title, artist: item.snippet.channelTitle, art: item.snippet.thumbnails.medium.url });
-            }
+            const tracks = await searchDeezer(`${song.title} ${song.artist}`, 'track', 1);
+            if (tracks.length > 0) addToQueue(tracks[0]);
         } catch(e) { console.error(e); }
     }
     showNotification(`✦ Added to queue!`);
@@ -5661,12 +5585,8 @@ async function saveAndPlayQPBPlaylist(playlist) {
     const found = [];
     for (const song of playlist.songs.slice(0, 8)) {
         try {
-            const res = await fetch(`https://www.googleapis.com/youtube/v3/search?part=snippet&type=video&videoCategoryId=10&maxResults=1&q=${encodeURIComponent(song.title + ' ' + song.artist)}&key=${getNextKey()}`);
-            const data = await res.json();
-            if (data.items?.[0]) {
-                const item = data.items[0];
-                found.push({ id: item.id.videoId, title: item.snippet.title, artist: item.snippet.channelTitle, art: item.snippet.thumbnails.medium.url });
-            }
+            const tracks = await searchDeezer(`${song.title} ${song.artist}`, 'track', 1);
+            if (tracks.length > 0) found.push(tracks[0]);
         } catch(e) { console.error(e); }
     }
     if (found.length > 0) {
@@ -5954,12 +5874,8 @@ async function playDailyMix() {
     const found = [];
     for (const song of cached.songs.slice(0, 10)) {
         try {
-            const res = await fetch(`https://www.googleapis.com/youtube/v3/search?part=snippet&type=video&videoCategoryId=10&maxResults=1&q=${encodeURIComponent(song.title + ' ' + song.artist)}&key=${getNextKey()}`);
-            const data = await res.json();
-            if (data.items?.[0]) {
-                const item = data.items[0];
-                found.push({ id: item.id.videoId, title: item.snippet.title, artist: item.snippet.channelTitle, art: item.snippet.thumbnails.medium.url });
-            }
+            const tracks = await searchDeezer(`${song.title} ${song.artist}`, 'track', 1);
+            if (tracks.length > 0) found.push(tracks[0]);
         } catch(e) { console.error(e); }
     }
     if (found.length > 0) {
@@ -6854,27 +6770,13 @@ window.performNavSearch = function() {
     showSearch();
     navSearchInput.value = '';
 
-    const videoId = extractYouTubeVideoId(searchQuery);
+    const scUrl = extractSoundCloudUrl(searchQuery);
 
-    if (videoId) {
-        showNotification("Loading video...");
-        const song = {
-            id: videoId, title: "Loading...", artist: "YouTube",
-            art: `https://img.youtube.com/vi/${videoId}/mqdefault.jpg`
-        };
-        fetch(`https://www.googleapis.com/youtube/v3/videos?part=snippet&id=${videoId}&key=${getNextKey()}`)
-            .then(r => r.json())
-            .then(data => {
-                const item = data.items?.[0];
-                if (item?.snippet) {
-                    song.title = item.snippet.title;
-                    song.artist = item.snippet.channelTitle;
-                    saveMetadataToCache(videoId, song.title, song.artist);
-                }
-                playSong(song);
-                showNotification("Playing pasted video!");
-            })
-            .catch(() => { playSong(song); });
+    if (scUrl) {
+        showNotification("Loading SoundCloud track...");
+        const song = { id: 'sc_paste', scPermalinkUrl: scUrl, title: "SoundCloud Track", artist: "SoundCloud", art: '', _isSoundCloud: true };
+        playSong(song);
+        showNotification("Playing SoundCloud track!");
     } else if (searchQuery.length >= 3) {
         Promise.all([
             searchDeezer(searchQuery, 'track', 10),
