@@ -4475,167 +4475,198 @@ async function runDeezerSearch(query) {
     
     container.innerHTML = '<div style="padding:40px;text-align:center;color:var(--muted);"><div style="font-size:32px;margin-bottom:12px;">🔍</div>Searching Deezer...</div>';
 
-    try {
-// Search for tracks
-const tracksResponse = await fetch(`https://api.allorigins.win/raw?url=${encodeURIComponent('https://api.deezer.com/search?q=' + encodeURIComponent(query) + '&limit=25&order=RANKING')}`);
-const tracksData = await tracksResponse.json();
+    // Try multiple proxies in order until one works
+    const proxies = [
+        'https://corsproxy.io/?',
+        'https://api.allorigins.win/raw?url=',
+        'https://cors-anywhere.herokuapp.com/',
+        'https://thingproxy.freeboard.io/fetch/'
+    ];
 
-// Search for albums
-const albumsResponse = await fetch(`https://api.allorigins.win/raw?url=${encodeURIComponent('https://api.deezer.com/search/album?q=' + encodeURIComponent(query) + '&limit=12&order=RANKING')}`);
-const albumsData = await albumsResponse.json();
+    let lastError = null;
 
-// Search for artists
-const artistsResponse = await fetch(`https://api.allorigins.win/raw?url=${encodeURIComponent('https://api.deezer.com/search/artist?q=' + encodeURIComponent(query) + '&limit=8&order=RANKING')}`);
-const artistsData = await artistsResponse.json();
-
-        // Clear container
-        container.innerHTML = '';
-        
-        // Add a note that we're using Deezer (since YouTube quota is exhausted)
-        const note = document.createElement('div');
-        note.style.cssText = `
-            background: rgba(255, 200, 0, 0.1);
-            border: 1px solid rgba(255, 200, 0, 0.3);
-            border-radius: 8px;
-            padding: 12px 16px;
-            margin-bottom: 20px;
-            font-size: 13px;
-            display: flex;
-            align-items: center;
-            gap: 10px;
-        `;
-        note.innerHTML = `
-            <span style="font-size: 18px;">🎵</span>
-            <span>Showing results from Deezer (YouTube quota reached). Click any song to play via YouTube search.</span>
-        `;
-        container.appendChild(note);
-        
-        // Artists Section
-        if (artistsData.data && artistsData.data.length > 0) {
-            const artistSection = document.createElement('div');
-            artistSection.className = 'section';
-            artistSection.innerHTML = '<div class="section-header"><h2>Artists</h2></div><div class="scroll-container" style="display:flex;gap:16px;overflow-x:auto;padding:8px 0;"></div>';
+    for (const proxy of proxies) {
+        try {
+            console.log(`Trying proxy: ${proxy}`);
             
-            const scroll = artistSection.querySelector('.scroll-container');
-            artistsData.data.slice(0, 8).forEach(artist => {
-                const div = document.createElement('div');
-                div.style.cssText = 'min-width:140px;cursor:pointer;';
-                div.innerHTML = `
-                    <img src="${artist.picture_medium || ''}" style="width:140px;height:140px;border-radius:50%;object-fit:cover;margin-bottom:8px;" onerror="this.src='https://via.placeholder.com/140?text=${encodeURIComponent(artist.name.charAt(0))}'">
-                    <div style="font-weight:600;text-align:center;">${escapeHtml(artist.name)}</div>
-                    <div style="font-size:12px;color:var(--muted);text-align:center;">${artist.nb_fan?.toLocaleString() || ''} fans</div>
-                `;
-                div.onclick = () => {
-                    const searchInput = document.getElementById('searchInput');
-                    if (searchInput) {
-                        searchInput.value = artist.name;
-                        searchInput.dispatchEvent(new Event('input'));
-                    }
-                };
-                scroll?.appendChild(div);
-            });
-            container.appendChild(artistSection);
-        }
-
-        // Albums Section
-        if (albumsData.data && albumsData.data.length > 0) {
-            const albumSection = document.createElement('div');
-            albumSection.className = 'section';
-            albumSection.innerHTML = '<div class="section-header"><h2>Albums</h2></div><div class="scroll-container" style="display:flex;gap:16px;overflow-x:auto;padding:8px 0;"></div>';
+            // Search for tracks
+            const tracksUrl = `${proxy}${encodeURIComponent('https://api.deezer.com/search?q=' + encodeURIComponent(query) + '&limit=25&order=RANKING')}`;
+            const tracksResponse = await fetch(tracksUrl);
+            if (!tracksResponse.ok) throw new Error(`HTTP ${tracksResponse.status}`);
+            const tracksData = await tracksResponse.json();
             
-            const scroll = albumSection.querySelector('.scroll-container');
-            albumsData.data.slice(0, 10).forEach(album => {
-                const div = document.createElement('div');
-                div.style.cssText = 'min-width:140px;cursor:pointer;';
-                div.innerHTML = `
-                    <img src="${album.cover_medium || album.cover || ''}" style="width:140px;height:140px;border-radius:8px;object-fit:cover;margin-bottom:8px;">
-                    <div style="font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${escapeHtml(album.title)}</div>
-                    <div style="font-size:12px;color:var(--muted);">${escapeHtml(album.artist?.name || '')}</div>
-                `;
-                div.onclick = () => {
-                    const searchInput = document.getElementById('searchInput');
-                    if (searchInput) {
-                        searchInput.value = album.artist?.name || '';
-                        searchInput.dispatchEvent(new Event('input'));
-                    }
-                };
-                scroll?.appendChild(div);
-            });
-            container.appendChild(albumSection);
-        }
-
-        // Tracks Section
-        if (tracksData.data && tracksData.data.length > 0) {
-            const trackSection = document.createElement('div');
-            trackSection.className = 'section';
-            trackSection.innerHTML = '<div class="section-header"><h2>Songs</h2></div><div style="display:flex;flex-direction:column;gap:8px;"></div>';
+            // Search for albums
+            const albumsUrl = `${proxy}${encodeURIComponent('https://api.deezer.com/search/album?q=' + encodeURIComponent(query) + '&limit=12&order=RANKING')}`;
+            const albumsResponse = await fetch(albumsUrl);
+            if (!albumsResponse.ok) throw new Error(`HTTP ${albumsResponse.status}`);
+            const albumsData = await albumsResponse.json();
             
-            const trackList = trackSection.querySelector('div:last-child');
-            tracksData.data.slice(0, 20).forEach(track => {
-                const song = {
-                    id: 'dz_' + track.id,
-                    title: track.title_short || track.title,
-                    artist: track.artist?.name || 'Unknown',
-                    art: track.album?.cover_medium || track.album?.cover || '',
-                };
+            // Search for artists
+            const artistsUrl = `${proxy}${encodeURIComponent('https://api.deezer.com/search/artist?q=' + encodeURIComponent(query) + '&limit=8&order=RANKING')}`;
+            const artistsResponse = await fetch(artistsUrl);
+            if (!artistsResponse.ok) throw new Error(`HTTP ${artistsResponse.status}`);
+            const artistsData = await artistsResponse.json();
 
-                const div = document.createElement('div');
-                div.style.cssText = `
-                    display:flex;
-                    align-items:center;
-                    gap:12px;
-                    padding:8px 12px;
-                    background:rgba(255,255,255,0.03);
-                    border:1px solid rgba(255,255,255,0.06);
-                    border-radius:8px;
-                    cursor:pointer;
-                    transition:all 0.2s ease;
-                `;
-                div.onmouseover = () => { div.style.background = 'rgba(255,255,255,0.06)'; };
-                div.onmouseout = () => { div.style.background = 'rgba(255,255,255,0.03)'; };
+            // If we get here, the proxy worked
+            console.log(`Success with proxy: ${proxy}`);
+            
+            // Clear container
+            container.innerHTML = '';
+            
+            // Add a note that we're using Deezer
+            const note = document.createElement('div');
+            note.style.cssText = `
+                background: rgba(255, 200, 0, 0.1);
+                border: 1px solid rgba(255, 200, 0, 0.3);
+                border-radius: 8px;
+                padding: 12px 16px;
+                margin-bottom: 20px;
+                font-size: 13px;
+                display: flex;
+                align-items: center;
+                gap: 10px;
+            `;
+            note.innerHTML = `
+                <span style="font-size: 18px;">🎵</span>
+                <span>Showing results from Deezer. Click any song to play.</span>
+            `;
+            container.appendChild(note);
+            
+            // Artists Section
+            if (artistsData.data && artistsData.data.length > 0) {
+                const artistSection = document.createElement('div');
+                artistSection.className = 'section';
+                artistSection.innerHTML = '<div class="section-header"><h2>Artists</h2></div><div class="scroll-container" style="display:flex;gap:16px;overflow-x:auto;padding:8px 0;"></div>';
                 
-                div.innerHTML = `
-                    <img src="${song.art}" style="width:48px;height:48px;border-radius:4px;object-fit:cover;" onerror="this.src='https://via.placeholder.com/48?text=${encodeURIComponent(song.title.charAt(0))}'">
-                    <div style="flex:1;min-width:0;">
-                        <div style="font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${escapeHtml(song.title)}</div>
-                        <div style="font-size:13px;color:var(--muted);">${escapeHtml(song.artist)}</div>
-                    </div>
-                    <div style="display:flex;gap:8px;">
-                        <button class="search-action-btn play-btn" style="width:36px;height:36px;border-radius:50%;background:rgba(255,255,255,0.1);border:none;color:white;cursor:pointer;">▶</button>
-                        <button class="search-action-btn" style="width:36px;height:36px;border-radius:50%;background:rgba(255,255,255,0.1);border:none;color:white;cursor:pointer;">+</button>
-                    </div>
-                `;
-                
-                // Add click handlers
-                const playBtn = div.querySelector('.play-btn');
-                playBtn.onclick = (e) => {
-                    e.stopPropagation();
-                    playSong(song);
-                };
-                
-                const queueBtn = div.querySelectorAll('button')[1];
-                queueBtn.onclick = (e) => {
-                    e.stopPropagation();
-                    addToQueue(song);
-                    showNotification(`Added "${song.title}" to queue`);
-                };
-                
-                div.onclick = () => playSong(song);
-                trackList?.appendChild(div);
-            });
-            container.appendChild(trackSection);
-        }
+                const scroll = artistSection.querySelector('.scroll-container');
+                artistsData.data.slice(0, 8).forEach(artist => {
+                    const div = document.createElement('div');
+                    div.style.cssText = 'min-width:140px;cursor:pointer;';
+                    div.innerHTML = `
+                        <img src="${artist.picture_medium || ''}" style="width:140px;height:140px;border-radius:50%;object-fit:cover;margin-bottom:8px;" onerror="this.src='https://via.placeholder.com/140?text=${encodeURIComponent(artist.name.charAt(0))}'">
+                        <div style="font-weight:600;text-align:center;">${escapeHtml(artist.name)}</div>
+                        <div style="font-size:12px;color:var(--muted);text-align:center;">${artist.nb_fan?.toLocaleString() || ''} fans</div>
+                    `;
+                    div.onclick = () => {
+                        const searchInput = document.getElementById('searchInput');
+                        if (searchInput) {
+                            searchInput.value = artist.name;
+                            searchInput.dispatchEvent(new Event('input'));
+                        }
+                    };
+                    scroll?.appendChild(div);
+                });
+                container.appendChild(artistSection);
+            }
 
-        if ((!tracksData.data || tracksData.data.length === 0) && 
-            (!albumsData.data || albumsData.data.length === 0) && 
-            (!artistsData.data || artistsData.data.length === 0)) {
-            container.innerHTML = '<div style="padding:40px;text-align:center;color:var(--muted);">No results found</div>';
+            // Albums Section
+            if (albumsData.data && albumsData.data.length > 0) {
+                const albumSection = document.createElement('div');
+                albumSection.className = 'section';
+                albumSection.innerHTML = '<div class="section-header"><h2>Albums</h2></div><div class="scroll-container" style="display:flex;gap:16px;overflow-x:auto;padding:8px 0;"></div>';
+                
+                const scroll = albumSection.querySelector('.scroll-container');
+                albumsData.data.slice(0, 10).forEach(album => {
+                    const div = document.createElement('div');
+                    div.style.cssText = 'min-width:140px;cursor:pointer;';
+                    div.innerHTML = `
+                        <img src="${album.cover_medium || album.cover || ''}" style="width:140px;height:140px;border-radius:8px;object-fit:cover;margin-bottom:8px;">
+                        <div style="font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${escapeHtml(album.title)}</div>
+                        <div style="font-size:12px;color:var(--muted);">${escapeHtml(album.artist?.name || '')}</div>
+                    `;
+                    div.onclick = () => {
+                        const searchInput = document.getElementById('searchInput');
+                        if (searchInput) {
+                            searchInput.value = album.artist?.name || '';
+                            searchInput.dispatchEvent(new Event('input'));
+                        }
+                    };
+                    scroll?.appendChild(div);
+                });
+                container.appendChild(albumSection);
+            }
+
+            // Tracks Section
+            if (tracksData.data && tracksData.data.length > 0) {
+                const trackSection = document.createElement('div');
+                trackSection.className = 'section';
+                trackSection.innerHTML = '<div class="section-header"><h2>Songs</h2></div><div style="display:flex;flex-direction:column;gap:8px;"></div>';
+                
+                const trackList = trackSection.querySelector('div:last-child');
+                tracksData.data.slice(0, 20).forEach(track => {
+                    const song = {
+                        id: 'dz_' + track.id,
+                        title: track.title_short || track.title,
+                        artist: track.artist?.name || 'Unknown',
+                        art: track.album?.cover_medium || track.album?.cover || '',
+                    };
+
+                    const div = document.createElement('div');
+                    div.style.cssText = `
+                        display:flex;
+                        align-items:center;
+                        gap:12px;
+                        padding:8px 12px;
+                        background:rgba(255,255,255,0.03);
+                        border:1px solid rgba(255,255,255,0.06);
+                        border-radius:8px;
+                        cursor:pointer;
+                        transition:all 0.2s ease;
+                    `;
+                    div.onmouseover = () => { div.style.background = 'rgba(255,255,255,0.06)'; };
+                    div.onmouseout = () => { div.style.background = 'rgba(255,255,255,0.03)'; };
+                    
+                    div.innerHTML = `
+                        <img src="${song.art}" style="width:48px;height:48px;border-radius:4px;object-fit:cover;" onerror="this.src='https://via.placeholder.com/48?text=${encodeURIComponent(song.title.charAt(0))}'">
+                        <div style="flex:1;min-width:0;">
+                            <div style="font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${escapeHtml(song.title)}</div>
+                            <div style="font-size:13px;color:var(--muted);">${escapeHtml(song.artist)}</div>
+                        </div>
+                        <div style="display:flex;gap:8px;">
+                            <button class="search-action-btn play-btn" style="width:36px;height:36px;border-radius:50%;background:rgba(255,255,255,0.1);border:none;color:white;cursor:pointer;">▶</button>
+                            <button class="search-action-btn" style="width:36px;height:36px;border-radius:50%;background:rgba(255,255,255,0.1);border:none;color:white;cursor:pointer;">+</button>
+                        </div>
+                    `;
+                    
+                    // Add click handlers
+                    const playBtn = div.querySelector('.play-btn');
+                    playBtn.onclick = (e) => {
+                        e.stopPropagation();
+                        playSong(song);
+                    };
+                    
+                    const queueBtn = div.querySelectorAll('button')[1];
+                    queueBtn.onclick = (e) => {
+                        e.stopPropagation();
+                        addToQueue(song);
+                        showNotification(`Added "${song.title}" to queue`);
+                    };
+                    
+                    div.onclick = () => playSong(song);
+                    trackList?.appendChild(div);
+                });
+                container.appendChild(trackSection);
+            }
+
+            if ((!tracksData.data || tracksData.data.length === 0) && 
+                (!albumsData.data || albumsData.data.length === 0) && 
+                (!artistsData.data || artistsData.data.length === 0)) {
+                container.innerHTML = '<div style="padding:40px;text-align:center;color:var(--muted);">No results found</div>';
+            }
+            
+            // Break out of the proxy loop since we succeeded
+            return;
+            
+        } catch (error) {
+            console.log(`Proxy ${proxy} failed:`, error);
+            lastError = error;
+            // Continue to next proxy
         }
-        
-    } catch (error) {
-        console.error("Deezer search error:", error);
-        container.innerHTML = '<div style="padding:40px;text-align:center;color:var(--muted);">Search failed - please try again</div>';
     }
+
+    // If we get here, all proxies failed
+    console.error("All proxies failed:", lastError);
+    container.innerHTML = '<div style="padding:40px;text-align:center;color:var(--muted);">Search failed - please try again later</div>';
 }
 // Update showSearch to show genre browse initially
 function showSearch() {
