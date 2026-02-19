@@ -522,12 +522,21 @@ function loadYouTubeAPI() {
         }
     }
 }
-
 window.onYouTubeIframeAPIReady = function() {
     console.log('YouTube IFrame API fully ready');
     playerReady = true;
     
     ytPlayer = new YT.Player('player', {
+        playerVars: {
+            'autoplay': 1,
+            'controls': 1,
+            'rel': 0,              // THIS IS KEY - prevents related videos
+            'modestbranding': 1,    // Reduces YouTube branding
+            'iv_load_policy': 3,    // Hides annotations
+            'fs': 1,
+            'playsinline': 1,
+            'enablejsapi': 1
+        },
         events: {
             'onReady': () => {
                 console.log('Player ready');
@@ -549,13 +558,16 @@ function onPlayerStateChange(event) {
     if (event.data === window.YT.PlayerState.ENDED) {
         console.log("Song ended, handling next track...");
         
+        // Force the player to not show anything
+        if (ytPlayer && typeof ytPlayer.stopVideo === 'function') {
+            ytPlayer.stopVideo();  // This clears the player
+        }
+        
         // Check repeat mode
         if (repeatMode === 'one') {
-            // Replay current song
             console.log("Repeat one - replaying current song");
             playSong(currentPlayingSong);
         } else {
-            // Try to play next - with proper queue handling
             handleNextSong();
         }
     } else if (event.data === window.YT.PlayerState.PLAYING) {
@@ -948,24 +960,32 @@ if (fromPlaylist === 'queue' || queue.some(s => s.id === song.id)) {
         fs: 1
     });
 
-    if (window.ytPlayer && typeof window.ytPlayer.loadVideoById === 'function') {
-        try {
-            window.ytPlayer.loadVideoById({ videoId: song.id, startSeconds: 0 });
-            console.log(`Playing "${cleanTitle}" via ytPlayer.loadVideoById`);
-        } catch (err) {
-            console.error("loadVideoById failed:", err);
-            const embedUrl = `https://www.youtube.com/embed/${song.id}?${params.toString()}`;
-            const playerIframe = document.getElementById('player');
-            if (playerIframe) playerIframe.src = embedUrl;
-        }
-    } else {
-        const embedUrl = `https://www.youtube.com/embed/${song.id}?${params.toString()}`;
+// Replace the existing video loading code with this:
+if (window.ytPlayer && typeof window.ytPlayer.loadVideoById === 'function') {
+    try {
+        // Load with options to prevent related videos
+        window.ytPlayer.loadVideoById({
+            videoId: song.id,
+            startSeconds: 0,
+            endSeconds: 0,  // Let it play to the end
+            suggestedQuality: 'default'
+        });
+        console.log(`Playing "${cleanTitle}" via ytPlayer.loadVideoById`);
+    } catch (err) {
+        console.error("loadVideoById failed:", err);
+        const embedUrl = `https://www.youtube.com/embed/${song.id}?autoplay=1&enablejsapi=1&rel=0&modestbranding=1&iv_load_policy=3`;
         const playerIframe = document.getElementById('player');
-        if (playerIframe) {
-            playerIframe.src = embedUrl;
-            console.log(`Playing "${cleanTitle}" via direct iframe src`);
-        }
+        if (playerIframe) playerIframe.src = embedUrl;
     }
+} else {
+    // Critical: Add rel=0 to prevent related videos
+    const embedUrl = `https://www.youtube.com/embed/${song.id}?autoplay=1&enablejsapi=1&rel=0&modestbranding=1&iv_load_policy=3`;
+    const playerIframe = document.getElementById('player');
+    if (playerIframe) {
+        playerIframe.src = embedUrl;
+        console.log(`Playing "${cleanTitle}" via direct iframe src with rel=0`);
+    }
+}
 
     // Fetch lyrics for the new song
     setTimeout(() => {
