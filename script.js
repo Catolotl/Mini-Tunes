@@ -49,52 +49,8 @@ function getNextKey() {
     return SC_CLIENT_ID; // kept for any legacy references
 }
 
-// ── SOUNDCLOUD SEARCH ─────────────────────────
-async function searchSoundCloud(query, limit = 10) {
-    const url = `https://api.soundcloud.com/tracks?q=${encodeURIComponent(query)}&client_id=${SC_CLIENT_ID}&limit=${limit}&linked_partitioning=1`;
-    try {
-        const res = await fetch(url);
-        if (!res.ok) throw new Error(`SC API ${res.status}`);
-        const data = await res.json();
-        const tracks = data.collection || data;
-        return tracks.map(t => ({
-            id: `sc_${t.id}`,
-            scId: t.id,
-            scStreamUrl: t.stream_url || null,
-            scPermalinkUrl: t.permalink_url,
-            title: t.title,
-            artist: t.user?.username || 'Unknown',
-            art: (t.artwork_url || '').replace('-large', '-t500x500') || '',
-            album: '',
-            duration: Math.round((t.duration || 0) / 1000),
-            _isSoundCloud: true
-        }));
-    } catch (err) {
-        console.error('SoundCloud search failed:', err);
-        return [];
-    }
-}
-
-async function searchSoundCloudAlbums(query, limit = 6) {
-    // SC doesn't have an albums endpoint; search playlists as proxy
-    const url = `https://api.soundcloud.com/playlists?q=${encodeURIComponent(query)}&client_id=${SC_CLIENT_ID}&limit=${limit}`;
-    try {
-        const res = await fetch(url);
-        if (!res.ok) return [];
-        const data = await res.json();
-        const playlists = data.collection || data;
-        return playlists.map(p => ({
-            deezerAlbumId: null,
-            scPlaylistId: p.id,
-            title: p.title,
-            artist: p.user?.username || 'Unknown',
-            art: (p.artwork_url || '').replace('-large', '-t500x500') || '',
-            _isSCPlaylist: true
-        }));
-    } catch (err) {
-        return [];
-    }
-}
+// SoundCloud API direct search is not used (requires server-side auth).
+// Track resolution is handled via widget search URLs instead.
 
 // ── DEEZER SEARCH (free, no key needed) ──────
 async function searchDeezer(query, type = 'track', limit = 10) {
@@ -141,31 +97,24 @@ async function searchDeezer(query, type = 'track', limit = 10) {
 const scTrackCache = new Map();
 
 async function resolveSoundCloudTrack(song) {
-    // Already resolved
-    if (song.scId && song.scPermalinkUrl) return song.scPermalinkUrl;
-    if (song._isSoundCloud && song.scPermalinkUrl) return song.scPermalinkUrl;
+    // Already have a direct URL
+    if (song.scPermalinkUrl) return song.scPermalinkUrl;
 
-    const cacheKey = `sc_${song.deezerTrackId || song.title + song.artist}`;
-    if (scTrackCache.has(cacheKey)) return scTrackCache.get(cacheKey);
-
-    const query = `${song.title} ${song.artist}`;
-    try {
-        const tracks = await searchSoundCloud(query, 1);
-        if (tracks.length > 0) {
-            const track = tracks[0];
-            scTrackCache.set(cacheKey, track.scPermalinkUrl);
-            // Copy SC data onto song
-            song.scId = track.scId;
-            song.scPermalinkUrl = track.scPermalinkUrl;
-            song.id = track.id;
-            if (!song.art && track.art) song.art = track.art;
-            return track.scPermalinkUrl;
-        }
-        return null;
-    } catch (err) {
-        console.error('SC resolve failed:', err);
-        return null;
+    const cacheKey = `sc_${song.deezerTrackId || (song.title + '|' + song.artist)}`;
+    if (scTrackCache.has(cacheKey)) {
+        const cached = scTrackCache.get(cacheKey);
+        song.scPermalinkUrl = cached;
+        return cached;
     }
+
+    // Build a SoundCloud search widget URL — the widget can play search results
+    // Format: https://w.soundcloud.com/player/?url=https://soundcloud.com/search/sounds?q=QUERY
+    const query = encodeURIComponent(`${song.title} ${song.artist}`);
+    const searchUrl = `https://soundcloud.com/search/sounds?q=${query}`;
+
+    scTrackCache.set(cacheKey, searchUrl);
+    song.scPermalinkUrl = searchUrl;
+    return searchUrl;
 }
 
 function escapeHtml(text) {
@@ -612,69 +561,73 @@ function injectAnimationStyles() {
 
 function initSoundCloudWidget() {
     const iframe = document.getElementById('scWidget');
-    if (!iframe || typeof SC === 'undefined') {
-        // SC Widget API not loaded yet, retry
-        setTimeout(initSoundCloudWidget, 500);
-        return;
-    }
+    if (!iframe) { setTimeout(initSoundCloudWidget, 500); return; }
 
-    scWidget = SC.Widget(iframe);
-
-    scWidget.bind(SC.Widget.Events.READY, () => {
-        console.log('SoundCloud Widget ready');
+    // Use the SC Widget API if available for event binding
+    if (typeof SC !== 'undefined') {
+        try {
+            scWidget = SC.Widget(iframe);
+            scWidget.bind(SC.Widget.Events.READY, () => {
+                console.log('SoundCloud Widget ready');
+                scPlayerReady = true;
+                playerReady = true;
+                if (pendingTrack) {
+                    playScTrack(pendingTrack);
+                    pendingTrack = null;
+                }
+            });
+            scWidget.bind(SC.Widget.Events.FINISH, () => {
+                if (repeatMode === 'one') {
+                    setTimeout(() => playSong(currentPlayingSong), 100);
+                } else {
+                    setTimeout(() => handleNextSong(), 100);
+                }
+            });
+            scWidget.bind(SC.Widget.Events.ERROR, () => {
+                console.warn('SC Widget error');
+                showVideoError();
+            });
+        } catch(e) {
+            console.warn('SC Widget API bind failed, using src-swap fallback:', e);
+            scPlayerReady = true;
+            playerReady = true;
+        }
+    } else {
+        // SC Widget API script not loaded — still works via src swap
+        console.log('SC Widget API not found, using src-swap mode');
         scPlayerReady = true;
         playerReady = true;
         if (pendingTrack) {
             playScTrack(pendingTrack);
             pendingTrack = null;
         }
-    });
-
-    scWidget.bind(SC.Widget.Events.FINISH, () => {
-        console.log('SC track finished');
-        if (repeatMode === 'one') {
-            setTimeout(() => playSong(currentPlayingSong), 100);
-        } else {
-            setTimeout(() => handleNextSong(), 100);
-        }
-    });
-
-    scWidget.bind(SC.Widget.Events.ERROR, (e) => {
-        console.error('SC Widget error:', e);
-        showVideoError();
-    });
+    }
 }
 
 function playScTrack(permalinkUrl) {
-    if (!scWidget || !scPlayerReady) {
-        pendingTrack = permalinkUrl;
-        return;
-    }
-    try {
-        scWidget.load(permalinkUrl, {
-            auto_play: true,
-            hide_related: true,
-            show_comments: false,
-            show_user: false,
-            show_reposts: false,
-            show_teaser: false,
-            visual: false
-        });
-        console.log('SC Widget loading:', permalinkUrl);
-    } catch (err) {
-        console.error('SC load error:', err);
-        showVideoError();
-    }
+    const iframe = document.getElementById('scWidget');
+    if (!iframe) { pendingTrack = permalinkUrl; return; }
+
+    // Build a clean embed URL from the SC track permalink
+    const encodedUrl = encodeURIComponent(permalinkUrl);
+    const embedSrc = `https://w.soundcloud.com/player/?url=${encodedUrl}&auto_play=true&hide_related=true&show_comments=false&show_user=false&show_reposts=false&show_teaser=false&visual=false&color=%23ffffff`;
+
+    iframe.src = embedSrc;
+    console.log('SC Widget loading:', permalinkUrl);
+
+    // Show the widget wrap now that we have a real track
+    const wrap = document.getElementById('scWidgetWrap');
+    if (wrap) wrap.style.opacity = '1';
 }
 
-// Expose play/pause/seek for any controls that might use ytPlayer API
+// Expose play/pause/seek shim so any legacy ytPlayer references don't crash
 const ytPlayer = {
-    playVideo: () => scWidget?.play(),
-    pauseVideo: () => scWidget?.pause(),
-    stopVideo: () => scWidget?.pause(),
-    loadVideoById: () => {}, // no-op
-    getCurrentTime: () => new Promise(res => scWidget?.getPosition(pos => res((pos || 0) / 1000))),
-    seekTo: (secs) => scWidget?.seekTo(secs * 1000)
+    playVideo:   () => scWidget?.play?.(),
+    pauseVideo:  () => scWidget?.pause?.(),
+    stopVideo:   () => scWidget?.pause?.(),
+    loadVideoById: () => {},
+    getCurrentTime: () => new Promise(res => scWidget?.getPosition ? scWidget.getPosition(p => res((p||0)/1000)) : res(0)),
+    seekTo: (secs) => scWidget?.seekTo?.(secs * 1000)
 };
 
 // Add this new function
@@ -968,28 +921,17 @@ async function playSong(song, fromPlaylist = null) {
         return;
     }
 
-    // Resolve SoundCloud track URL for Deezer songs
-    if (song._isDeezer && !song.scPermalinkUrl) {
-        showNotification("Finding track on SoundCloud...");
-        const scUrl = await resolveSoundCloudTrack(song);
-        if (!scUrl) {
-            showNotification("Couldn't find this track on SoundCloud");
-            return;
-        }
-    }
-
-    // Also resolve if it's just a plain song with no SC data
-    if (!song._isSoundCloud && !song.scPermalinkUrl && song.title && song.artist) {
-        showNotification("Finding track...");
+    // Make sure we have a SoundCloud URL to hand to the widget
+    if (!song.scPermalinkUrl) {
         await resolveSoundCloudTrack(song);
     }
 
-    if (!song.scPermalinkUrl && !song._isSoundCloud) {
+    if (!song.scPermalinkUrl) {
         showNotification("Track not available");
         return;
     }
 
-    const trackKey = song.scId || song.scPermalinkUrl || song.id;
+    const trackKey = song.scPermalinkUrl;
     if (lastPlayedTrackId === trackKey) {
         console.log("Already playing this track — skipping duplicate call");
         return;
