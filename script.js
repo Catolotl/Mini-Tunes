@@ -597,6 +597,8 @@ window.onYouTubeIframeAPIReady = function() {
     playerReady = true;
 
     ytPlayer = new YT.Player('player', {
+        height: '100%',
+        width: '100%',
         playerVars: {
             'autoplay': 1,
             'controls': 1,
@@ -1049,12 +1051,6 @@ if (ytPlayer && typeof ytPlayer.loadVideoById === 'function') {
     try {
         ytPlayer.loadVideoById({ videoId: song.id, startSeconds: 0 });
         console.log(`Playing "${cleanTitle}" via ytPlayer.loadVideoById`);
-        // Force play after load — needed when browser blocks autoplay after async resolve
-        setTimeout(() => {
-            if (ytPlayer && typeof ytPlayer.playVideo === 'function') {
-                ytPlayer.playVideo();
-            }
-        }, 800);
     } catch (err) {
         console.error("loadVideoById failed:", err);
         pendingVideo = song.id;
@@ -6845,7 +6841,7 @@ setTimeout(() => {
 }, 2500); // Slightly after auth button renders
 
 // ────────────────────────────────────────
-// NAV SEARCH - defined in script.js so searchDeezer is in scope
+// NAV SEARCH - defined here so searchDeezer is in scope
 // ────────────────────────────────────────
 
 window.performNavSearch = function() {
@@ -6853,10 +6849,7 @@ window.performNavSearch = function() {
     if (!navSearchInput) return;
     const searchQuery = navSearchInput.value.trim();
 
-    if (!searchQuery) {
-        showSearch();
-        return;
-    }
+    if (!searchQuery) { showSearch(); return; }
 
     showSearch();
     navSearchInput.value = '';
@@ -6866,9 +6859,7 @@ window.performNavSearch = function() {
     if (videoId) {
         showNotification("Loading video...");
         const song = {
-            id: videoId,
-            title: "Loading...",
-            artist: "YouTube",
+            id: videoId, title: "Loading...", artist: "YouTube",
             art: `https://img.youtube.com/vi/${videoId}/mqdefault.jpg`
         };
         fetch(`https://www.googleapis.com/youtube/v3/videos?part=snippet&id=${videoId}&key=${getNextKey()}`)
@@ -6883,23 +6874,14 @@ window.performNavSearch = function() {
                 playSong(song);
                 showNotification("Playing pasted video!");
             })
-            .catch(() => {
-                playSong(song);
-                showNotification("Playing video (couldn't fetch title)");
-            });
-
+            .catch(() => { playSong(song); });
     } else if (searchQuery.length >= 3) {
         Promise.all([
             searchDeezer(searchQuery, 'track', 10),
             searchDeezer(searchQuery, 'album', 6)
         ])
-        .then(([tracks, albums]) => {
-            renderDeezerSearchResults(tracks, albums);
-        })
-        .catch(err => {
-            console.error("Search error:", err);
-            showNotification("Search failed");
-        });
+        .then(([tracks, albums]) => renderDeezerSearchResults(tracks, albums))
+        .catch(err => { console.error("Search error:", err); showNotification("Search failed"); });
     }
 };
 
