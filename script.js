@@ -6837,3 +6837,64 @@ setTimeout(() => {
 
     console.log('✓ Jam button added');
 }, 2500); // Slightly after auth button renders
+
+// ────────────────────────────────────────
+// NAV SEARCH - uses Deezer, defined here so searchDeezer is in scope
+// ────────────────────────────────────────
+
+window.performNavSearch = function() {
+    const navSearchInput = document.getElementById('navSearchInput');
+    if (!navSearchInput) return;
+    const searchQuery = navSearchInput.value.trim();
+
+    if (!searchQuery) {
+        showSearch();
+        return;
+    }
+
+    showSearch();
+    navSearchInput.value = '';
+
+    const videoId = extractYouTubeVideoId(searchQuery);
+
+    if (videoId) {
+        showNotification("Loading video...");
+        const song = {
+            id: videoId,
+            title: "Loading...",
+            artist: "YouTube",
+            art: `https://img.youtube.com/vi/${videoId}/mqdefault.jpg`
+        };
+        fetch(`https://www.googleapis.com/youtube/v3/videos?part=snippet&id=${videoId}&key=${getNextKey()}`)
+            .then(r => r.json())
+            .then(data => {
+                const item = data.items?.[0];
+                if (item?.snippet) {
+                    song.title = item.snippet.title;
+                    song.artist = item.snippet.channelTitle;
+                    saveMetadataToCache(videoId, song.title, song.artist);
+                }
+                playSong(song);
+                showNotification("Playing pasted video!");
+            })
+            .catch(err => {
+                playSong(song);
+                showNotification("Playing video (couldn't fetch title)");
+            });
+
+    } else if (searchQuery.length >= 3) {
+        Promise.all([
+            searchDeezer(searchQuery, 'track', 10),
+            searchDeezer(searchQuery, 'album', 6)
+        ])
+        .then(([tracks, albums]) => {
+            renderDeezerSearchResults(tracks, albums);
+        })
+        .catch(err => {
+            console.error("Search error:", err);
+            showNotification("Search failed");
+        });
+    }
+};
+
+console.log('✓ Nav search (Deezer) loaded');
