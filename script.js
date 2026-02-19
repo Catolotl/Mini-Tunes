@@ -6839,7 +6839,7 @@ setTimeout(() => {
 }, 2500); // Slightly after auth button renders
 
 // ────────────────────────────────────────
-// NAV SEARCH - uses Deezer, defined here so searchDeezer is in scope
+// NAV SEARCH - defined in script.js so searchDeezer is in scope
 // ────────────────────────────────────────
 
 window.performNavSearch = function() {
@@ -6877,7 +6877,7 @@ window.performNavSearch = function() {
                 playSong(song);
                 showNotification("Playing pasted video!");
             })
-            .catch(err => {
+            .catch(() => {
                 playSong(song);
                 showNotification("Playing video (couldn't fetch title)");
             });
@@ -6895,6 +6895,10 @@ window.performNavSearch = function() {
             showNotification("Search failed");
         });
     }
+};
+
+window.handleNavSearchKeyPress = function(event) {
+    if (event.key === 'Enter') window.performNavSearch();
 };
 
 console.log('✓ Nav search (Deezer) loaded');
