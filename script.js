@@ -1049,6 +1049,12 @@ if (ytPlayer && typeof ytPlayer.loadVideoById === 'function') {
     try {
         ytPlayer.loadVideoById({ videoId: song.id, startSeconds: 0 });
         console.log(`Playing "${cleanTitle}" via ytPlayer.loadVideoById`);
+        // Force play after load — needed when browser blocks autoplay after async resolve
+        setTimeout(() => {
+            if (ytPlayer && typeof ytPlayer.playVideo === 'function') {
+                ytPlayer.playVideo();
+            }
+        }, 800);
     } catch (err) {
         console.error("loadVideoById failed:", err);
         pendingVideo = song.id;
