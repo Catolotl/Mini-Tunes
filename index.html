@@ -5535,78 +5535,9 @@ function filterContent(type) {
     console.log("Filter applied successfully");
 }
 
-// Function to handle nav bar search
-function performNavSearch() {
-    const navSearchInput = document.getElementById('navSearchInput');
-    const searchQuery = navSearchInput.value.trim();
-    
-    if (searchQuery) {
-        // Switch to search view
-        showSearch();
-        
-        // Directly trigger the search without populating the input
-        const videoId = extractYouTubeVideoId(searchQuery);
-        
-        if (videoId) {
-            // It's a YouTube URL, play it directly
-            navSearchInput.value = '';
-            showNotification("Loading video...");
-            
-            const song = {
-                id: videoId,
-                title: "Loading...",
-                artist: "YouTube",
-                art: `https://img.youtube.com/vi/${videoId}/mqdefault.jpg`
-            };
-            
-            fetch(`https://www.googleapis.com/youtube/v3/videos?part=snippet&id=${videoId}&key=${getNextKey()}`)
-                .then(r => r.json())
-                .then(data => {
-                    const item = data.items?.[0];
-                    if (item?.snippet) {
-                        song.title = item.snippet.title;
-                        song.artist = item.snippet.channelTitle;
-                        saveMetadataToCache(videoId, song.title, song.artist);
-                    }
-                    playSong(song);
-                    showNotification("Playing pasted video!");
-                })
-                .catch(err => {
-                    console.error("Error fetching video details:", err);
-                    playSong(song);
-                    showNotification("Playing video (couldn't fetch title)");
-                });
-        } else if (searchQuery.length >= 3) {
-            // Regular search query - use Deezer (free, no quota)
-            Promise.all([
-                searchDeezer(searchQuery, 'track', 10),
-                searchDeezer(searchQuery, 'album', 6)
-            ])
-            .then(([tracks, albums]) => {
-                renderDeezerSearchResults(tracks, albums);
-            })
-            .catch(error => {
-                console.error("Search error:", error);
-                showNotification("Search failed");
-            });
-        }
-        
-        // Clear the nav search input
-        navSearchInput.value = '';
-    } else {
-        // If empty, just open search view
-        showSearch();
-        const searchInput = document.getElementById('searchInput');
-        if (searchInput) searchInput.focus();
-    }
-}
-
-// Function to handle Enter key in nav search
-function handleNavSearchKeyPress(event) {
-    if (event.key === 'Enter') {
-        performNavSearch();
-    }
-}
+// Defined in script.js — see window.performNavSearch
+function performNavSearch() { window.performNavSearch(); }
+function handleNavSearchKeyPress(event) { if (event.key === 'Enter') window.performNavSearch(); }
 
 
 let konamiCode = [];
