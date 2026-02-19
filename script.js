@@ -4475,40 +4475,60 @@ async function runDeezerSearch(query) {
     
     container.innerHTML = '<div style="padding:40px;text-align:center;color:var(--muted);"><div style="font-size:32px;margin-bottom:12px;">🔍</div>Searching Deezer...</div>';
 
-    // Try multiple proxies in order until one works
+    const deezerEndpoints = {
+        tracks: `https://api.deezer.com/search?q=${encodeURIComponent(query)}&limit=25&order=RANKING`,
+        albums: `https://api.deezer.com/search/album?q=${encodeURIComponent(query)}&limit=12&order=RANKING`,
+        artists: `https://api.deezer.com/search/artist?q=${encodeURIComponent(query)}&limit=8&order=RANKING`
+    };
+
+    // Each proxy has its own URL format requirements.
     const proxies = [
-        'https://corsproxy.io/?',
-        'https://api.allorigins.win/raw?url=',
-        'https://cors-anywhere.herokuapp.com/',
-        'https://thingproxy.freeboard.io/fetch/'
+        {
+            name: 'corsproxy.io',
+            buildUrl: (targetUrl) => `https://corsproxy.io/?${encodeURIComponent(targetUrl)}`
+        },
+        {
+            name: 'allorigins',
+            buildUrl: (targetUrl) => `https://api.allorigins.win/raw?url=${encodeURIComponent(targetUrl)}`
+        },
+        {
+            name: 'thingproxy',
+            buildUrl: (targetUrl) => `https://thingproxy.freeboard.io/fetch/${targetUrl}`
+        },
+        {
+            name: 'codetabs',
+            buildUrl: (targetUrl) => `https://api.codetabs.com/v1/proxy?quest=${encodeURIComponent(targetUrl)}`
+        }
     ];
+
+    async function fetchProxyJson(proxy, targetUrl) {
+        const response = await fetch(proxy.buildUrl(targetUrl));
+        if (!response.ok) throw new Error(`HTTP ${response.status}`);
+
+        // Some proxies return text/plain even for JSON payloads.
+        const raw = await response.text();
+        try {
+            return JSON.parse(raw);
+        } catch {
+            throw new Error(`Invalid JSON from ${proxy.name}`);
+        }
+    }
 
     let lastError = null;
 
     for (const proxy of proxies) {
         try {
-            console.log(`Trying proxy: ${proxy}`);
+            console.log(`Trying proxy: ${proxy.name}`);
             
-            // Search for tracks
-            const tracksUrl = `${proxy}${encodeURIComponent('https://api.deezer.com/search?q=' + encodeURIComponent(query) + '&limit=25&order=RANKING')}`;
-            const tracksResponse = await fetch(tracksUrl);
-            if (!tracksResponse.ok) throw new Error(`HTTP ${tracksResponse.status}`);
-            const tracksData = await tracksResponse.json();
-            
-            // Search for albums
-            const albumsUrl = `${proxy}${encodeURIComponent('https://api.deezer.com/search/album?q=' + encodeURIComponent(query) + '&limit=12&order=RANKING')}`;
-            const albumsResponse = await fetch(albumsUrl);
-            if (!albumsResponse.ok) throw new Error(`HTTP ${albumsResponse.status}`);
-            const albumsData = await albumsResponse.json();
-            
-            // Search for artists
-            const artistsUrl = `${proxy}${encodeURIComponent('https://api.deezer.com/search/artist?q=' + encodeURIComponent(query) + '&limit=8&order=RANKING')}`;
-            const artistsResponse = await fetch(artistsUrl);
-            if (!artistsResponse.ok) throw new Error(`HTTP ${artistsResponse.status}`);
-            const artistsData = await artistsResponse.json();
+            // Search tracks, albums, and artists with the same proxy.
+            const [tracksData, albumsData, artistsData] = await Promise.all([
+                fetchProxyJson(proxy, deezerEndpoints.tracks),
+                fetchProxyJson(proxy, deezerEndpoints.albums),
+                fetchProxyJson(proxy, deezerEndpoints.artists)
+            ]);
 
             // If we get here, the proxy worked
-            console.log(`Success with proxy: ${proxy}`);
+            console.log(`Success with proxy: ${proxy.name}`);
             
             // Clear container
             container.innerHTML = '';
@@ -4658,7 +4678,7 @@ async function runDeezerSearch(query) {
             return;
             
         } catch (error) {
-            console.log(`Proxy ${proxy} failed:`, error);
+            console.log(`Proxy ${proxy.name} failed:`, error);
             lastError = error;
             // Continue to next proxy
         }
