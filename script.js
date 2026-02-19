@@ -530,9 +530,9 @@ window.onYouTubeIframeAPIReady = function() {
         playerVars: {
             'autoplay': 1,
             'controls': 1,
-            'rel': 0,              // THIS IS KEY - prevents related videos
-            'modestbranding': 1,    // Reduces YouTube branding
-            'iv_load_policy': 3,    // Hides annotations
+            'rel': 0,              // ← PREVENTS RELATED VIDEOS
+            'modestbranding': 1,    // ← REDUCES YOUTUBE BRANDING
+            'iv_load_policy': 3,    // ← HIDES ANNOTATIONS
             'fs': 1,
             'playsinline': 1,
             'enablejsapi': 1
