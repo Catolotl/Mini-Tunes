@@ -4472,47 +4472,87 @@ function setupSearchInput() {
 async function runDeezerSearch(query) {
     const container = document.getElementById('searchResults');
     if (!container) return;
-    
+
     container.innerHTML = '<div style="padding:40px;text-align:center;color:var(--muted);"><div style="font-size:32px;margin-bottom:12px;">🔍</div>Searching Deezer...</div>';
 
-    // Try multiple proxies in order until one works
+    const deezerEndpoints = {
+        tracks: `https://api.deezer.com/search?q=${encodeURIComponent(query)}&limit=25&order=RANKING`,
+        albums: `https://api.deezer.com/search/album?q=${encodeURIComponent(query)}&limit=12&order=RANKING`,
+        artists: `https://api.deezer.com/search/artist?q=${encodeURIComponent(query)}&limit=8&order=RANKING`
+    };
+
+    // Keep only proxies that work without auth/headers and support GET passthrough.
     const proxies = [
-        'https://corsproxy.io/?',
-        'https://api.allorigins.win/raw?url=',
-        'https://cors-anywhere.herokuapp.com/',
-        'https://thingproxy.freeboard.io/fetch/'
+        {
+            name: 'corsproxy.io',
+            buildUrl: (targetUrl) => `https://corsproxy.io/?${encodeURIComponent(targetUrl)}`
+        },
+        {
+            name: 'allorigins',
+            buildUrl: (targetUrl) => `https://api.allorigins.win/raw?url=${encodeURIComponent(targetUrl)}`
+        },
+        {
+            name: 'thingproxy',
+            buildUrl: (targetUrl) => `https://thingproxy.freeboard.io/fetch/${targetUrl}`
+        },
+        {
+            name: 'codetabs',
+            buildUrl: (targetUrl) => `https://api.codetabs.com/v1/proxy?quest=${encodeURIComponent(targetUrl)}`
+        }
     ];
+
+    async function fetchProxyJson(proxy, targetUrl) {
+        const response = await fetch(proxy.buildUrl(targetUrl));
+        if (!response.ok) throw new Error(`HTTP ${response.status}`);
+
+        // Some proxies return text/plain for JSON bodies.
+        const raw = await response.text();
+        try {
+            return JSON.parse(raw);
+        } catch {
+            throw new Error(`Invalid JSON from ${proxy.name}`);
+        }
+    }
+
+    // Do not fail an otherwise healthy proxy if one Deezer endpoint is flaky.
+    async function fetchProxyJsonSafe(proxy, targetUrl) {
+        try {
+            return await fetchProxyJson(proxy, targetUrl);
+        } catch (err) {
+            console.log(`Endpoint failed via ${proxy.name}:`, err);
+            return { data: [] };
+        }
+    }
+
+    function dataArray(payload) {
+        return Array.isArray(payload?.data) ? payload.data : [];
+    }
 
     let lastError = null;
 
     for (const proxy of proxies) {
         try {
-            console.log(`Trying proxy: ${proxy}`);
-            
-            // Search for tracks
-            const tracksUrl = `${proxy}${encodeURIComponent('https://api.deezer.com/search?q=' + encodeURIComponent(query) + '&limit=25&order=RANKING')}`;
-            const tracksResponse = await fetch(tracksUrl);
-            if (!tracksResponse.ok) throw new Error(`HTTP ${tracksResponse.status}`);
-            const tracksData = await tracksResponse.json();
-            
-            // Search for albums
-            const albumsUrl = `${proxy}${encodeURIComponent('https://api.deezer.com/search/album?q=' + encodeURIComponent(query) + '&limit=12&order=RANKING')}`;
-            const albumsResponse = await fetch(albumsUrl);
-            if (!albumsResponse.ok) throw new Error(`HTTP ${albumsResponse.status}`);
-            const albumsData = await albumsResponse.json();
-            
-            // Search for artists
-            const artistsUrl = `${proxy}${encodeURIComponent('https://api.deezer.com/search/artist?q=' + encodeURIComponent(query) + '&limit=8&order=RANKING')}`;
-            const artistsResponse = await fetch(artistsUrl);
-            if (!artistsResponse.ok) throw new Error(`HTTP ${artistsResponse.status}`);
-            const artistsData = await artistsResponse.json();
+            console.log(`Trying proxy: ${proxy.name}`);
 
-            // If we get here, the proxy worked
-            console.log(`Success with proxy: ${proxy}`);
-            
+            const [tracksData, albumsData, artistsData] = await Promise.all([
+                fetchProxyJsonSafe(proxy, deezerEndpoints.tracks),
+                fetchProxyJsonSafe(proxy, deezerEndpoints.albums),
+                fetchProxyJsonSafe(proxy, deezerEndpoints.artists)
+            ]);
+
+            const tracks = dataArray(tracksData);
+            const albums = dataArray(albumsData);
+            const artists = dataArray(artistsData);
+
+            if (!tracks.length && !albums.length && !artists.length) {
+                throw new Error('Proxy responded but returned no usable Deezer data');
+            }
+
+            console.log(`Success with proxy: ${proxy.name}`);
+
             // Clear container
             container.innerHTML = '';
-            
+
             // Add a note that we're using Deezer
             const note = document.createElement('div');
             note.style.cssText = `
@@ -4531,15 +4571,15 @@ async function runDeezerSearch(query) {
                 <span>Showing results from Deezer. Click any song to play.</span>
             `;
             container.appendChild(note);
-            
+
             // Artists Section
-            if (artistsData.data && artistsData.data.length > 0) {
+            if (artists.length > 0) {
                 const artistSection = document.createElement('div');
                 artistSection.className = 'section';
                 artistSection.innerHTML = '<div class="section-header"><h2>Artists</h2></div><div class="scroll-container" style="display:flex;gap:16px;overflow-x:auto;padding:8px 0;"></div>';
-                
+
                 const scroll = artistSection.querySelector('.scroll-container');
-                artistsData.data.slice(0, 8).forEach(artist => {
+                artists.slice(0, 8).forEach(artist => {
                     const div = document.createElement('div');
                     div.style.cssText = 'min-width:140px;cursor:pointer;';
                     div.innerHTML = `
@@ -4560,13 +4600,13 @@ async function runDeezerSearch(query) {
             }
 
             // Albums Section
-            if (albumsData.data && albumsData.data.length > 0) {
+            if (albums.length > 0) {
                 const albumSection = document.createElement('div');
                 albumSection.className = 'section';
                 albumSection.innerHTML = '<div class="section-header"><h2>Albums</h2></div><div class="scroll-container" style="display:flex;gap:16px;overflow-x:auto;padding:8px 0;"></div>';
-                
+
                 const scroll = albumSection.querySelector('.scroll-container');
-                albumsData.data.slice(0, 10).forEach(album => {
+                albums.slice(0, 10).forEach(album => {
                     const div = document.createElement('div');
                     div.style.cssText = 'min-width:140px;cursor:pointer;';
                     div.innerHTML = `
@@ -4587,13 +4627,13 @@ async function runDeezerSearch(query) {
             }
 
             // Tracks Section
-            if (tracksData.data && tracksData.data.length > 0) {
+            if (tracks.length > 0) {
                 const trackSection = document.createElement('div');
                 trackSection.className = 'section';
                 trackSection.innerHTML = '<div class="section-header"><h2>Songs</h2></div><div style="display:flex;flex-direction:column;gap:8px;"></div>';
-                
+
                 const trackList = trackSection.querySelector('div:last-child');
-                tracksData.data.slice(0, 20).forEach(track => {
+                tracks.slice(0, 20).forEach(track => {
                     const song = {
                         id: 'dz_' + track.id,
                         title: track.title_short || track.title,
@@ -4615,7 +4655,7 @@ async function runDeezerSearch(query) {
                     `;
                     div.onmouseover = () => { div.style.background = 'rgba(255,255,255,0.06)'; };
                     div.onmouseout = () => { div.style.background = 'rgba(255,255,255,0.03)'; };
-                    
+
                     div.innerHTML = `
                         <img src="${song.art}" style="width:48px;height:48px;border-radius:4px;object-fit:cover;" onerror="this.src='https://via.placeholder.com/48?text=${encodeURIComponent(song.title.charAt(0))}'">
                         <div style="flex:1;min-width:0;">
@@ -4627,45 +4667,36 @@ async function runDeezerSearch(query) {
                             <button class="search-action-btn" style="width:36px;height:36px;border-radius:50%;background:rgba(255,255,255,0.1);border:none;color:white;cursor:pointer;">+</button>
                         </div>
                     `;
-                    
-                    // Add click handlers
+
                     const playBtn = div.querySelector('.play-btn');
                     playBtn.onclick = (e) => {
                         e.stopPropagation();
                         playSong(song);
                     };
-                    
+
                     const queueBtn = div.querySelectorAll('button')[1];
                     queueBtn.onclick = (e) => {
                         e.stopPropagation();
                         addToQueue(song);
                         showNotification(`Added "${song.title}" to queue`);
                     };
-                    
+
                     div.onclick = () => playSong(song);
                     trackList?.appendChild(div);
                 });
                 container.appendChild(trackSection);
             }
 
-            if ((!tracksData.data || tracksData.data.length === 0) && 
-                (!albumsData.data || albumsData.data.length === 0) && 
-                (!artistsData.data || artistsData.data.length === 0)) {
-                container.innerHTML = '<div style="padding:40px;text-align:center;color:var(--muted);">No results found</div>';
-            }
-            
-            // Break out of the proxy loop since we succeeded
             return;
-            
+
         } catch (error) {
-            console.log(`Proxy ${proxy} failed:`, error);
+            console.log(`Proxy ${proxy.name} failed:`, error);
             lastError = error;
-            // Continue to next proxy
         }
     }
 
     // If we get here, all proxies failed
-    console.error("All proxies failed:", lastError);
+    console.error('All proxies failed:', lastError);
     container.innerHTML = '<div style="padding:40px;text-align:center;color:var(--muted);">Search failed - please try again later</div>';
 }
 // Update showSearch to show genre browse initially
