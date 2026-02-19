@@ -10,6 +10,8 @@ const YOUTUBE_API_KEY = "AIzaSyDNd7dwB1rZEpJzpyRrVZQwSKHvnt3Q7vQ";
 const CACHE_TTL = 24 * 60 * 60 * 1000; // 24 hours
 const UPDATE_KEY = "tunes_datasaving_update_v1";
 
+const CORS_PROXY = 'https://corsproxy.io/?';
+
 // ────────────────────────────────────────
 // STATE MANAGEMENT
 // ────────────────────────────────────────
@@ -26,6 +28,10 @@ let playerReady = false;
 let pendingVideo = null;
 let currentPlayingSong = null;
 let isFullscreenLyrics = false;
+
+// Add this with the other state variables (around line 30-40)
+let youtubeQuotaExhausted = false;
+let currentPreviewAudio = null;
 
 // NEW: Enhanced state for v2.0 features
 let queue = [];
@@ -774,44 +780,43 @@ async function playSong(song, fromPlaylist = null) {
         return;
     }
     
-    if (lastPlayedVideoId === song.id) {
+    if (lastPlayedVideoId === song.id && !song.id.startsWith('dz_')) {
         console.log("Already playing this exact video — skipping duplicate call");
         return;
+    }
+    
+    // Stop any preview audio if playing
+    if (currentPreviewAudio) {
+        currentPreviewAudio.pause();
+        currentPreviewAudio = null;
     }
     
     lastPlayedVideoId = song.id;
     currentPlayingSong = { ...song };
 
-    // Update playback context - IMPORTANT: Check if we're playing from queue
+    // Update playback context
     if (fromPlaylist && fromPlaylist !== 'queue') {
         currentPlaylist = fromPlaylist;
         currentSongs = playlists[fromPlaylist]?.songs || [];
         currentIndex = currentSongs.findIndex(s => s.id === song.id);
         if (currentIndex === -1) currentIndex = 0;
     } else if (fromPlaylist === 'queue') {
-        // Playing from queue, keep current queue state
         currentPlaylist = null;
         currentSongs = [...queue];
     } else {
-        // Not from playlist, check if we're in queue mode
         const queueIdx = queue.findIndex(s => s.id === song.id);
         if (queueIdx !== -1) {
-            // This song is in queue, set queue as current source
             queueIndex = queueIdx;
             currentSongs = [...queue];
             currentIndex = queueIdx;
             currentPlaylist = null;
         } else {
-            // Just playing a single song
             const idx = currentSongs.findIndex(s => s.id === song.id);
             if (idx !== -1) currentIndex = idx;
         }
     }
 
-    // Hide video error overlay if showing
     hideVideoError();
-    
-    // Increment play stats
     incrementSongPlay();
 
     // Clean title for display
@@ -826,24 +831,102 @@ async function playSong(song, fromPlaylist = null) {
     addToRecent(song);
     if (song.art) updateGradient(song.art);
     showToast({ ...song, title: cleanTitle });
-
-    // Update mini player
     updateMiniPlayer({ ...song, title: cleanTitle });
 
-    // Show add to playlist button
     const addBtn = document.getElementById('addToPlaylistBtn');
     if (addBtn) addBtn.style.display = 'flex';
 
-    // Auto-open right sidebar
     const rightSidebar = document.getElementById('rightSidebar');
     if (rightSidebar && rightSidebar.classList.contains('minimized')) {
         rightSidebar.classList.remove('minimized');
     }
 
-    // Update queue display
     renderQueue();
 
-    // Load video
+    // Check if this is a Deezer song (starts with dz_)
+    if (song.id.startsWith('dz_')) {
+        // Try to find on YouTube first (if quota not exhausted)
+        if (!youtubeQuotaExhausted) {
+            const query = `${song.title} ${song.artist} official audio`;
+            try {
+                const response = await fetch(
+                    `https://www.googleapis.com/youtube/v3/search?part=snippet&type=video&videoCategoryId=10&maxResults=1&q=${encodeURIComponent(query)}&key=${getNextKey()}`
+                );
+                
+                if (response.ok) {
+                    const data = await response.json();
+                    const videoId = data.items?.[0]?.id?.videoId;
+                    
+                    if (videoId) {
+                        // Found on YouTube, update the song ID and play
+                        song.id = videoId;
+                        song.isPreview = false;
+                        hidePreviewBadge();
+                        
+                        // Play the YouTube video
+                        const params = new URLSearchParams({
+                            autoplay: 1,
+                            enablejsapi: 1,
+                            origin: window.location.origin,
+                            rel: 0,
+                            modestbranding: 1,
+                            showinfo: 0,
+                            iv_load_policy: 3,
+                            playsinline: 1,
+                            fs: 1
+                        });
+                        
+                        const embedUrl = `https://www.youtube.com/embed/${videoId}?${params.toString()}`;
+                        const playerIframe = document.getElementById('player');
+                        if (playerIframe) playerIframe.src = embedUrl;
+                        
+                        console.log(`Playing "${cleanTitle}" via YouTube`);
+                        
+                        // Fetch lyrics
+                        setTimeout(() => updateLyrics(song), 1000);
+                        return;
+                    }
+                }
+            } catch (e) {
+                console.log("YouTube search failed, using Deezer embed");
+            }
+        }
+        
+        // Play using YouTube embed with search (always works, no quota)
+        showNotification(`▶ Playing "${song.title}"`);
+        
+        // Create a YouTube embed that searches for the song
+        const searchQuery = `${song.title} ${song.artist} audio`;
+        const params = new URLSearchParams({
+            autoplay: 1,
+            enablejsapi: 1,
+            origin: window.location.origin,
+            rel: 0,
+            modestbranding: 1,
+            showinfo: 0,
+            iv_load_policy: 3,
+            playsinline: 1,
+            fs: 1,
+            listType: 'search',
+            list: searchQuery
+        });
+        
+        const embedUrl = `https://www.youtube.com/embed?${params.toString()}`;
+        const playerIframe = document.getElementById('player');
+        if (playerIframe) {
+            playerIframe.src = embedUrl;
+            console.log(`Playing "${cleanTitle}" via YouTube search embed`);
+        }
+        
+        song.isPreview = false;
+        hidePreviewBadge();
+        
+        // Fetch lyrics
+        setTimeout(() => updateLyrics(song), 1000);
+        return;
+    }
+
+    // Regular YouTube song - original playback code
     const params = new URLSearchParams({
         autoplay: 1,
         enablejsapi: 1,
@@ -875,12 +958,11 @@ async function playSong(song, fromPlaylist = null) {
         }
     }
 
-    // Fetch lyrics for the new song
+    // Fetch lyrics
     setTimeout(() => {
         if (song && song.id) {
             updateLyrics(song);
             
-            // Set up lyrics sync if we have the player
             if (ytPlayer && typeof ytPlayer.getCurrentTime === 'function') {
                 if (window.lyricsInterval) clearInterval(window.lyricsInterval);
                 
@@ -978,7 +1060,7 @@ async function renderPopular() {
     
     container.innerHTML = '<div style="padding:20px;color:var(--muted);">Loading popular songs...</div>';
     
-    // Use a mix of recent songs and some popular queries
+    // Try YouTube first
     const popularQueries = [
         'pop hits 2024',
         'chill lofi beats',
@@ -995,13 +1077,15 @@ async function renderPopular() {
             `https://www.googleapis.com/youtube/v3/search?part=snippet&type=video&videoCategoryId=10&maxResults=6&q=${encodeURIComponent(randomQuery)}&key=${getNextKey()}`
         );
         
-        if (!response.ok) throw new Error('API error');
+        if (!response.ok) {
+            // YouTube failed, use Deezer instead
+            throw new Error('API error');
+        }
         
         const data = await response.json();
         
-        container.innerHTML = '';
-        
         if (data.items && data.items.length > 0) {
+            container.innerHTML = '';
             data.items.forEach(item => {
                 const song = {
                     id: item.id.videoId,
@@ -1029,11 +1113,48 @@ async function renderPopular() {
                 });
             });
         } else {
-            container.innerHTML = '<div style="padding:20px;color:var(--muted);">No popular songs found</div>';
+            // No results, try Deezer
+            throw new Error('No results');
         }
     } catch (error) {
-        console.error("Popular songs error:", error);
-        container.innerHTML = '<div style="padding:20px;color:var(--muted);">Could not load popular songs</div>';
+        console.error("Popular songs error, falling back to Deezer:", error);
+        
+        // Fall back to Deezer chart
+        try {
+            const data = await fetch(
+                `https://corsproxy.io/?${encodeURIComponent('https://api.deezer.com/chart/0/tracks?limit=12')}`
+            );
+            const result = await data.json();
+            const tracks = result.data || [];
+            
+            if (tracks.length > 0) {
+                container.innerHTML = '';
+                tracks.forEach(track => {
+                    const song = {
+                        id: 'dz_' + track.id,
+                        title: track.title_short || track.title,
+                        artist: track.artist?.name || 'Unknown',
+                        art: track.album?.cover_medium || track.album?.cover || '',
+                        previewUrl: track.preview
+                    };
+                    
+                    const div = document.createElement('div');
+                    div.className = 'album-card';
+                    div.innerHTML = `
+                        <img src="${song.art}" alt="">
+                        <div class="album-title">${escapeHtml(song.title)}</div>
+                        <div class="album-artist">${escapeHtml(song.artist)}</div>
+                    `;
+                    div.onclick = () => playSong(song);
+                    container.appendChild(div);
+                });
+            } else {
+                container.innerHTML = '<div style="padding:20px;color:var(--muted);">Could not load popular songs</div>';
+            }
+        } catch (deezerError) {
+            console.error("Deezer fallback also failed:", deezerError);
+            container.innerHTML = '<div style="padding:20px;color:var(--muted);">Could not load popular songs</div>';
+        }
     }
 }
 
@@ -1111,61 +1232,63 @@ function setupSearchInput() {
     if (!searchInput || searchInput.dataset.enhanced) return;
 
     searchInput.dataset.enhanced = 'true';
+    
+    const genreBrowse = document.getElementById('genreBrowse');
+    const searchResults = document.getElementById('searchResults');
 
     searchInput.oninput = (e) => {
         clearTimeout(searchTimeout);
         const value = e.target.value.trim();
 
         if (!value) {
-            const resultsContainer = document.getElementById('searchResults');
-            if (resultsContainer) resultsContainer.innerHTML = '';
+            if (genreBrowse) genreBrowse.style.display = 'block';
+            if (searchResults) {
+                searchResults.style.display = 'none';
+                searchResults.innerHTML = '';
+            }
             return;
         }
+
+        if (genreBrowse) genreBrowse.style.display = 'none';
+        if (searchResults) searchResults.style.display = 'block';
 
         searchTimeout = setTimeout(async () => {
             const videoId = extractYouTubeVideoId(value);
 
-if (videoId) {
-    e.target.value = '';
-    showNotification("Loading video...");
-    
-    // Fetch metadata BEFORE playing
-    const song = {
-        id: videoId,
-        title: "Loading...",
-        artist: "YouTube",
-        art: `https://img.youtube.com/vi/${videoId}/mqdefault.jpg`
-    };
-    
-    // Fetch the real title first
-    fetch(`https://www.googleapis.com/youtube/v3/videos?part=snippet&id=${videoId}&key=${getNextKey()}`)
-        .then(r => r.json())
-        .then(data => {
-            const item = data.items?.[0];
-            if (item?.snippet) {
-                song.title = item.snippet.title;
-                song.artist = item.snippet.channelTitle;
-                saveMetadataToCache(videoId, song.title, song.artist);
-            }
-            playSong(song);
-            showNotification("Playing pasted video!");
-        })
-        .catch(err => {
-            console.error("Error fetching video details:", err);
-            playSong(song);
-            showNotification("Playing video (couldn't fetch title)");
-        });
-} else if (value.length >= 3) {
+            if (videoId) {
+                e.target.value = '';
+                showNotification("Loading video...");
+                
+                const song = {
+                    id: videoId,
+                    title: "Loading...",
+                    artist: "YouTube",
+                    art: `https://img.youtube.com/vi/${videoId}/mqdefault.jpg`
+                };
+                
+                // Try to get metadata
                 try {
-                    const [videos, playlists] = await Promise.all([
-                        fetch(`https://www.googleapis.com/youtube/v3/search?part=snippet&type=video&videoCategoryId=10&maxResults=10&q=${encodeURIComponent(value)}&key=${getNextKey()}`).then(r => r.json()),
-                        fetch(`https://www.googleapis.com/youtube/v3/search?part=snippet&type=playlist&maxResults=4&q=${encodeURIComponent(value + ' album')}&key=${getNextKey()}`).then(r => r.json())
-                    ]);
-                    renderSearchResults(videos, playlists);
-                } catch (error) {
-                    console.error("Search error:", error);
-                    showNotification("Search failed");
+                    const response = await fetch(`https://www.googleapis.com/youtube/v3/videos?part=snippet&id=${videoId}&key=${getNextKey()}`);
+                    if (response.ok) {
+                        const data = await response.json();
+                        const item = data.items?.[0];
+                        if (item?.snippet) {
+                            song.title = item.snippet.title;
+                            song.artist = item.snippet.channelTitle;
+                        }
+                    }
+                } catch (err) {
+                    console.log("Could not fetch metadata");
                 }
+                
+                playSong(song);
+                showNotification("Playing video!");
+                return;
+            } 
+            
+            if (value.length >= 2) {
+                // Always use Deezer for search (no quota issues)
+                runDeezerSearch(value);
             }
         }, 500);
     };
@@ -1174,41 +1297,18 @@ if (videoId) {
         if (e.key === 'Enter') {
             clearTimeout(searchTimeout);
             const value = searchInput.value.trim();
+            if (!value) return;
+            
             const videoId = extractYouTubeVideoId(value);
-
-if (videoId) {
-    e.target.value = '';
-    showNotification("Loading video...");
-    
-    // Fetch metadata BEFORE playing
-    const song = {
-        id: videoId,
-        title: "Loading...",
-        artist: "YouTube",
-        art: `https://img.youtube.com/vi/${videoId}/mqdefault.jpg`
-    };
-    
-    // Fetch the real title first
-    fetch(`https://www.googleapis.com/youtube/v3/videos?part=snippet&id=${videoId}&key=${getNextKey()}`)
-        .then(r => r.json())
-        .then(data => {
-            const item = data.items?.[0];
-            if (item?.snippet) {
-                song.title = item.snippet.title;
-                song.artist = item.snippet.channelTitle;
-                saveMetadataToCache(videoId, song.title, song.artist);
+            if (videoId) {
+                searchInput.dispatchEvent(new Event('input'));
+            } else if (value.length >= 2) {
+                runDeezerSearch(value);
             }
-            playSong(song);
-            showNotification("Playing pasted video!");
-        })
-        .catch(err => {
-            console.error("Error fetching video details:", err);
-            playSong(song);
-            showNotification("Playing video (couldn't fetch title)");
-        });
-}
         }
     });
+    
+    renderGenreBrowse();
 }
 
 // ────────────────────────────────────────
@@ -1273,10 +1373,41 @@ async function renderAlbums() {
     const uniqueArtists = [...new Set(recent.map(s => s.artist).filter(Boolean))].slice(0, 3);
     
     if (uniqueArtists.length === 0) {
+        // No recent artists, show Deezer chart albums instead
+        try {
+            const data = await fetch(
+                `https://corsproxy.io/?${encodeURIComponent('https://api.deezer.com/chart/0/albums?limit=8')}`
+            );
+            const result = await data.json();
+            const albums = result.data || [];
+            
+            if (albums.length > 0) {
+                container.innerHTML = '';
+                albums.forEach(album => {
+                    const div = document.createElement('div');
+                    div.className = 'album-card';
+                    div.innerHTML = `
+                        <img src="${album.cover_medium || album.cover}" alt="">
+                        <div class="album-title">${escapeHtml(album.title)}</div>
+                        <div class="album-artist">${escapeHtml(album.artist?.name || '')}</div>
+                    `;
+                    div.onclick = () => {
+                        // Open album view
+                        showNotification("Opening album...");
+                    };
+                    container.appendChild(div);
+                });
+                return;
+            }
+        } catch (e) {
+            console.error("Deezer albums failed:", e);
+        }
+        
         container.innerHTML = '<div style="padding:20px;color:var(--muted);">Play some songs to see album recommendations</div>';
         return;
     }
     
+    // Try YouTube first
     try {
         const albumPromises = uniqueArtists.map(artist =>
             cachedFetch(
@@ -1288,26 +1419,53 @@ async function renderAlbums() {
         const results = await Promise.all(albumPromises);
         const albums = results.flatMap(data => data?.items || []).slice(0, 6);
         
-        container.innerHTML = '';
-        
-        if (albums.length === 0) {
-            container.innerHTML = '<div style="padding:20px;color:var(--muted);">No albums found</div>';
+        if (albums.length > 0) {
+            container.innerHTML = '';
+            albums.forEach(item => {
+                const div = document.createElement('div');
+                div.className = 'album-card';
+                div.innerHTML = `
+                    <img src="${item.snippet.thumbnails.medium.url}" alt="">
+                    <div class="album-title">${escapeHtml(item.snippet.title)}</div>
+                    <div class="album-artist">${escapeHtml(item.snippet.channelTitle)}</div>
+                `;
+                div.onclick = () => playPlaylist(item.id.playlistId, true);
+                container.appendChild(div);
+            });
             return;
         }
-        
-        albums.forEach(item => {
-            const div = document.createElement('div');
-            div.className = 'album-card';
-            div.innerHTML = `
-                <img src="${item.snippet.thumbnails.medium.url}" alt="">
-                <div class="album-title">${escapeHtml(item.snippet.title)}</div>
-                <div class="album-artist">${escapeHtml(item.snippet.channelTitle)}</div>
-            `;
-            div.onclick = () => playPlaylist(item.id.playlistId, true);
-            container.appendChild(div);
-        });
     } catch (error) {
-        console.error("Album fetch error:", error);
+        console.error("YouTube album fetch error:", error);
+    }
+    
+    // Fallback to Deezer
+    try {
+        const data = await fetch(
+            `https://corsproxy.io/?${encodeURIComponent('https://api.deezer.com/search/album?q=' + encodeURIComponent(uniqueArtists[0] || 'pop') + '&limit=8')}`
+        );
+        const result = await data.json();
+        const albums = result.data || [];
+        
+        if (albums.length > 0) {
+            container.innerHTML = '';
+            albums.slice(0, 6).forEach(album => {
+                const div = document.createElement('div');
+                div.className = 'album-card';
+                div.innerHTML = `
+                    <img src="${album.cover_medium || album.cover}" alt="">
+                    <div class="album-title">${escapeHtml(album.title)}</div>
+                    <div class="album-artist">${escapeHtml(album.artist?.name || '')}</div>
+                `;
+                div.onclick = () => {
+                    showNotification("Opening album...");
+                };
+                container.appendChild(div);
+            });
+        } else {
+            container.innerHTML = '<div style="padding:20px;color:var(--muted);">No albums found</div>';
+        }
+    } catch (error) {
+        console.error("Deezer album fallback error:", error);
         container.innerHTML = '<div style="padding:20px;color:var(--muted);">Could not load albums</div>';
     }
 }
@@ -4311,6 +4469,174 @@ function setupSearchInput() {
     renderGenreBrowse();
 }
 
+async function runDeezerSearch(query) {
+    const container = document.getElementById('searchResults');
+    if (!container) return;
+    
+    container.innerHTML = '<div style="padding:40px;text-align:center;color:var(--muted);"><div style="font-size:32px;margin-bottom:12px;">🔍</div>Searching Deezer...</div>';
+
+    try {
+// Search for tracks
+const tracksResponse = await fetch(`https://api.allorigins.win/raw?url=${encodeURIComponent('https://api.deezer.com/search?q=' + encodeURIComponent(query) + '&limit=25&order=RANKING')}`);
+const tracksData = await tracksResponse.json();
+
+// Search for albums
+const albumsResponse = await fetch(`https://api.allorigins.win/raw?url=${encodeURIComponent('https://api.deezer.com/search/album?q=' + encodeURIComponent(query) + '&limit=12&order=RANKING')}`);
+const albumsData = await albumsResponse.json();
+
+// Search for artists
+const artistsResponse = await fetch(`https://api.allorigins.win/raw?url=${encodeURIComponent('https://api.deezer.com/search/artist?q=' + encodeURIComponent(query) + '&limit=8&order=RANKING')}`);
+const artistsData = await artistsResponse.json();
+
+        // Clear container
+        container.innerHTML = '';
+        
+        // Add a note that we're using Deezer (since YouTube quota is exhausted)
+        const note = document.createElement('div');
+        note.style.cssText = `
+            background: rgba(255, 200, 0, 0.1);
+            border: 1px solid rgba(255, 200, 0, 0.3);
+            border-radius: 8px;
+            padding: 12px 16px;
+            margin-bottom: 20px;
+            font-size: 13px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        `;
+        note.innerHTML = `
+            <span style="font-size: 18px;">🎵</span>
+            <span>Showing results from Deezer (YouTube quota reached). Click any song to play via YouTube search.</span>
+        `;
+        container.appendChild(note);
+        
+        // Artists Section
+        if (artistsData.data && artistsData.data.length > 0) {
+            const artistSection = document.createElement('div');
+            artistSection.className = 'section';
+            artistSection.innerHTML = '<div class="section-header"><h2>Artists</h2></div><div class="scroll-container" style="display:flex;gap:16px;overflow-x:auto;padding:8px 0;"></div>';
+            
+            const scroll = artistSection.querySelector('.scroll-container');
+            artistsData.data.slice(0, 8).forEach(artist => {
+                const div = document.createElement('div');
+                div.style.cssText = 'min-width:140px;cursor:pointer;';
+                div.innerHTML = `
+                    <img src="${artist.picture_medium || ''}" style="width:140px;height:140px;border-radius:50%;object-fit:cover;margin-bottom:8px;" onerror="this.src='https://via.placeholder.com/140?text=${encodeURIComponent(artist.name.charAt(0))}'">
+                    <div style="font-weight:600;text-align:center;">${escapeHtml(artist.name)}</div>
+                    <div style="font-size:12px;color:var(--muted);text-align:center;">${artist.nb_fan?.toLocaleString() || ''} fans</div>
+                `;
+                div.onclick = () => {
+                    const searchInput = document.getElementById('searchInput');
+                    if (searchInput) {
+                        searchInput.value = artist.name;
+                        searchInput.dispatchEvent(new Event('input'));
+                    }
+                };
+                scroll?.appendChild(div);
+            });
+            container.appendChild(artistSection);
+        }
+
+        // Albums Section
+        if (albumsData.data && albumsData.data.length > 0) {
+            const albumSection = document.createElement('div');
+            albumSection.className = 'section';
+            albumSection.innerHTML = '<div class="section-header"><h2>Albums</h2></div><div class="scroll-container" style="display:flex;gap:16px;overflow-x:auto;padding:8px 0;"></div>';
+            
+            const scroll = albumSection.querySelector('.scroll-container');
+            albumsData.data.slice(0, 10).forEach(album => {
+                const div = document.createElement('div');
+                div.style.cssText = 'min-width:140px;cursor:pointer;';
+                div.innerHTML = `
+                    <img src="${album.cover_medium || album.cover || ''}" style="width:140px;height:140px;border-radius:8px;object-fit:cover;margin-bottom:8px;">
+                    <div style="font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${escapeHtml(album.title)}</div>
+                    <div style="font-size:12px;color:var(--muted);">${escapeHtml(album.artist?.name || '')}</div>
+                `;
+                div.onclick = () => {
+                    const searchInput = document.getElementById('searchInput');
+                    if (searchInput) {
+                        searchInput.value = album.artist?.name || '';
+                        searchInput.dispatchEvent(new Event('input'));
+                    }
+                };
+                scroll?.appendChild(div);
+            });
+            container.appendChild(albumSection);
+        }
+
+        // Tracks Section
+        if (tracksData.data && tracksData.data.length > 0) {
+            const trackSection = document.createElement('div');
+            trackSection.className = 'section';
+            trackSection.innerHTML = '<div class="section-header"><h2>Songs</h2></div><div style="display:flex;flex-direction:column;gap:8px;"></div>';
+            
+            const trackList = trackSection.querySelector('div:last-child');
+            tracksData.data.slice(0, 20).forEach(track => {
+                const song = {
+                    id: 'dz_' + track.id,
+                    title: track.title_short || track.title,
+                    artist: track.artist?.name || 'Unknown',
+                    art: track.album?.cover_medium || track.album?.cover || '',
+                };
+
+                const div = document.createElement('div');
+                div.style.cssText = `
+                    display:flex;
+                    align-items:center;
+                    gap:12px;
+                    padding:8px 12px;
+                    background:rgba(255,255,255,0.03);
+                    border:1px solid rgba(255,255,255,0.06);
+                    border-radius:8px;
+                    cursor:pointer;
+                    transition:all 0.2s ease;
+                `;
+                div.onmouseover = () => { div.style.background = 'rgba(255,255,255,0.06)'; };
+                div.onmouseout = () => { div.style.background = 'rgba(255,255,255,0.03)'; };
+                
+                div.innerHTML = `
+                    <img src="${song.art}" style="width:48px;height:48px;border-radius:4px;object-fit:cover;" onerror="this.src='https://via.placeholder.com/48?text=${encodeURIComponent(song.title.charAt(0))}'">
+                    <div style="flex:1;min-width:0;">
+                        <div style="font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${escapeHtml(song.title)}</div>
+                        <div style="font-size:13px;color:var(--muted);">${escapeHtml(song.artist)}</div>
+                    </div>
+                    <div style="display:flex;gap:8px;">
+                        <button class="search-action-btn play-btn" style="width:36px;height:36px;border-radius:50%;background:rgba(255,255,255,0.1);border:none;color:white;cursor:pointer;">▶</button>
+                        <button class="search-action-btn" style="width:36px;height:36px;border-radius:50%;background:rgba(255,255,255,0.1);border:none;color:white;cursor:pointer;">+</button>
+                    </div>
+                `;
+                
+                // Add click handlers
+                const playBtn = div.querySelector('.play-btn');
+                playBtn.onclick = (e) => {
+                    e.stopPropagation();
+                    playSong(song);
+                };
+                
+                const queueBtn = div.querySelectorAll('button')[1];
+                queueBtn.onclick = (e) => {
+                    e.stopPropagation();
+                    addToQueue(song);
+                    showNotification(`Added "${song.title}" to queue`);
+                };
+                
+                div.onclick = () => playSong(song);
+                trackList?.appendChild(div);
+            });
+            container.appendChild(trackSection);
+        }
+
+        if ((!tracksData.data || tracksData.data.length === 0) && 
+            (!albumsData.data || albumsData.data.length === 0) && 
+            (!artistsData.data || artistsData.data.length === 0)) {
+            container.innerHTML = '<div style="padding:40px;text-align:center;color:var(--muted);">No results found</div>';
+        }
+        
+    } catch (error) {
+        console.error("Deezer search error:", error);
+        container.innerHTML = '<div style="padding:40px;text-align:center;color:var(--muted);">Search failed - please try again</div>';
+    }
+}
 // Update showSearch to show genre browse initially
 function showSearch() {
     const homeView = document.getElementById('homeView');
@@ -6545,3 +6871,34 @@ setTimeout(() => {
 
     console.log('✓ Jam button added');
 }, 2500); // Slightly after auth button renders
+
+// Helper to show preview badge
+function showPreviewBadge() {
+    let badge = document.getElementById('previewBadge');
+    if (!badge) {
+        badge = document.createElement('span');
+        badge.id = 'previewBadge';
+        badge.textContent = 'PREVIEW';
+        badge.style.cssText = `
+            background: rgba(255,200,0,0.2);
+            border: 1px solid rgba(255,200,0,0.4);
+            color: #ffd700;
+            font-size: 10px;
+            font-weight: 700;
+            padding: 2px 8px;
+            border-radius: 20px;
+            margin-left: 8px;
+        `;
+        const npTitle = document.getElementById('npTitle');
+        npTitle?.parentNode?.insertBefore(badge, npTitle.nextSibling);
+    }
+    badge.style.display = 'inline-block';
+}
+
+function hidePreviewBadge() {
+    const badge = document.getElementById('previewBadge');
+    if (badge) badge.style.display = 'none';
+}
+
+// Add to global scope
+window.runDeezerSearch = runDeezerSearch;
