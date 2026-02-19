@@ -331,13 +331,17 @@ function initializeApp() {
     recent = load("recent", []);
     playlists = load("playlists", {});
     liked = load("liked", []);
-    queue = load('queue', []);
+    queue = load('queue', []); // Make sure this line exists
     savedAlbums = load('indy_saved_albums', {});
     listeningStats = load('listening_stats', {
         songsPlayed: 0,
         totalMinutes: 0,
         lastUpdated: Date.now()
     });
+
+    // Initialize queue index from saved state
+    const savedQueueIndex = load('queue_index', 0);
+    queueIndex = savedQueueIndex;
 
     // Initialize Liked Songs playlist
     if (!playlists["Liked Songs"]) {
@@ -543,13 +547,88 @@ window.onYouTubeIframeAPIReady = function() {
 
 function onPlayerStateChange(event) {
     if (event.data === window.YT.PlayerState.ENDED) {
-        // Song ended, check repeat mode and queue
+        console.log("Song ended, handling next track...");
+        
+        // Check repeat mode
         if (repeatMode === 'one') {
             // Replay current song
+            console.log("Repeat one - replaying current song");
             playSong(currentPlayingSong);
         } else {
-            // Try to play next
-            skipToNext();
+            // Try to play next - with proper queue handling
+            handleNextSong();
+        }
+    } else if (event.data === window.YT.PlayerState.PLAYING) {
+        console.log("Song started playing");
+        // Update playing state if needed
+    } else if (event.data === window.YT.PlayerState.PAUSED) {
+        console.log("Song paused");
+    } else if (event.data === window.YT.PlayerState.BUFFERING) {
+        console.log("Buffering...");
+    }
+}
+
+// Add this new function
+function handleNextSong() {
+    // Check if we're playing from queue
+    if (queue.length > 0) {
+        // Check if current song is in queue
+        const currentInQueue = currentPlayingSong && queue.some(s => s.id === currentPlayingSong.id);
+        
+        if (currentInQueue) {
+            // Find current song's position in queue
+            const currentQueuePos = queue.findIndex(s => s.id === currentPlayingSong.id);
+            
+            if (currentQueuePos !== -1 && currentQueuePos < queue.length - 1) {
+                // Play next song in queue
+                console.log("Playing next song in queue");
+                queueIndex = currentQueuePos + 1;
+                playSong(queue[queueIndex]);
+                return;
+            } else if (repeatMode === 'all' && queue.length > 0) {
+                // Loop back to start of queue
+                console.log("Looping queue back to start");
+                queueIndex = 0;
+                playSong(queue[0]);
+                return;
+            } else {
+                // End of queue reached
+                console.log("End of queue reached");
+                if (queue.length > 0) {
+                    showNotification("End of queue");
+                }
+            }
+        }
+    }
+    
+    // If not in queue mode or queue ended, handle regular playlist/single mode
+    if (shuffleMode && currentSongs.length > 1) {
+        // Pick random song (not current)
+        let newIndex;
+        do {
+            newIndex = Math.floor(Math.random() * currentSongs.length);
+        } while (newIndex === currentIndex && currentSongs.length > 1);
+        
+        console.log("Shuffle mode - playing random song");
+        currentIndex = newIndex;
+        playSong(currentSongs[currentIndex]);
+        return;
+    }
+    
+    // Regular sequential playback
+    if (currentIndex < currentSongs.length - 1) {
+        console.log("Playing next song in playlist");
+        currentIndex++;
+        playSong(currentSongs[currentIndex]);
+    } else if (repeatMode === 'all' && currentSongs.length > 0) {
+        console.log("Repeat all - looping to start");
+        currentIndex = 0;
+        playSong(currentSongs[currentIndex]);
+    } else {
+        console.log("No more songs to play");
+        // No more songs to play
+        if (currentPlayingSong) {
+            showNotification("End of playlist/queue");
         }
     }
 }
@@ -782,6 +861,7 @@ async function playSong(song, fromPlaylist = null) {
     lastPlayedVideoId = song.id;
     currentPlayingSong = { ...song };
 
+
     // Update playback context - IMPORTANT: Check if we're playing from queue
     if (fromPlaylist && fromPlaylist !== 'queue') {
         currentPlaylist = fromPlaylist;
@@ -793,20 +873,32 @@ async function playSong(song, fromPlaylist = null) {
         currentPlaylist = null;
         currentSongs = [...queue];
     } else {
-        // Not from playlist, check if we're in queue mode
-        const queueIdx = queue.findIndex(s => s.id === song.id);
-        if (queueIdx !== -1) {
-            // This song is in queue, set queue as current source
-            queueIndex = queueIdx;
-            currentSongs = [...queue];
-            currentIndex = queueIdx;
-            currentPlaylist = null;
-        } else {
-            // Just playing a single song
-            const idx = currentSongs.findIndex(s => s.id === song.id);
-            if (idx !== -1) currentIndex = idx;
-        }
+    // UPDATE THIS SECTION - Fix queue detection logic
+    // Check if we're playing from queue
+    const queueIdx = queue.findIndex(s => s.id === song.id);
+    if (queueIdx !== -1) {
+        // This song is in queue, set queue as current source
+        queueIndex = queueIdx;
+        currentSongs = [...queue];
+        currentIndex = queueIdx;
+        currentPlaylist = null;
+        fromPlaylist = 'queue'; // Mark as queue playback
+    } else if (fromPlaylist && fromPlaylist !== 'queue') {
+        currentPlaylist = fromPlaylist;
+        currentSongs = playlists[fromPlaylist]?.songs || [];
+        currentIndex = currentSongs.findIndex(s => s.id === song.id);
+        if (currentIndex === -1) currentIndex = 0;
+    } else {
+        // Not from playlist or queue
+        const idx = currentSongs.findIndex(s => s.id === song.id);
+        if (idx !== -1) currentIndex = idx;
     }
+    }
+
+    // Inside playSong function, after setting queueIndex if playing from queue
+if (fromPlaylist === 'queue' || queue.some(s => s.id === song.id)) {
+    save('queue_index', queueIndex);
+}
 
     // Hide video error overlay if showing
     hideVideoError();
@@ -896,26 +988,38 @@ async function playSong(song, fromPlaylist = null) {
 }
 
 function skipToNext() {
+    console.log("Skip to next called");
+    
     if (repeatMode === 'one' && currentPlayingSong) {
         // Replay current song
+        console.log("Repeat one - replaying current");
         playSong(currentPlayingSong);
         return;
     }
     
     // Check if we're playing from queue
-    if (queue.length > 0 && currentPlayingSong && queue.some(s => s.id === currentPlayingSong.id)) {
-        // We're in queue mode
-        if (moveToNextInQueue()) {
+    const currentInQueue = currentPlayingSong && queue.some(s => s.id === currentPlayingSong.id);
+    
+    if (currentInQueue) {
+        // Find current song's position in queue
+        const currentQueuePos = queue.findIndex(s => s.id === currentPlayingSong.id);
+        
+        if (currentQueuePos !== -1 && currentQueuePos < queue.length - 1) {
+            // Play next song in queue
+            console.log("Skip to next in queue");
+            queueIndex = currentQueuePos + 1;
+            playSong(queue[queueIndex]);
             return;
         } else if (repeatMode === 'all' && queue.length > 0) {
             // Loop back to start of queue
+            console.log("Skip to next - looping queue");
             queueIndex = 0;
-            playFromQueue(0);
+            playSong(queue[0]);
             return;
         }
     }
     
-    // Not in queue mode, handle playlist or single song
+    // Not in queue mode or at end of queue, handle playlist or single song
     if (shuffleMode && currentSongs.length > 1) {
         // Pick random song (not current)
         let newIndex;
@@ -923,17 +1027,23 @@ function skipToNext() {
             newIndex = Math.floor(Math.random() * currentSongs.length);
         } while (newIndex === currentIndex && currentSongs.length > 1);
         
+        console.log("Skip to next - shuffle mode");
         currentIndex = newIndex;
         playSong(currentSongs[currentIndex]);
         return;
     }
     
     if (currentIndex < currentSongs.length - 1) {
+        console.log("Skip to next in playlist");
         currentIndex++;
         playSong(currentSongs[currentIndex]);
     } else if (repeatMode === 'all' && currentSongs.length > 0) {
+        console.log("Skip to next - repeat all");
         currentIndex = 0;
         playSong(currentSongs[currentIndex]);
+    } else {
+        console.log("Skip to next - no more songs");
+        showNotification("No more songs in queue/playlist");
     }
 }
 
@@ -2677,9 +2787,10 @@ function clearQueue() {
         queue = [];
         queueIndex = 0;
         save('queue', queue);
+        save('queue_index', 0);
         renderQueue();
         showNotification("Queue cleared");
-        // Keep playing current song
+        // Keep playing current song if any
     }
 }
 
