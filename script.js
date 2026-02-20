@@ -603,6 +603,7 @@ window.onYouTubeIframeAPIReady = function() {
             'autoplay': 1,
             'controls': 1,
             'rel': 0,
+            'showinfo': 0,
             'modestbranding': 1,
             'iv_load_policy': 3,
             'fs': 1,
@@ -637,13 +638,8 @@ window.onYouTubeIframeAPIReady = function() {
 function onPlayerStateChange(event) {
     if (event.data === window.YT.PlayerState.ENDED) {
         console.log("Song ended, handling next track...");
-
-        // Reset so the duplicate-play guard in playSong doesn't block the next load
-        lastPlayedVideoId = null;
-
-        // NOTE: Do NOT call stopVideo() here — it causes YouTube to briefly
-        // render the recommendations end screen before the next song loads.
-        // Loading the next video immediately via loadVideoById suppresses it.
+        // Do NOT call stopVideo() — it triggers the recommendations end screen.
+        // Instead, immediately determine and load the next video.
         if (repeatMode === 'one') {
             playSong(currentPlayingSong);
         } else {
