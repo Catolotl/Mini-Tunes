@@ -5,7 +5,7 @@
 // ────────────────────────────────────────
 // CONFIGURATION & CONSTANTS
 // ────────────────────────────────────────
-const GROQ_API_KEY = "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";
+const GROQ_API_KEY = "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";
 const YOUTUBE_API_KEY = "AIzaSyDNd7dwB1rZEpJzpyRrVZQwSKHvnt3Q7vQ";
 const CACHE_TTL = 24 * 60 * 60 * 1000; // 24 hours
 const UPDATE_KEY = "tunes_datasaving_update_v1";
