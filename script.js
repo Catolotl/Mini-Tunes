@@ -71,37 +71,22 @@ function load(key, def) {
     }
 }
 
-let _notifTimeout = null;
 function showNotification(message) {
-    // Reuse or create a single persistent toast element
-    let notif = document.getElementById('_indy_notif');
-    if (!notif) {
-        notif = document.createElement('div');
-        notif.id = '_indy_notif';
-        notif.style.cssText = `
-            position: fixed; bottom: 28px; left: 50%; transform: translateX(-50%) translateY(20px);
-            background: rgba(22,22,26,0.96); backdrop-filter: saturate(180%) blur(32px);
-            color: rgba(255,255,255,0.92); padding: 12px 22px; border-radius: 14px;
-            font-family: -apple-system,"SF Pro Text","Helvetica Neue",sans-serif;
-            font-size: 13px; font-weight: 500; letter-spacing: -0.01em;
-            box-shadow: 0 8px 32px rgba(0,0,0,0.6), inset 0 1px 0 rgba(255,255,255,0.08);
-            border: 1px solid rgba(255,255,255,0.10);
-            z-index: 100000; opacity: 0; pointer-events: none;
-            transition: opacity 0.2s ease, transform 0.2s cubic-bezier(0.4,0,0.2,1);
-            white-space: nowrap; max-width: 320px;
-        `;
-        document.body.appendChild(notif);
-    }
-    
+    const notif = document.createElement('div');
+    notif.style.cssText = `
+        position: fixed; top: 24px; right: 24px;
+        background: rgba(0,0,0,.95); backdrop-filter: blur(10px);
+        color: white; padding: 16px 24px; border-radius: 8px;
+        box-shadow: 0 8px 32px rgba(0,0,0,.5); z-index: 10000;
+        animation: slideIn 0.3s ease;
+    `;
     notif.textContent = message;
-    notif.style.opacity = '1';
-    notif.style.transform = 'translateX(-50%) translateY(0)';
+    document.body.appendChild(notif);
     
-    clearTimeout(_notifTimeout);
-    _notifTimeout = setTimeout(() => {
-        notif.style.opacity = '0';
-        notif.style.transform = 'translateX(-50%) translateY(8px)';
-    }, 2200);
+    setTimeout(() => {
+        notif.style.animation = 'slideOut 0.3s ease';
+        setTimeout(() => notif.remove(), 300);
+    }, 2000);
 }
 
 // ────────────────────────────────────────
@@ -338,7 +323,7 @@ function showHome() {
     
     // Setup search input
     setTimeout(setupSearchInput, 100);
-    // ✦ Removed window.location.reload() — that caused full page refresh on every home navigation
+    window.location.reload();
 }
 
 function initializeApp() {
@@ -538,121 +523,124 @@ function loadYouTubeAPI() {
     }
 }
 window.onYouTubeIframeAPIReady = function() {
+    console.log('YouTube IFrame API fully ready');
     playerReady = true;
     
     ytPlayer = new YT.Player('player', {
         playerVars: {
             'autoplay': 1,
             'controls': 1,
-            'rel': 0,
-            'modestbranding': 1,
-            'iv_load_policy': 3,
+            'rel': 0,              // ← PREVENTS RELATED VIDEOS
+            'modestbranding': 1,    // ← REDUCES YOUTUBE BRANDING
+            'iv_load_policy': 3,    // ← HIDES ANNOTATIONS
             'fs': 1,
             'playsinline': 1,
-            'enablejsapi': 1,
-            'origin': window.location.origin
+            'enablejsapi': 1
         },
         events: {
-            'onReady': (e) => {
+            'onReady': () => {
+                console.log('Player ready');
                 if (pendingVideo) {
-                    ytPlayer.loadVideoById({ videoId: pendingVideo });
+                    ytPlayer.loadVideoById(pendingVideo);
                     pendingVideo = null;
                 }
             },
             'onStateChange': onPlayerStateChange,
             'onError': (e) => {
-                // Error 150 = video not embeddable, skip to next
-                if (e.data === 150 || e.data === 101) {
-                    showNotification("Song unavailable — skipping ⏭");
-                    setTimeout(() => { lastPlayedVideoId = null; handleNextSong(); }, 800);
-                } else {
-                    showVideoError();
-                }
+                console.error('YT Player error:', e.data);
+                showVideoError();
             }
         }
     });
 };
 
-// ✦ Global play/pause toggle — called by the play button in the player UI
-function togglePlayPause() {
-    if (!ytPlayer || typeof ytPlayer.getPlayerState !== 'function') return;
-    const state = ytPlayer.getPlayerState();
-    if (state === YT.PlayerState.PLAYING) {
-        ytPlayer.pauseVideo();
-    } else {
-        ytPlayer.playVideo();
-    }
-}
-window.togglePlayPause = togglePlayPause;
-
 function onPlayerStateChange(event) {
     if (event.data === window.YT.PlayerState.ENDED) {
-        // ✦ DO NOT call stopVideo() here — that's what shows the recommendations screen.
-        // Instead, immediately queue up the next track so YouTube never idles.
+        console.log("Song ended, handling next track...");
+        
+        // Force the player to not show anything
+        if (ytPlayer && typeof ytPlayer.stopVideo === 'function') {
+            ytPlayer.stopVideo();  // This clears the player
+        }
+        
+        // Check repeat mode
         if (repeatMode === 'one') {
-            // Reset dedup guard so repeat-one actually replays
-            lastPlayedVideoId = null;
+            console.log("Repeat one - replaying current song");
             playSong(currentPlayingSong);
         } else {
             handleNextSong();
         }
     } else if (event.data === window.YT.PlayerState.PLAYING) {
-        // Update play button icon to pause
-        const playBtn = document.querySelector('.control-btn.play');
-        if (playBtn) playBtn.innerHTML = '⏸';
+        console.log("Song started playing");
+        // Update playing state if needed
     } else if (event.data === window.YT.PlayerState.PAUSED) {
-        const playBtn = document.querySelector('.control-btn.play');
-        if (playBtn) playBtn.innerHTML = '▶';
+        console.log("Song paused");
+    } else if (event.data === window.YT.PlayerState.BUFFERING) {
+        console.log("Buffering...");
     }
 }
 
 // Add this new function
 function handleNextSong() {
-    // ✦ Clear dedup guard — next song must be allowed to play even if same id somehow
-    lastPlayedVideoId = null;
-
-    // Queue takes priority
-    if (queue.length > 0 && currentPlayingSong) {
-        const currentQueuePos = queue.findIndex(s => s.id === currentPlayingSong.id);
+    // Check if we're playing from queue
+    if (queue.length > 0) {
+        // Check if current song is in queue
+        const currentInQueue = currentPlayingSong && queue.some(s => s.id === currentPlayingSong.id);
         
-        if (currentQueuePos !== -1) {
-            if (currentQueuePos < queue.length - 1) {
+        if (currentInQueue) {
+            // Find current song's position in queue
+            const currentQueuePos = queue.findIndex(s => s.id === currentPlayingSong.id);
+            
+            if (currentQueuePos !== -1 && currentQueuePos < queue.length - 1) {
+                // Play next song in queue
+                console.log("Playing next song in queue");
                 queueIndex = currentQueuePos + 1;
-                save('queue_index', queueIndex);
                 playSong(queue[queueIndex]);
                 return;
-            } else if (repeatMode === 'all') {
+            } else if (repeatMode === 'all' && queue.length > 0) {
+                // Loop back to start of queue
+                console.log("Looping queue back to start");
                 queueIndex = 0;
-                save('queue_index', 0);
                 playSong(queue[0]);
                 return;
             } else {
-                showNotification("End of queue");
-                return;
+                // End of queue reached
+                console.log("End of queue reached");
+                if (queue.length > 0) {
+                    showNotification("End of queue");
+                }
             }
         }
     }
     
-    // Shuffle mode
+    // If not in queue mode or queue ended, handle regular playlist/single mode
     if (shuffleMode && currentSongs.length > 1) {
+        // Pick random song (not current)
         let newIndex;
-        do { newIndex = Math.floor(Math.random() * currentSongs.length); }
-        while (newIndex === currentIndex && currentSongs.length > 1);
+        do {
+            newIndex = Math.floor(Math.random() * currentSongs.length);
+        } while (newIndex === currentIndex && currentSongs.length > 1);
+        
+        console.log("Shuffle mode - playing random song");
         currentIndex = newIndex;
         playSong(currentSongs[currentIndex]);
         return;
     }
     
-    // Sequential playlist playback
-    if (currentSongs.length > 0) {
-        if (currentIndex < currentSongs.length - 1) {
-            currentIndex++;
-            playSong(currentSongs[currentIndex]);
-        } else if (repeatMode === 'all') {
-            currentIndex = 0;
-            playSong(currentSongs[0]);
-        } else {
-            showNotification("End of playlist");
+    // Regular sequential playback
+    if (currentIndex < currentSongs.length - 1) {
+        console.log("Playing next song in playlist");
+        currentIndex++;
+        playSong(currentSongs[currentIndex]);
+    } else if (repeatMode === 'all' && currentSongs.length > 0) {
+        console.log("Repeat all - looping to start");
+        currentIndex = 0;
+        playSong(currentSongs[currentIndex]);
+    } else {
+        console.log("No more songs to play");
+        // No more songs to play
+        if (currentPlayingSong) {
+            showNotification("End of playlist/queue");
         }
     }
 }
@@ -877,35 +865,32 @@ async function playSong(song, fromPlaylist = null) {
         return;
     }
     
-    // ✦ Dedup guard: only block if exact same video was triggered within 800ms
-    // (prevents double-fire on click, but allows repeat/queue to work)
-    const now = Date.now();
-    if (lastPlayedVideoId === song.id && window._lastPlayTime && (now - window._lastPlayTime) < 800) {
+    if (lastPlayedVideoId === song.id) {
+        console.log("Already playing this exact video — skipping duplicate call");
         return;
     }
+    
     lastPlayedVideoId = song.id;
-    window._lastPlayTime = now;
     currentPlayingSong = { ...song };
 
-    // Update playback context
+
+    // Update playback context - IMPORTANT: Check if we're playing from queue
     if (fromPlaylist && fromPlaylist !== 'queue') {
         currentPlaylist = fromPlaylist;
         currentSongs = playlists[fromPlaylist]?.songs || [];
         currentIndex = currentSongs.findIndex(s => s.id === song.id);
         if (currentIndex === -1) currentIndex = 0;
     } else if (fromPlaylist === 'queue') {
+        // Playing from queue, keep current queue state
         currentPlaylist = null;
         currentSongs = [...queue];
     } else {
+    // UPDATE THIS SECTION - Fix queue detection logic
     // Check if we're playing from queue
     const queueIdx = queue.findIndex(s => s.id === song.id);
     if (queueIdx !== -1) {
+        // This song is in queue, set queue as current source
         queueIndex = queueIdx;
-        currentSongs = [...queue];
-        currentIndex = queueIdx;
-        currentPlaylist = null;
-        fromPlaylist = 'queue';
-    } else if (fromPlaylist && fromPlaylist !== 'queue') {
         currentSongs = [...queue];
         currentIndex = queueIdx;
         currentPlaylist = null;
@@ -975,22 +960,31 @@ if (fromPlaylist === 'queue' || queue.some(s => s.id === song.id)) {
         fs: 1
     });
 
-// ✦ Load video — endSeconds must NOT be set to 0 (that stops the video at 0s!)
+// Replace the existing video loading code with this:
 if (window.ytPlayer && typeof window.ytPlayer.loadVideoById === 'function') {
     try {
+        // Load with options to prevent related videos
         window.ytPlayer.loadVideoById({
             videoId: song.id,
-            startSeconds: 0
-            // ✦ No endSeconds — omitting it lets the video play to natural end
+            startSeconds: 0,
+            endSeconds: 0,  // Let it play to the end
+            suggestedQuality: 'default'
         });
+        console.log(`Playing "${cleanTitle}" via ytPlayer.loadVideoById`);
     } catch (err) {
         console.error("loadVideoById failed:", err);
+        const embedUrl = `https://www.youtube.com/embed/${song.id}?autoplay=1&enablejsapi=1&rel=0&modestbranding=1&iv_load_policy=3`;
         const playerIframe = document.getElementById('player');
-        if (playerIframe) playerIframe.src = `https://www.youtube.com/embed/${song.id}?autoplay=1&enablejsapi=1&rel=0&modestbranding=1&iv_load_policy=3&origin=${encodeURIComponent(window.location.origin)}`;
+        if (playerIframe) playerIframe.src = embedUrl;
     }
 } else {
+    // Critical: Add rel=0 to prevent related videos
+    const embedUrl = `https://www.youtube.com/embed/${song.id}?autoplay=1&enablejsapi=1&rel=0&modestbranding=1&iv_load_policy=3`;
     const playerIframe = document.getElementById('player');
-    if (playerIframe) playerIframe.src = `https://www.youtube.com/embed/${song.id}?autoplay=1&enablejsapi=1&rel=0&modestbranding=1&iv_load_policy=3&origin=${encodeURIComponent(window.location.origin)}`;
+    if (playerIframe) {
+        playerIframe.src = embedUrl;
+        console.log(`Playing "${cleanTitle}" via direct iframe src with rel=0`);
+    }
 }
 
     // Fetch lyrics for the new song
@@ -1014,69 +1008,73 @@ if (window.ytPlayer && typeof window.ytPlayer.loadVideoById === 'function') {
 }
 
 function skipToNext() {
-    // ✦ Clear dedup guard so next song always plays
-    lastPlayedVideoId = null;
+    console.log("Skip to next called");
     
     if (repeatMode === 'one' && currentPlayingSong) {
+        // Replay current song
+        console.log("Repeat one - replaying current");
         playSong(currentPlayingSong);
         return;
     }
     
-    // Queue takes priority
-    if (queue.length > 0 && currentPlayingSong) {
+    // Check if we're playing from queue
+    const currentInQueue = currentPlayingSong && queue.some(s => s.id === currentPlayingSong.id);
+    
+    if (currentInQueue) {
+        // Find current song's position in queue
         const currentQueuePos = queue.findIndex(s => s.id === currentPlayingSong.id);
-        if (currentQueuePos !== -1) {
-            if (currentQueuePos < queue.length - 1) {
-                queueIndex = currentQueuePos + 1;
-                playSong(queue[queueIndex]);
-                return;
-            } else if (repeatMode === 'all') {
-                queueIndex = 0;
-                playSong(queue[0]);
-                return;
-            }
+        
+        if (currentQueuePos !== -1 && currentQueuePos < queue.length - 1) {
+            // Play next song in queue
+            console.log("Skip to next in queue");
+            queueIndex = currentQueuePos + 1;
+            playSong(queue[queueIndex]);
+            return;
+        } else if (repeatMode === 'all' && queue.length > 0) {
+            // Loop back to start of queue
+            console.log("Skip to next - looping queue");
+            queueIndex = 0;
+            playSong(queue[0]);
+            return;
         }
     }
     
+    // Not in queue mode or at end of queue, handle playlist or single song
     if (shuffleMode && currentSongs.length > 1) {
+        // Pick random song (not current)
         let newIndex;
-        do { newIndex = Math.floor(Math.random() * currentSongs.length); }
-        while (newIndex === currentIndex && currentSongs.length > 1);
+        do {
+            newIndex = Math.floor(Math.random() * currentSongs.length);
+        } while (newIndex === currentIndex && currentSongs.length > 1);
+        
+        console.log("Skip to next - shuffle mode");
         currentIndex = newIndex;
         playSong(currentSongs[currentIndex]);
         return;
     }
     
     if (currentIndex < currentSongs.length - 1) {
+        console.log("Skip to next in playlist");
         currentIndex++;
         playSong(currentSongs[currentIndex]);
     } else if (repeatMode === 'all' && currentSongs.length > 0) {
+        console.log("Skip to next - repeat all");
         currentIndex = 0;
-        playSong(currentSongs[0]);
+        playSong(currentSongs[currentIndex]);
     } else {
-        showNotification("No more songs");
+        console.log("Skip to next - no more songs");
+        showNotification("No more songs in queue/playlist");
     }
 }
 
 function skipToPrevious() {
-    // ✦ If we're >3s in, restart current song instead of going back
-    if (ytPlayer && typeof ytPlayer.getCurrentTime === 'function' && ytPlayer.getCurrentTime() > 3) {
-        ytPlayer.seekTo(0);
+    // Check if we're playing from queue
+    if (queue.length > 0 && currentPlayingSong && queue.some(s => s.id === currentPlayingSong.id)) {
+        moveToPreviousInQueue();
         return;
     }
     
-    lastPlayedVideoId = null;
-    
-    // Queue mode
-    if (queue.length > 0 && currentPlayingSong) {
-        const currentQueuePos = queue.findIndex(s => s.id === currentPlayingSong.id);
-        if (currentQueuePos > 0) {
-            queueIndex = currentQueuePos - 1;
-            playSong(queue[queueIndex]);
-            return;
-        }
-    }
-    
+    // Not in queue mode
     if (currentIndex > 0) {
         currentIndex--;
         playSong(currentSongs[currentIndex]);
@@ -1089,18 +1087,15 @@ function showToast(song) {
     
     const toastImg = document.getElementById('toastImg');
     const toastTitle = document.getElementById('toastTitle');
-    const toastArtist = document.getElementById('toastArtist');
     
     if (toastImg) toastImg.src = song.art || '';
     if (toastTitle) toastTitle.textContent = song.title || 'Unknown';
-    if (toastArtist) toastArtist.textContent = song.artist || '';
     
     toast.classList.add('show');
 
-    clearTimeout(toast._hideTimeout);
-    toast._hideTimeout = setTimeout(() => {
+    setTimeout(() => {
         toast.classList.remove('show');
-    }, 4000);
+    }, 5000);
 }
 
 // ────────────────────────────────────────
@@ -2758,15 +2753,19 @@ window.setupFullscreenLyrics = setupFullscreenLyrics;
 function addToQueue(song) {
     if (!song || !song.id) return;
     
+    // Don't add if already in queue
+    if (queue.some(s => s.id === song.id)) {
+        showNotification("Already in queue");
+        return;
+    }
+    
     queue.push(song);
     save('queue', queue);
-    
-    const pos = queue.length;
-    showNotification(`Added to queue · position ${pos}`);
+    showNotification(`Added "${song.title}" to queue`);
     renderQueue();
     
     // If nothing is playing, start playing from queue
-    if (!currentPlayingSong) {
+    if (!currentPlayingSong && queue.length === 1) {
         playFromQueue(0);
     }
 }
@@ -2883,53 +2882,26 @@ function renderQueue() {
     
     if (queue.length === 0) {
         container.innerHTML = `
-            <div style="padding:32px 20px;text-align:center;color:rgba(255,255,255,0.3);">
-                <div style="font-size:32px;margin-bottom:10px;">♩</div>
-                <div style="font-size:13px;font-weight:500;letter-spacing:-0.01em;">Queue is empty</div>
-                <div style="font-size:11px;margin-top:6px;color:rgba(255,255,255,0.2);">Add songs with the + button</div>
+            <div class="empty-state">
+                <div class="empty-state-icon">🎵</div>
+                <div class="empty-state-text">Queue is empty</div>
+                <div class="empty-state-subtext">Add songs to build your queue</div>
             </div>
         `;
         return;
     }
     
     container.innerHTML = '';
-    
-    // Show "Now Playing" header if a queue song is active
-    const activeIdx = currentPlayingSong ? queue.findIndex(s => s.id === currentPlayingSong.id) : -1;
-    
     queue.forEach((song, i) => {
-        const isPlaying = (i === activeIdx);
-        const isNext = (i === activeIdx + 1);
-        
         const div = document.createElement('div');
-        div.className = 'queue-item' + (isPlaying ? ' playing' : '');
-        div.style.cssText = `
-            display:flex;align-items:center;gap:10px;padding:9px 12px;
-            border-radius:10px;cursor:pointer;
-            background:${isPlaying ? 'rgba(255,255,255,0.10)' : 'transparent'};
-            border:${isPlaying ? '1px solid rgba(255,255,255,0.10)' : '1px solid transparent'};
-            transition:background 0.15s ease;
-            margin-bottom:3px;
-        `;
-        div.onmouseover = () => { if (!isPlaying) div.style.background = 'rgba(255,255,255,0.06)'; };
-        div.onmouseout = () => { if (!isPlaying) div.style.background = 'transparent'; };
-        
+        div.className = 'queue-item' + (i === queueIndex && currentPlayingSong ? ' playing' : '');
         div.innerHTML = `
-            <div style="position:relative;flex-shrink:0;">
-                <img src="${song.art || ''}" alt="" loading="lazy" style="width:38px;height:38px;border-radius:7px;object-fit:cover;display:block;">
-                ${isPlaying ? '<div style="position:absolute;inset:0;background:rgba(0,0,0,0.4);border-radius:7px;display:flex;align-items:center;justify-content:center;font-size:14px;">▶</div>' : ''}
+            <img src="${song.art || ''}" alt="" loading="lazy">
+            <div class="queue-item-info">
+                <div class="queue-item-title">${escapeHtml(song.title)}</div>
+                <div class="queue-item-artist">${escapeHtml(song.artist)}</div>
             </div>
-            <div style="flex:1;min-width:0;">
-                <div style="font-size:13px;font-weight:${isPlaying ? 600 : 500};letter-spacing:-0.01em;color:${isPlaying ? '#fff' : 'rgba(255,255,255,0.82)'};overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${escapeHtml(song.title)}</div>
-                <div style="font-size:11px;color:rgba(255,255,255,0.38);margin-top:2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${isPlaying ? '▶ Now playing' : isNext ? 'Up next' : escapeHtml(song.artist)}</div>
-            </div>
-            <button onclick="event.stopPropagation();removeFromQueue(${i})" style="
-                width:26px;height:26px;border-radius:50%;background:rgba(255,255,255,0.07);
-                border:none;color:rgba(255,255,255,0.4);cursor:pointer;font-size:15px;
-                display:flex;align-items:center;justify-content:center;flex-shrink:0;
-                transition:background 0.15s ease;
-            " onmouseover="this.style.background='rgba(255,255,255,0.14)';this.style.color='rgba(255,255,255,0.85)'"
-               onmouseout="this.style.background='rgba(255,255,255,0.07)';this.style.color='rgba(255,255,255,0.4)'">×</button>
+            <button class="queue-remove" onclick="event.stopPropagation(); removeFromQueue(${i})">×</button>
         `;
         div.onclick = () => playFromQueue(i);
         container.appendChild(div);
@@ -3347,15 +3319,7 @@ document.addEventListener('keydown', (e) => {
     switch(e.key) {
         case ' ':
             e.preventDefault();
-            // ✦ Toggle play/pause via YouTube API
-            if (ytPlayer && typeof ytPlayer.getPlayerState === 'function') {
-                const state = ytPlayer.getPlayerState();
-                if (state === YT.PlayerState.PLAYING) {
-                    ytPlayer.pauseVideo();
-                } else {
-                    ytPlayer.playVideo();
-                }
-            }
+            // Toggle play/pause (would need YouTube API implementation)
             break;
         case 'ArrowRight':
             e.preventDefault();
@@ -3367,34 +3331,23 @@ document.addEventListener('keydown', (e) => {
             break;
         case 'q':
         case 'Q':
-            if (!e.ctrlKey && !e.metaKey) toggleQueue();
+            toggleQueue();
             break;
         case 's':
         case 'S':
             if (e.ctrlKey || e.metaKey) {
                 e.preventDefault();
-                if (currentPlayingSong) toggleLike(currentPlayingSong);
+                // Save current song
+                if (currentPlayingSong) {
+                    toggleLike(currentPlayingSong);
+                }
             } else {
                 toggleShuffle();
             }
             break;
         case 'r':
         case 'R':
-            if (!e.ctrlKey && !e.metaKey) toggleRepeat();
-            break;
-        case 'ArrowUp':
-            e.preventDefault();
-            if (ytPlayer && typeof ytPlayer.getVolume === 'function') {
-                ytPlayer.setVolume(Math.min(100, ytPlayer.getVolume() + 10));
-                showNotification(`Volume: ${Math.min(100, ytPlayer.getVolume())}%`);
-            }
-            break;
-        case 'ArrowDown':
-            e.preventDefault();
-            if (ytPlayer && typeof ytPlayer.getVolume === 'function') {
-                ytPlayer.setVolume(Math.max(0, ytPlayer.getVolume() - 10));
-                showNotification(`Volume: ${Math.max(0, ytPlayer.getVolume())}%`);
-            }
+            toggleRepeat();
             break;
     }
 });
@@ -3473,48 +3426,6 @@ window.currentSongs = currentSongs;
 
 
 console.log('🎵 INDY Music v2.0 - Fully debugged and enhanced!');
-
-// ✦ Nav search bar functions — wire the top nav search into the main search system
-function performNavSearch() {
-    const navInput = document.getElementById('navSearchInput');
-    if (!navInput || !navInput.value.trim()) return;
-    
-    const query = navInput.value.trim();
-    navInput.value = '';
-    
-    // Check if it's a YouTube URL first
-    const videoId = extractYouTubeVideoId(query);
-    if (videoId) {
-        showNotification("Loading video...");
-        const song = { id: videoId, title: "Loading...", artist: "YouTube", art: `https://img.youtube.com/vi/${videoId}/mqdefault.jpg` };
-        fetch(`https://www.googleapis.com/youtube/v3/videos?part=snippet&id=${videoId}&key=${getNextKey()}`)
-            .then(r => r.json())
-            .then(data => {
-                const item = data.items?.[0];
-                if (item?.snippet) { song.title = item.snippet.title; song.artist = item.snippet.channelTitle; }
-                playSong(song);
-            })
-            .catch(() => playSong(song));
-        return;
-    }
-    
-    // Otherwise navigate to search view with the query pre-filled
-    showSearch();
-    setTimeout(() => {
-        const searchInput = document.getElementById('searchInput');
-        if (searchInput) {
-            searchInput.value = query;
-            searchInput.dispatchEvent(new Event('input'));
-        }
-    }, 120);
-}
-
-function handleNavSearchKeyPress(e) {
-    if (e.key === 'Enter') performNavSearch();
-}
-
-window.performNavSearch = performNavSearch;
-window.handleNavSearchKeyPress = handleNavSearchKeyPress;
 
 // ════════════════════════════════════════════════════════════
 // IMPROVED FIX: Back Button - Properly Restore Home View
