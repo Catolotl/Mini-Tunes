@@ -1474,7 +1474,8 @@ body::before {
     z-index: 2;
 }
 
-/* Ensure iframe covers the entire container */
+/* Ensure album art or iframe covers the entire container */
+.video-container img,
 .video-container iframe {
     position: absolute;
     top: 0;
@@ -3597,8 +3598,937 @@ body {
     flex: 1;
     min-width: 0;
 }
+</style>
 
+<!-- ═══════════════════════════════════════════════════════════
+     ✦  APPLE MUSIC — SF PRO + LIQUID GLASS MASTER OVERRIDE
+     ═══════════════════════════════════════════════════════════ -->
+<style>
+/* ── FONT ── */
+@import url('https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&display=swap');
 
+:root {
+    --sf: -apple-system, "SF Pro Display", "SF Pro Text", "Helvetica Neue", Inter, BlinkMacSystemFont, sans-serif;
+    --glass-1: rgba(30,30,34,0.72);
+    --glass-2: rgba(22,22,26,0.80);
+    --glass-border: rgba(255,255,255,0.09);
+    --glass-hi: rgba(255,255,255,0.06);
+    --radius-xl: 20px;
+    --radius-lg: 14px;
+    --radius-md: 10px;
+}
+
+/* ── GLOBAL FONT SWAP ── */
+*, *::before, *::after {
+    font-family: var(--sf) !important;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+}
+
+/* ── BODY & ROOT ── */
+html, body {
+    background: #060608 !important;
+}
+
+/* ── FIX THE GAP: make sidebars fill full height ── */
+.app-container {
+    height: calc(100vh - 58px) !important;
+    padding: 8px 8px 8px 8px !important;
+    gap: 7px !important;
+    margin-top: 0 !important;
+}
+
+.left-sidebar {
+    width: 230px !important;
+    gap: 7px !important;
+    height: 100% !important;
+}
+
+.left-sidebar.minimized {
+    width: 62px !important;
+}
+
+.right-sidebar {
+    width: 320px !important;
+    height: 100% !important;
+}
+
+/* sidebar-top should NOT flex-grow — it's just nav buttons */
+.sidebar-top {
+    flex-shrink: 0 !important;
+}
+
+/* sidebar-library fills the rest */
+.sidebar-library {
+    flex: 1 1 0 !important;
+    min-height: 0 !important;
+}
+
+/* ── NAV BAR: proper Apple-style frosted header ── */
+.sticky-nav-full {
+    height: 58px !important;
+    background: rgba(10,10,14,0.82) !important;
+    backdrop-filter: saturate(200%) blur(32px) !important;
+    -webkit-backdrop-filter: saturate(200%) blur(32px) !important;
+    border-bottom: 1px solid rgba(255,255,255,0.055) !important;
+    box-shadow: 0 1px 0 rgba(255,255,255,0.04) !important;
+    margin-bottom: 0 !important;
+}
+
+.nav-logo-text {
+    font-size: 17px !important;
+    font-weight: 700 !important;
+    letter-spacing: -0.04em !important;
+    background: none !important;
+    -webkit-text-fill-color: #fff !important;
+}
+
+.nav-logo-icon {
+    font-size: 20px !important;
+    background: none !important;
+    -webkit-text-fill-color: rgba(255,255,255,0.85) !important;
+}
+
+/* Search bar: rounded rect like Apple Music */
+.nav-search-container {
+    background: rgba(255,255,255,0.085) !important;
+    border: 1px solid rgba(255,255,255,0.10) !important;
+    border-radius: 11px !important;
+    backdrop-filter: blur(12px) !important;
+    box-shadow: inset 0 1px 0 rgba(255,255,255,0.07), 0 1px 4px rgba(0,0,0,0.3) !important;
+    transition: background 0.2s ease, border-color 0.2s ease !important;
+}
+
+.nav-search-container:focus-within {
+    background: rgba(255,255,255,0.12) !important;
+    border-color: rgba(255,255,255,0.22) !important;
+}
+
+.nav-search-input {
+    font-size: 14px !important;
+    font-weight: 400 !important;
+    letter-spacing: -0.01em !important;
+    color: #fff !important;
+}
+
+.nav-search-input::placeholder {
+    color: rgba(255,255,255,0.30) !important;
+    font-weight: 300 !important;
+}
+
+.nav-search-btn {
+    background: rgba(255,255,255,0.12) !important;
+    border: none !important;
+    border-radius: 8px !important;
+    font-size: 13px !important;
+    font-weight: 500 !important;
+    letter-spacing: -0.01em !important;
+    color: rgba(255,255,255,0.85) !important;
+    transition: background 0.18s ease !important;
+}
+
+.nav-search-btn:hover {
+    background: rgba(255,255,255,0.20) !important;
+}
+
+.nav-home-btn {
+    background: rgba(255,255,255,0.07) !important;
+    border: 1px solid rgba(255,255,255,0.09) !important;
+    border-radius: 50% !important;
+    color: rgba(255,255,255,0.8) !important;
+    transition: background 0.18s ease !important;
+}
+
+.nav-home-btn:hover {
+    background: rgba(255,255,255,0.13) !important;
+    transform: none !important;
+}
+
+/* ── LEFT SIDEBAR PANELS: true liquid glass ── */
+.sidebar-top,
+.sidebar-library {
+    background: var(--glass-1) !important;
+    backdrop-filter: saturate(180%) blur(32px) !important;
+    -webkit-backdrop-filter: saturate(180%) blur(32px) !important;
+    border: 1px solid var(--glass-border) !important;
+    border-radius: var(--radius-xl) !important;
+    /* glass highlight on top edge */
+    box-shadow:
+        0 0 0 0.5px rgba(255,255,255,0.04) inset,
+        0 1px 0 rgba(255,255,255,0.07) inset,
+        0 12px 40px rgba(0,0,0,0.5) !important;
+}
+
+.sidebar-top {
+    padding: 16px 12px !important;
+    gap: 6px !important;
+}
+
+.sidebar-library {
+    padding: 16px 12px !important;
+    gap: 4px !important;
+}
+
+/* ── LOGO in sidebar ── */
+.logo {
+    font-size: 16px !important;
+    font-weight: 700 !important;
+    letter-spacing: -0.04em !important;
+    background: none !important;
+    -webkit-text-fill-color: #fff !important;
+    padding: 4px 6px !important;
+}
+
+/* ── NAV BUTTONS: slim Apple Music sidebar items ── */
+.nav-btn {
+    padding: 8px 10px !important;
+    border-radius: var(--radius-md) !important;
+    font-size: 13px !important;
+    font-weight: 500 !important;
+    letter-spacing: -0.01em !important;
+    color: rgba(255,255,255,0.58) !important;
+    gap: 10px !important;
+    transition: background 0.15s ease, color 0.15s ease !important;
+}
+
+.nav-btn:hover {
+    background: rgba(255,255,255,0.07) !important;
+    color: rgba(255,255,255,0.9) !important;
+}
+
+.nav-btn.active {
+    background: rgba(255,255,255,0.10) !important;
+    color: #fff !important;
+    box-shadow: inset 0 1px 0 rgba(255,255,255,0.06) !important;
+}
+
+/* ── LIBRARY HEADER ── */
+.library-header h3 {
+    font-size: 11px !important;
+    font-weight: 600 !important;
+    letter-spacing: 0.07em !important;
+    text-transform: uppercase !important;
+    color: rgba(255,255,255,0.38) !important;
+}
+
+/* Create button */
+.library-header .nav-search-btn {
+    font-size: 12px !important;
+    padding: 5px 10px !important;
+    border-radius: 8px !important;
+    background: rgba(255,255,255,0.08) !important;
+    color: rgba(255,255,255,0.7) !important;
+}
+
+/* ── PLAYLIST ITEMS: minimal, no card border ── */
+.playlist-item {
+    padding: 8px 10px !important;
+    border-radius: 8px !important;
+    gap: 10px !important;
+    background: transparent !important;
+    border: none !important;
+    margin-bottom: 1px !important;
+    backdrop-filter: none !important;
+    box-shadow: none !important;
+    transition: background 0.15s ease !important;
+}
+
+.playlist-item:hover {
+    background: rgba(255,255,255,0.07) !important;
+    border: none !important;
+}
+
+.playlist-item.active {
+    background: rgba(255,255,255,0.11) !important;
+    border: none !important;
+}
+
+.playlist-item.active .playlist-name {
+    color: #fff !important;
+}
+
+.playlist-item.active .playlist-count {
+    color: rgba(255,255,255,0.5) !important;
+    opacity: 1 !important;
+}
+
+.playlist-icon {
+    font-size: 18px !important;
+    width: 36px !important;
+    height: 36px !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    background: rgba(255,255,255,0.06) !important;
+    border-radius: 8px !important;
+    flex-shrink: 0 !important;
+}
+
+.playlist-name {
+    font-size: 13px !important;
+    font-weight: 500 !important;
+    letter-spacing: -0.01em !important;
+    color: rgba(255,255,255,0.82) !important;
+}
+
+.playlist-count {
+    font-size: 11px !important;
+    color: rgba(255,255,255,0.35) !important;
+    margin-top: 1px !important;
+}
+
+/* Album covers in sidebar */
+.playlist-album-cover,
+.playlist-artist-image {
+    border-radius: 8px !important;
+    width: 36px !important;
+    height: 36px !important;
+}
+
+.playlist-artist-image {
+    border-radius: 50% !important;
+}
+
+/* ── RIGHT SIDEBAR: intense liquid glass ── */
+.right-sidebar {
+    background: rgba(8,8,12,0.88) !important;
+    backdrop-filter: saturate(200%) blur(48px) !important;
+    -webkit-backdrop-filter: saturate(200%) blur(48px) !important;
+    border: 1px solid rgba(255,255,255,0.07) !important;
+    border-radius: var(--radius-xl) !important;
+    box-shadow:
+        0 0 0 0.5px rgba(255,255,255,0.03) inset,
+        0 1px 0 rgba(255,255,255,0.06) inset,
+        -12px 0 60px rgba(0,0,0,0.6) !important;
+}
+
+/* ── MAIN CONTENT area ── */
+.main-content {
+    border-radius: var(--radius-xl) !important;
+    overflow-y: auto !important;
+    padding: 0 !important;
+}
+
+#homeView, #searchView {
+    padding: 24px 28px !important;
+}
+
+/* ── SECTION HEADERS ── */
+.section-header h2 {
+    font-size: 21px !important;
+    font-weight: 700 !important;
+    letter-spacing: -0.04em !important;
+    background: none !important;
+    -webkit-text-fill-color: #fff !important;
+}
+
+.section {
+    margin-bottom: 40px !important;
+}
+
+/* ── FILTER CHIPS: Apple Music pill style ── */
+.filter-chips {
+    margin-bottom: 28px !important;
+    gap: 8px !important;
+}
+
+.filter-chip {
+    padding: 7px 16px !important;
+    border-radius: 22px !important;
+    font-size: 13px !important;
+    font-weight: 500 !important;
+    letter-spacing: -0.01em !important;
+    background: rgba(255,255,255,0.08) !important;
+    border: 1px solid rgba(255,255,255,0.09) !important;
+    backdrop-filter: blur(8px) !important;
+    color: rgba(255,255,255,0.75) !important;
+    transition: all 0.18s ease !important;
+}
+
+.filter-chip:hover {
+    background: rgba(255,255,255,0.13) !important;
+    color: #fff !important;
+}
+
+.filter-chip.active {
+    background: #fff !important;
+    color: #000 !important;
+    border-color: transparent !important;
+    font-weight: 600 !important;
+    box-shadow: 0 2px 12px rgba(255,255,255,0.18) !important;
+}
+
+/* AI feature buttons inside filter-chips */
+.filter-chips > button:not(.filter-chip) {
+    padding: 7px 14px !important;
+    border-radius: 22px !important;
+    background: rgba(255,255,255,0.05) !important;
+    border: 1px solid rgba(255,255,255,0.08) !important;
+    color: rgba(255,255,255,0.55) !important;
+    font-size: 13px !important;
+    font-weight: 500 !important;
+    transition: all 0.18s ease !important;
+}
+
+.filter-chips > button:not(.filter-chip):hover {
+    background: rgba(255,255,255,0.10) !important;
+    color: rgba(255,255,255,0.85) !important;
+    transform: none !important;
+    box-shadow: none !important;
+}
+
+/* ── SONG CARDS: horizontal glass card ── */
+.song-card {
+    background: rgba(255,255,255,0.05) !important;
+    backdrop-filter: blur(16px) !important;
+    -webkit-backdrop-filter: blur(16px) !important;
+    border: 1px solid rgba(255,255,255,0.07) !important;
+    border-radius: var(--radius-lg) !important;
+    padding: 10px 14px 10px 10px !important;
+    gap: 12px !important;
+    min-height: 70px !important;
+    box-shadow: 0 1px 0 rgba(255,255,255,0.04) inset !important;
+    transition: background 0.2s ease, box-shadow 0.2s ease, transform 0.2s ease !important;
+    animation: none !important;
+}
+
+.song-card:hover {
+    background: rgba(255,255,255,0.09) !important;
+    border-color: rgba(255,255,255,0.12) !important;
+    transform: translateY(-1px) !important;
+    box-shadow: 0 6px 28px rgba(0,0,0,0.55), 0 1px 0 rgba(255,255,255,0.05) inset !important;
+}
+
+.song-card img {
+    width: 50px !important;
+    height: 50px !important;
+    border-radius: 9px !important;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.45) !important;
+}
+
+.song-title {
+    font-size: 13.5px !important;
+    font-weight: 500 !important;
+    letter-spacing: -0.015em !important;
+    color: rgba(255,255,255,0.92) !important;
+}
+
+.song-artist {
+    font-size: 12px !important;
+    color: rgba(255,255,255,0.42) !important;
+    font-weight: 400 !important;
+}
+
+/* ── ALBUM CARDS ── */
+.album-card {
+    background: rgba(255,255,255,0.045) !important;
+    backdrop-filter: blur(12px) !important;
+    border: 1px solid rgba(255,255,255,0.065) !important;
+    border-radius: var(--radius-lg) !important;
+    padding: 12px 12px 14px !important;
+    box-shadow: 0 1px 0 rgba(255,255,255,0.04) inset !important;
+    transition: transform 0.22s cubic-bezier(0.4,0,0.2,1), box-shadow 0.22s ease, background 0.2s ease !important;
+}
+
+.album-card:hover {
+    background: rgba(255,255,255,0.08) !important;
+    transform: translateY(-5px) !important;
+    box-shadow: 0 20px 50px rgba(0,0,0,0.65), 0 1px 0 rgba(255,255,255,0.06) inset !important;
+    border-color: rgba(255,255,255,0.11) !important;
+}
+
+.album-card img {
+    border-radius: 10px !important;
+    box-shadow: 0 4px 16px rgba(0,0,0,0.5) !important;
+    width: 100% !important;
+    margin-bottom: 10px !important;
+}
+
+.album-card:hover img {
+    transform: none !important;
+}
+
+.album-title {
+    font-size: 13px !important;
+    font-weight: 600 !important;
+    letter-spacing: -0.02em !important;
+    color: rgba(255,255,255,0.88) !important;
+    min-height: unset !important;
+}
+
+.album-artist {
+    font-size: 11.5px !important;
+    color: rgba(255,255,255,0.38) !important;
+    font-weight: 400 !important;
+}
+
+/* ── PLAYBACK CONTROLS (right sidebar) ── */
+.playback-controls {
+    background: linear-gradient(
+        to top,
+        rgba(0,0,0,0.92) 0%,
+        rgba(0,0,0,0.6) 60%,
+        transparent 100%
+    ) !important;
+    backdrop-filter: blur(20px) !important;
+    -webkit-backdrop-filter: blur(20px) !important;
+}
+
+.control-btn {
+    width: 38px !important;
+    height: 38px !important;
+    background: rgba(255,255,255,0.13) !important;
+    border: 1px solid rgba(255,255,255,0.16) !important;
+    border-radius: 50% !important;
+    font-size: 17px !important;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.35), inset 0 1px 0 rgba(255,255,255,0.13) !important;
+    transition: all 0.18s ease !important;
+}
+
+.control-btn:hover {
+    background: rgba(255,255,255,0.22) !important;
+    transform: scale(1.06) !important;
+}
+
+.control-btn.play {
+    width: 46px !important;
+    height: 46px !important;
+    font-size: 22px !important;
+    background: rgba(255,255,255,0.97) !important;
+    border: none !important;
+    box-shadow: 0 4px 20px rgba(255,255,255,0.22), inset 0 1px 0 rgba(255,255,255,0.4) !important;
+}
+
+.control-btn.play:hover {
+    background: #fff !important;
+    box-shadow: 0 6px 28px rgba(255,255,255,0.35) !important;
+    transform: scale(1.07) !important;
+}
+
+/* ── NOW PLAYING ── */
+.np-title {
+    font-size: 19px !important;
+    font-weight: 700 !important;
+    letter-spacing: -0.04em !important;
+    text-shadow: 0 2px 12px rgba(0,0,0,0.9) !important;
+}
+
+.np-artist {
+    font-size: 13px !important;
+    font-weight: 400 !important;
+    color: rgba(255,255,255,0.52) !important;
+    letter-spacing: -0.01em !important;
+    text-shadow: 0 2px 8px rgba(0,0,0,0.9) !important;
+}
+
+/* ── LYRICS ── */
+.lyric-line {
+    font-size: 14.5px !important;
+    font-weight: 400 !important;
+    letter-spacing: -0.01em !important;
+    line-height: 2 !important;
+    color: rgba(255,255,255,0.42) !important;
+    transition: all 0.28s ease !important;
+}
+
+.lyric-line.active {
+    color: #fff !important;
+    font-weight: 600 !important;
+    text-shadow: 0 0 16px rgba(255,255,255,0.22) !important;
+    transform: none !important;
+}
+
+/* ── PROGRESS BAR ── */
+.progress-bar {
+    height: 3px !important;
+    background: rgba(255,255,255,0.10) !important;
+    border-radius: 2px !important;
+    cursor: pointer !important;
+}
+
+.progress-fill {
+    background: linear-gradient(90deg, rgba(255,255,255,0.9), #fff) !important;
+    border-radius: 2px !important;
+}
+
+/* ── VOLUME SLIDER ── */
+.volume-slider {
+    height: 3px !important;
+    accent-color: #fff !important;
+}
+
+/* ── ALBUM/PLAYLIST DETAIL VIEW ── */
+.album-info h1,
+.playlist-info-large h1 {
+    font-size: 36px !important;
+    font-weight: 800 !important;
+    letter-spacing: -0.05em !important;
+    background: none !important;
+    -webkit-text-fill-color: #fff !important;
+}
+
+.album-song-item {
+    background: rgba(255,255,255,0.035) !important;
+    border: 1px solid rgba(255,255,255,0.05) !important;
+    border-radius: 12px !important;
+    padding: 11px 16px !important;
+    gap: 14px !important;
+    margin-bottom: 5px !important;
+    transition: background 0.18s ease !important;
+}
+
+.album-song-item:hover {
+    background: rgba(255,255,255,0.07) !important;
+    transform: none !important;
+    box-shadow: none !important;
+    border-color: rgba(255,255,255,0.08) !important;
+}
+
+.back-btn {
+    background: rgba(255,255,255,0.07) !important;
+    border: 1px solid rgba(255,255,255,0.08) !important;
+    border-radius: var(--radius-md) !important;
+    font-size: 13px !important;
+    font-weight: 500 !important;
+    letter-spacing: -0.01em !important;
+    padding: 8px 16px !important;
+    color: rgba(255,255,255,0.82) !important;
+    transition: background 0.18s ease !important;
+    margin-bottom: 22px !important;
+}
+
+.back-btn:hover {
+    background: rgba(255,255,255,0.12) !important;
+    transform: none !important;
+}
+
+/* ── PLAY ALL BUTTON ── */
+.play-all-btn {
+    background: #fff !important;
+    color: #000 !important;
+    border-radius: 22px !important;
+    font-size: 14px !important;
+    font-weight: 600 !important;
+    letter-spacing: -0.02em !important;
+    padding: 11px 26px !important;
+    box-shadow: 0 3px 16px rgba(255,255,255,0.15) !important;
+    transition: box-shadow 0.2s ease, transform 0.2s ease !important;
+}
+
+.play-all-btn:hover {
+    box-shadow: 0 6px 26px rgba(255,255,255,0.28) !important;
+    transform: scale(1.03) !important;
+    background: #fff !important;
+}
+
+/* ── TOAST ── */
+.toast {
+    background: rgba(20,20,24,0.94) !important;
+    backdrop-filter: saturate(180%) blur(32px) !important;
+    border: 1px solid rgba(255,255,255,0.10) !important;
+    border-radius: 16px !important;
+    box-shadow: 0 16px 48px rgba(0,0,0,0.75), inset 0 1px 0 rgba(255,255,255,0.07) !important;
+}
+
+/* ── MODAL ── */
+.modal-content {
+    background: rgba(22,22,26,0.97) !important;
+    backdrop-filter: saturate(180%) blur(40px) !important;
+    border: 1px solid rgba(255,255,255,0.10) !important;
+    border-radius: 22px !important;
+    box-shadow: 0 32px 80px rgba(0,0,0,0.85), inset 0 1px 0 rgba(255,255,255,0.07) !important;
+    padding: 32px !important;
+}
+
+.modal-content h3 {
+    font-weight: 700 !important;
+    font-size: 20px !important;
+    letter-spacing: -0.04em !important;
+}
+
+.modal-content input {
+    background: rgba(255,255,255,0.06) !important;
+    border: 1px solid rgba(255,255,255,0.09) !important;
+    border-radius: 10px !important;
+    color: #fff !important;
+    font-size: 14px !important;
+    padding: 13px 14px !important;
+}
+
+.modal-content input:focus {
+    background: rgba(255,255,255,0.09) !important;
+    border-color: rgba(255,255,255,0.22) !important;
+    box-shadow: none !important;
+}
+
+.modal-buttons .primary {
+    background: #fff !important;
+    color: #000 !important;
+    border-radius: 12px !important;
+    font-weight: 600 !important;
+    font-size: 14px !important;
+    box-shadow: 0 2px 12px rgba(255,255,255,0.12) !important;
+}
+
+.modal-buttons .secondary {
+    background: rgba(255,255,255,0.07) !important;
+    border: 1px solid rgba(255,255,255,0.09) !important;
+    border-radius: 12px !important;
+    color: rgba(255,255,255,0.75) !important;
+    font-size: 14px !important;
+}
+
+/* ── QUEUE PANEL ── */
+.queue-panel {
+    background: rgba(16,16,20,0.96) !important;
+    backdrop-filter: saturate(180%) blur(40px) !important;
+    border: 1px solid rgba(255,255,255,0.07) !important;
+    border-radius: var(--radius-xl) !important;
+}
+
+.queue-header h3 {
+    font-size: 17px !important;
+    font-weight: 700 !important;
+    letter-spacing: -0.04em !important;
+}
+
+.queue-item {
+    background: rgba(255,255,255,0.04) !important;
+    border-radius: 11px !important;
+    margin-bottom: 5px !important;
+    transition: background 0.15s ease !important;
+}
+
+.queue-item:hover {
+    background: rgba(255,255,255,0.08) !important;
+}
+
+.queue-item-title {
+    font-size: 13px !important;
+    font-weight: 500 !important;
+    letter-spacing: -0.01em !important;
+}
+
+.queue-item-artist {
+    font-size: 11.5px !important;
+    color: rgba(255,255,255,0.38) !important;
+}
+
+/* ── LIBRARY CARDS ── */
+.library-album-card {
+    background: rgba(255,255,255,0.04) !important;
+    border: 1px solid rgba(255,255,255,0.065) !important;
+    border-radius: var(--radius-lg) !important;
+    transition: transform 0.2s ease, box-shadow 0.2s ease, background 0.18s ease !important;
+}
+
+.library-album-card:hover {
+    background: rgba(255,255,255,0.075) !important;
+    transform: translateY(-4px) !important;
+    box-shadow: 0 14px 40px rgba(0,0,0,0.6) !important;
+}
+
+/* ── STATS CARD ── */
+.stats-card {
+    background: rgba(255,255,255,0.03) !important;
+    border: 1px solid rgba(255,255,255,0.07) !important;
+    border-radius: var(--radius-xl) !important;
+    backdrop-filter: blur(16px) !important;
+}
+
+.stat-value {
+    font-size: 36px !important;
+    font-weight: 800 !important;
+    letter-spacing: -0.05em !important;
+    background: none !important;
+    -webkit-text-fill-color: #fff !important;
+    margin-bottom: 6px !important;
+}
+
+.stat-label {
+    font-size: 11px !important;
+    font-weight: 500 !important;
+    letter-spacing: 0.07em !important;
+    text-transform: uppercase !important;
+    color: rgba(255,255,255,0.36) !important;
+}
+
+/* ── CONTEXT MENU ── */
+.context-menu {
+    background: rgba(22,22,26,0.98) !important;
+    backdrop-filter: saturate(180%) blur(32px) !important;
+    border: 1px solid rgba(255,255,255,0.10) !important;
+    border-radius: 14px !important;
+    box-shadow: 0 16px 48px rgba(0,0,0,0.7), inset 0 1px 0 rgba(255,255,255,0.06) !important;
+}
+
+.context-menu-item {
+    font-size: 13px !important;
+    font-weight: 400 !important;
+    letter-spacing: -0.01em !important;
+    border-radius: 8px !important;
+    padding: 9px 12px !important;
+}
+
+/* ── SEARCH INPUT ── */
+.search-input {
+    background: rgba(255,255,255,0.06) !important;
+    border: 1px solid rgba(255,255,255,0.09) !important;
+    border-radius: 14px !important;
+    font-size: 15px !important;
+    font-weight: 400 !important;
+    backdrop-filter: blur(16px) !important;
+    box-shadow: inset 0 1px 0 rgba(255,255,255,0.05) !important;
+}
+
+.search-input:focus {
+    background: rgba(255,255,255,0.09) !important;
+    border-color: rgba(255,255,255,0.20) !important;
+    box-shadow: inset 0 1px 0 rgba(255,255,255,0.05) !important;
+}
+
+/* ── SCROLLBARS: ultra-thin macOS style ── */
+::-webkit-scrollbar { width: 4px !important; height: 4px !important; }
+::-webkit-scrollbar-track { background: transparent !important; }
+::-webkit-scrollbar-thumb {
+    background: rgba(255,255,255,0.12) !important;
+    border-radius: 6px !important;
+}
+::-webkit-scrollbar-thumb:hover {
+    background: rgba(255,255,255,0.22) !important;
+}
+
+/* ── TOGGLE SIDEBAR BUTTONS ── */
+.toggle-sidebar {
+    background: rgba(20,20,24,0.85) !important;
+    backdrop-filter: blur(12px) !important;
+    border: 1px solid rgba(255,255,255,0.08) !important;
+    color: rgba(255,255,255,0.45) !important;
+    border-radius: 0 9px 9px 0 !important;
+    transition: all 0.18s ease !important;
+}
+
+.toggle-sidebar:hover {
+    background: rgba(40,40,46,0.95) !important;
+    color: rgba(255,255,255,0.85) !important;
+}
+
+/* ── MODE BUTTONS ── */
+.mode-btn {
+    border-radius: 20px !important;
+    font-size: 12px !important;
+    font-weight: 500 !important;
+    letter-spacing: -0.01em !important;
+    background: rgba(255,255,255,0.07) !important;
+    border: 1px solid rgba(255,255,255,0.09) !important;
+    color: rgba(255,255,255,0.5) !important;
+}
+
+.mode-btn.active {
+    background: rgba(255,255,255,0.14) !important;
+    border-color: rgba(255,255,255,0.18) !important;
+    color: #fff !important;
+}
+
+/* ── ADD TO PLAYLIST BUTTON ── */
+.add-to-playlist-btn {
+    border-radius: 22px !important;
+    font-size: 13px !important;
+    font-weight: 500 !important;
+    background: rgba(255,255,255,0.10) !important;
+    border: 1px solid rgba(255,255,255,0.14) !important;
+    backdrop-filter: blur(10px) !important;
+}
+
+.add-to-playlist-btn:hover {
+    background: rgba(255,255,255,0.18) !important;
+    transform: none !important;
+}
+
+/* ── LINK OPTION BUTTONS ── */
+.link-option-btn {
+    background: rgba(255,255,255,0.06) !important;
+    border: 1px solid rgba(255,255,255,0.09) !important;
+    border-radius: var(--radius-lg) !important;
+    font-size: 14px !important;
+    font-weight: 500 !important;
+    backdrop-filter: blur(12px) !important;
+    transition: background 0.18s ease, transform 0.18s ease !important;
+}
+
+.link-option-btn:hover {
+    background: rgba(255,255,255,0.11) !important;
+    transform: translateY(-1px) !important;
+    box-shadow: 0 8px 28px rgba(0,0,0,0.35) !important;
+}
+
+/* ── ARTIST VIEW ── */
+.artist-info h1 {
+    font-family: var(--sf) !important;
+    font-size: 52px !important;
+    font-weight: 800 !important;
+    letter-spacing: -0.05em !important;
+}
+
+/* ── FEATURED SECTION ── */
+.featured-content h3 {
+    font-family: var(--sf) !important;
+    font-size: 36px !important;
+    font-weight: 800 !important;
+    letter-spacing: -0.04em !important;
+    background: none !important;
+    -webkit-text-fill-color: #fff !important;
+}
+
+/* ── REMOVE ALL STAGGERED CARD ANIMATIONS (they cause jank) ── */
+.song-card, .album-card {
+    animation: none !important;
+}
+
+/* ── MINI PLAYER ── */
+.mini-player {
+    background: rgba(18,18,22,0.95) !important;
+    backdrop-filter: saturate(180%) blur(32px) !important;
+    border: 1px solid rgba(255,255,255,0.10) !important;
+    border-radius: 16px !important;
+    box-shadow: 0 12px 40px rgba(0,0,0,0.8), inset 0 1px 0 rgba(255,255,255,0.07) !important;
+}
+
+.mini-player-title {
+    font-size: 13.5px !important;
+    font-weight: 600 !important;
+    letter-spacing: -0.02em !important;
+}
+
+.mini-player-artist {
+    font-size: 11.5px !important;
+    color: rgba(255,255,255,0.4) !important;
+}
+
+/* ── SCROLL BUTTONS ── */
+.scroll-btn {
+    background: rgba(0,0,0,0.5) !important;
+    backdrop-filter: blur(8px) !important;
+    border: 1px solid rgba(255,255,255,0.08) !important;
+    border-radius: 50% !important;
+    transition: background 0.18s ease !important;
+}
+
+.scroll-btn:hover {
+    background: rgba(255,255,255,0.12) !important;
+}
+
+/* ── MAIN CONTENT GRADIENT: smoother, deeper ── */
+.main-content {
+    background: linear-gradient(
+        180deg,
+        var(--gradient-color) 0%,
+        rgba(8,8,12,0.97) 22%,
+        #060608 45%
+    ) !important;
+    background-size: 100% 200% !important;
+    transition: background 1.2s ease !important;
+}
 </style>
 </head>
 <body>
@@ -5338,17 +6268,45 @@ body {
 
     <!-- RIGHT SIDEBAR -->
     <aside class="right-sidebar" id="rightSidebar">
-        <div class="video-container">
-            <iframe id="player" allow="autoplay; encrypted-media"></iframe>
-            
-            <!-- NEW: Video Error Overlay -->
+        <!-- Hidden SoundCloud Widget -->
+        <iframe id="scWidget"
+            src="https://w.soundcloud.com/player/?url=https%3A//soundcloud.com&amp;auto_play=false&amp;hide_related=true&amp;show_comments=false&amp;show_user=false&amp;show_reposts=false&amp;show_teaser=false&amp;visual=false"
+            style="display:none; width:1px; height:1px; border:none;"
+            allow="autoplay">
+        </iframe>
+
+        <div class="video-container" id="videoContainer">
+            <!-- Album Art Display (replaces video) -->
+            <img id="nowPlayingArt"
+                 src=""
+                 alt="Album Art"
+                 style="
+                     position:absolute; inset:0; width:100%; height:100%;
+                     object-fit:cover; z-index:1;
+                     transition: opacity 0.5s ease, src 0.3s;
+                     opacity: 0;
+                 ">
+            <div id="npArtPlaceholder" style="
+                position:absolute; inset:0; z-index:1;
+                display:flex; flex-direction:column; align-items:center; justify-content:center;
+                background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+                font-size:64px;
+            ">🎵</div>
+
+            <!-- Dark gradient overlay for readability -->
+            <div style="
+                position:absolute; inset:0; z-index:2; pointer-events:none;
+                background: linear-gradient(180deg, rgba(0,0,0,0.4) 0%, rgba(0,0,0,0.3) 40%, rgba(0,0,0,0.7) 100%);
+            "></div>
+
+            <!-- SoundCloud Error Overlay -->
             <div class="video-error-overlay" id="videoError">
-                <div class="video-error-icon">⚠️</div>
+                <div class="video-error-icon">🔇</div>
                 <div class="video-error-text">
-                    Video unavailable or restricted<br>
-                    <small style="opacity:0.7;">This might be due to copyright or regional restrictions</small>
+                    Track unavailable on SoundCloud<br>
+                    <small style="opacity:0.7;">This track may not be available for streaming</small>
                 </div>
-                <button class="retry-video-btn" onclick="retryVideo()">Try Another Source</button>
+                <button class="retry-video-btn" onclick="retryVideo()">Try Again</button>
                 <button class="retry-video-btn" onclick="skipToNext()" style="margin-top:8px;background:transparent;">
                     Skip to Next →
                 </button>
@@ -5461,6 +6419,8 @@ body {
     <div class="context-menu-item" onclick="addToQueueNext(contextMenuTarget)"><span>⚡</span> Play Next</div>
 </div>
 
+<!-- SoundCloud Widget API -->
+<script src="https://w.soundcloud.com/player/api.js"></script>
 <script src="script.js"></script>
 
 <script>
@@ -5957,7 +6917,16 @@ function triggerConfetti() {
         flex: 0 0 90px !important;
     }
 }
-    
+
+/* ── HITBOX FIX: containers are invisible, only children are clickable ── */
+.now-playing-info,
+.lyrics-section {
+    pointer-events: none !important;
+}
+.now-playing-info > *,
+.lyrics-section > * {
+    pointer-events: auto !important;
+}
 </style>
 
 
