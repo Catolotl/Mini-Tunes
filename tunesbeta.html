@@ -496,17 +496,6 @@
     <div class="logo-sub">INVIDIOUS MUSIC EXPLORER</div>
   </div>
   <div class="header-right">
-    <div class="instance-pill">
-      <label>INSTANCE</label>
-      <select id="instanceSel">
-        <option value="https://iv.melmac.space">iv.melmac.space</option>
-        <option value="https://inv.nadeko.net">inv.nadeko.net</option>
-        <option value="https://invidious.privacydev.net">privacydev.net</option>
-        <option value="https://yt.cdaut.de">yt.cdaut.de</option>
-        <option value="https://invidious.lunar.icu">lunar.icu</option>
-        <option value="https://invidious.fdn.fr">invidious.fdn.fr</option>
-      </select>
-    </div>
   </div>
 </header>
 
@@ -592,23 +581,19 @@
 <audio id="aud"></audio>
 
 <script>
+// ─────────── CONFIG ───────────
+// Paste your Cloudflare Worker URL here after deploying (see instructions below)
+const WORKER_URL = 'https://morning-frog-57e3.rafaestrada-rafa.workers.dev';
+
 // ─────────── STATE ───────────
-let instance = 'https://iv.melmac.space';
-let queue    = [];   // array of video objects
-let qIdx     = -1;   // current position in queue
-let lastQ    = '';
+let queue = [];
+let qIdx  = -1;
+let lastQ = '';
 
 const aud    = document.getElementById('aud');
 const dot    = document.getElementById('dot');
 const ppBtn  = document.getElementById('ppBtn');
 const progFill = document.getElementById('progFill');
-
-// ─────────── INSTANCE CHANGE ───────────
-document.getElementById('instanceSel').addEventListener('change', e => {
-  instance = e.target.value;
-  setStatus('INSTANCE → ' + new URL(instance).hostname);
-  if (lastQ) doSearch(lastQ);
-});
 
 // ─────────── SEARCH ───────────
 document.getElementById('q').addEventListener('keydown', e => { if (e.key === 'Enter') triggerSearch(); });
@@ -626,14 +611,24 @@ async function doSearch(query) {
   pane.innerHTML = `<div class="state-center"><div class="spinner"></div><p>SEARCHING "${query.toUpperCase()}"</p></div>`;
   setStatus('SEARCHING…', true);
 
-  // Invidious search endpoint
-  const url = `${instance}/api/v1/search?q=${encodeURIComponent(query)}&type=video&fields=videoId,title,author,lengthSeconds,videoThumbnails,viewCount`;
+  if (WORKER_URL === 'YOUR_WORKER_URL_HERE') {
+    pane.innerHTML = `<div class="state-center"><div class="state-icon">⚙️</div>
+      <div class="err-box">WORKER NOT CONFIGURED<br><br>
+        Open the HTML file and set WORKER_URL at the top of the &lt;script&gt; block.<br>
+        See the worker.js file for deployment instructions.
+      </div></div>`;
+    setStatus('WORKER NOT SET UP');
+    return;
+  }
 
   try {
-    const res = await fetch(url);
-    if (!res.ok) throw new Error(`HTTP ${res.status} from ${new URL(instance).hostname}`);
-    const items = await res.json();
+    const res = await fetch(`${WORKER_URL}/search?q=${encodeURIComponent(query)}`);
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    const body = await res.json();
 
+    if (body.error) throw new Error(body.error);
+
+    const items = body.results || body; // handle both shapes
     if (!Array.isArray(items) || items.length === 0) {
       pane.innerHTML = `<div class="state-center"><div class="state-icon">🔍</div><p>NO RESULTS FOR "${query.toUpperCase()}"</p></div>`;
       setStatus('NO RESULTS');
@@ -641,17 +636,11 @@ async function doSearch(query) {
     }
 
     queue = items;
-    setStatus(`${items.length} RESULTS`, false);
+    setStatus(`${items.length} RESULTS · via ${body.instance ? new URL(body.instance).hostname : 'worker'}`, false);
     renderList(items);
   } catch(err) {
-    pane.innerHTML = `
-      <div class="state-center">
-        <div class="state-icon">⚠️</div>
-        <div class="err-box">ERROR: ${escHtml(err.message)}<br><br>
-          Try switching the instance in the top-right dropdown.<br>
-          Some instances block external origins — others allow it.
-        </div>
-      </div>`;
+    pane.innerHTML = `<div class="state-center"><div class="state-icon">⚠️</div>
+      <div class="err-box">ERROR: ${escHtml(err.message)}</div></div>`;
     setStatus('ERROR', false);
   }
 }
@@ -695,42 +684,28 @@ async function play(idx) {
   qIdx = idx;
   const v = queue[idx];
 
-  // re-render to show playing state
   refreshPlayingState();
   renderQueue();
-
-  setStatus(`LOADING: ${v.title?.slice(0,35)}…`, true);
+  setStatus(`LOADING: ${v.title?.slice(0,40)}…`, true);
 
   try {
-    // Fetch stream info
-    const res = await fetch(`${instance}/api/v1/videos/${v.videoId}?local=true&fields=adaptiveFormats,formatStreams,videoThumbnails,title,author`);
+    const res = await fetch(`${WORKER_URL}/stream?id=${v.videoId}`);
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
     const data = await res.json();
 
-    // Pick best audio-only stream (adaptiveFormats) → fallback to formatStreams (muxed)
-    const audioOnly = (data.adaptiveFormats || [])
-      .filter(f => f.type?.startsWith('audio/'))
-      .sort((a, b) => (b.bitrate || 0) - (a.bitrate || 0));
+    if (!data.url) throw new Error('No stream URL returned');
 
-    const muxed = (data.formatStreams || [])
-      .sort((a, b) => (b.bitrate || 0) - (a.bitrate || 0));
-
-    const stream = audioOnly[0] || muxed[0];
-    if (!stream?.url) throw new Error('No playable stream found for this video.');
-
-    aud.src = stream.url;
+    aud.src = data.url;
     aud.volume = parseFloat(document.getElementById('vol').value);
     await aud.play();
 
-    // Update art panel
-    const artThumb = bestThumb(data.videoThumbnails || v.videoThumbnails, 'medium');
-    const artWrap  = document.getElementById('artWrap');
-    artWrap.innerHTML = artThumb
+    const artThumb = bestThumb(v.videoThumbnails, 'medium');
+    document.getElementById('artWrap').innerHTML = artThumb
       ? `<img src="${artThumb}" alt="">
          <div class="art-grad"></div>
          <div class="art-text">
-           <div class="art-title">${escHtml(data.title || v.title)}</div>
-           <div class="art-author">${escHtml(data.author || v.author || '')}</div>
+           <div class="art-title">${escHtml(v.title)}</div>
+           <div class="art-author">${escHtml(v.author || '')}</div>
          </div>`
       : `<div class="art-ph"><span>🎧</span><p>${escHtml((v.title||'').slice(0,28))}</p></div>`;
 
@@ -738,7 +713,7 @@ async function play(idx) {
     setStatus(`▶ ${v.title?.slice(0,50)}`, true);
 
   } catch(err) {
-    setStatus(`STREAM ERROR: ${err.message}`, false);
+    setStatus(`ERROR: ${err.message}`, false);
     dot.classList.remove('live');
   }
 }
@@ -836,7 +811,6 @@ function setStatus(msg, active = false) {
   document.getElementById('statusTxt').textContent = msg;
   dot.classList.toggle('live', !!active);
   document.getElementById('statusR').textContent =
-    new URL(instance).hostname + ' · ' +
     new Date().toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'});
 }
 </script>
