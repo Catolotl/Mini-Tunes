@@ -149,9 +149,9 @@ function startDurationTracking() {
             highlightFullscreenLyricLine(current);
         }
 
-        if (duration > 10 && current > 0 && (duration - current) < 1.2) {
-            handleSongNearEnd();
-        }
+if (duration > 10 && current > 5 && (duration - current) < 1.5) {
+    handleSongNearEnd();
+}
 
         _durationRafId = requestAnimationFrame(tick);
     }
@@ -169,8 +169,8 @@ function stopDurationTracking() {
 function handleSongNearEnd() {
     if (_nearEndFired) return;
     _nearEndFired = true;
-    setTimeout(() => { _nearEndFired = false; }, 4000);
-    console.log('[Duration] Near end — triggering next song');
+    setTimeout(() => { _nearEndFired = false; }, 8000); // was 4000
+    console.log('[Duration] Near end — advancing to next song');
     if (repeatMode === 'one') {
         lastPlayedVideoId = null;
         playSong(currentPlayingSong);
@@ -1128,6 +1128,7 @@ async function playSong(song, fromPlaylist = null) {
 
     // Reset near-end guard and start duration tracking immediately
     _nearEndFired = false;
+    _durationLastReported = 0;  // ← add this
     startDurationTracking();
 
     // Fetch lyrics, but wait for actual playback (not ads) before syncing
