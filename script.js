@@ -1226,24 +1226,8 @@ if (videoId) {
         art: `https://img.youtube.com/vi/${videoId}/mqdefault.jpg`
     };
     
-    // Fetch the real title first
-    fetch(`https://www.googleapis.com/youtube/v3/videos?part=snippet&id=${videoId}&key=${getNextKey()}`)
-        .then(r => r.json())
-        .then(data => {
-            const item = data.items?.[0];
-            if (item?.snippet) {
-                song.title = item.snippet.title;
-                song.artist = item.snippet.channelTitle;
-                saveMetadataToCache(videoId, song.title, song.artist);
-            }
-            playSong(song);
-            showNotification("Playing pasted video!");
-        })
-        .catch(err => {
-            console.error("Error fetching video details:", err);
-            playSong(song);
-            showNotification("Playing video (couldn't fetch title)");
-        });
+playSong(song);
+    showNotification("Playing pasted video!");
 } else if (value.length >= 3) {
                 try {
                     const [videos, playlists] = await Promise.all([
@@ -1278,24 +1262,9 @@ if (videoId) {
     };
     
     // Fetch the real title first
-    fetch(`https://www.googleapis.com/youtube/v3/videos?part=snippet&id=${videoId}&key=${getNextKey()}`)
-        .then(r => r.json())
-        .then(data => {
-            const item = data.items?.[0];
-            if (item?.snippet) {
-                song.title = item.snippet.title;
-                song.artist = item.snippet.channelTitle;
-                saveMetadataToCache(videoId, song.title, song.artist);
+                playSong(song);
+                showNotification("Playing pasted video!");
             }
-            playSong(song);
-            showNotification("Playing pasted video!");
-        })
-        .catch(err => {
-            console.error("Error fetching video details:", err);
-            playSong(song);
-            showNotification("Playing video (couldn't fetch title)");
-        });
-}
         }
     });
 }
@@ -3907,47 +3876,28 @@ function saveArtistToLibrary(artistName, channelId = null) {
 async function fetchArtistDataBackground(artistId) {
     const artist = savedArtists[artistId];
     if (!artist) return;
-    
-    // If fetched within last 7 days, skip
+
     const weekAgo = Date.now() - (7 * 24 * 60 * 60 * 1000);
     if (artist.lastFetched && artist.lastFetched > weekAgo) {
         console.log(`Artist data for ${artist.name} is fresh, skipping fetch`);
         return;
     }
-    
+
     try {
-        // Fetch top tracks (limited to 10 to save quota)
-        const tracksUrl = `https://www.googleapis.com/youtube/v3/search?part=snippet&type=video&videoCategoryId=10&maxResults=10&q=${encodeURIComponent(artist.name + ' official audio')}&key=${getNextKey()}`;
-        const tracksRes = await fetch(tracksUrl);
-        const tracksData = await tracksRes.json();
-        
-        if (tracksData.items) {
-            artist.topTracks = tracksData.items.map(item => ({
-                id: item.id.videoId,
-                title: item.snippet.title,
-                artist: item.snippet.channelTitle,
-                art: item.snippet.thumbnails.medium.url
-            }));
-        }
-        
-        // Fetch albums (limited to 6 to save quota)
-        const albumsUrl = `https://www.googleapis.com/youtube/v3/search?part=snippet&type=playlist&maxResults=6&q=${encodeURIComponent(artist.name + ' album')}&key=${getNextKey()}`;
-        const albumsRes = await fetch(albumsUrl);
-        const albumsData = await albumsRes.json();
-        
-        if (albumsData.items) {
-            artist.albums = albumsData.items.map(item => ({
-                id: item.id.playlistId,
-                name: item.snippet.title,
-                art: item.snippet.thumbnails.medium.url
-            }));
-        }
-        
+        const tracksResults = await workerSearch(artist.name + ' official audio');
+        artist.topTracks = tracksResults.slice(0, 10).map(v => ({
+            id: v.videoId, title: v.title, artist: v.channel, art: v.thumb
+        }));
+
+        const albumResults = await workerSearch(artist.name + ' album');
+        artist.albums = albumResults.slice(0, 6).map(v => ({
+            id: v.videoId, name: v.title, art: v.thumb
+        }));
+
         artist.lastFetched = Date.now();
         save('indy_saved_artists', savedArtists);
-        
         console.log(`✓ Artist data cached for ${artist.name}`);
-        
+
     } catch (error) {
         console.error("Artist data fetch error:", error);
     }
@@ -5090,11 +5040,10 @@ async function searchAndPlayDJPlaylist(songs) {
     const found = [];
     for (const song of songs.slice(0, 8)) {
         try {
-            const res = await fetch(`https://www.googleapis.com/youtube/v3/search?part=snippet&type=video&videoCategoryId=10&maxResults=1&q=${encodeURIComponent(song.title + ' ' + song.artist)}&key=${getNextKey()}`);
-            const data = await res.json();
-            if (data.items?.[0]) {
-                const item = data.items[0];
-                found.push({ id: item.id.videoId, title: item.snippet.title, artist: item.snippet.channelTitle, art: item.snippet.thumbnails.medium.url });
+            const results = await workerSearch(song.title + ' ' + song.artist);
+            if (results[0]) {
+                const v = results[0];
+                found.push({ id: v.videoId, title: v.title, artist: v.channel, art: v.thumb });
             }
         } catch(e) { console.error(e); }
     }
@@ -5111,11 +5060,10 @@ async function addDJSongsToQueue(songs) {
     showNotification(`✦ Adding ${songs.length} songs to queue...`);
     for (const song of songs.slice(0, 6)) {
         try {
-            const res = await fetch(`https://www.googleapis.com/youtube/v3/search?part=snippet&type=video&videoCategoryId=10&maxResults=1&q=${encodeURIComponent(song.title + ' ' + song.artist)}&key=${getNextKey()}`);
-            const data = await res.json();
-            if (data.items?.[0]) {
-                const item = data.items[0];
-                addToQueue({ id: item.id.videoId, title: item.snippet.title, artist: item.snippet.channelTitle, art: item.snippet.thumbnails.medium.url });
+            const results = await workerSearch(song.title + ' ' + song.artist);
+            if (results[0]) {
+                const v = results[0];
+                addToQueue({ id: v.videoId, title: v.title, artist: v.channel, art: v.thumb });
             }
         } catch(e) { console.error(e); }
     }
@@ -5519,11 +5467,10 @@ async function saveAndPlayQPBPlaylist(playlist) {
     const found = [];
     for (const song of playlist.songs.slice(0, 8)) {
         try {
-            const res = await fetch(`https://www.googleapis.com/youtube/v3/search?part=snippet&type=video&videoCategoryId=10&maxResults=1&q=${encodeURIComponent(song.title + ' ' + song.artist)}&key=${getNextKey()}`);
-            const data = await res.json();
-            if (data.items?.[0]) {
-                const item = data.items[0];
-                found.push({ id: item.id.videoId, title: item.snippet.title, artist: item.snippet.channelTitle, art: item.snippet.thumbnails.medium.url });
+            const results = await workerSearch(song.title + ' ' + song.artist);
+            if (results[0]) {
+                const v = results[0];
+                found.push({ id: v.videoId, title: v.title, artist: v.channel, art: v.thumb });
             }
         } catch(e) { console.error(e); }
     }
@@ -5812,11 +5759,10 @@ async function playDailyMix() {
     const found = [];
     for (const song of cached.songs.slice(0, 10)) {
         try {
-            const res = await fetch(`https://www.googleapis.com/youtube/v3/search?part=snippet&type=video&videoCategoryId=10&maxResults=1&q=${encodeURIComponent(song.title + ' ' + song.artist)}&key=${getNextKey()}`);
-            const data = await res.json();
-            if (data.items?.[0]) {
-                const item = data.items[0];
-                found.push({ id: item.id.videoId, title: item.snippet.title, artist: item.snippet.channelTitle, art: item.snippet.thumbnails.medium.url });
+            const results = await workerSearch(song.title + ' ' + song.artist);
+            if (results[0]) {
+                const v = results[0];
+                found.push({ id: v.videoId, title: v.title, artist: v.channel, art: v.thumb });
             }
         } catch(e) { console.error(e); }
     }
@@ -6696,4 +6642,4 @@ setTimeout(() => {
     authBtn.parentNode.insertBefore(jamBtn, authBtn);
 
     console.log('✓ Jam button added');
-}, 2500); // Slightly after auth button renders
+}, 2500);
