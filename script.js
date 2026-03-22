@@ -720,6 +720,18 @@ function onPlayerStateChange(event) {
         console.log('Buffering (possible ad)');
         // Don't stop tracking — duration tick skips ad states automatically
     }
+
+    if (state === window.YT.PlayerState.PLAYING) {
+    const btn = document.getElementById('durPlayPauseBtn');
+    if (btn) btn.textContent = '⏸';
+    startDurationTracking();
+    _nearEndFired = false;
+} else if (state === window.YT.PlayerState.PAUSED) {
+    const btn = document.getElementById('durPlayPauseBtn');
+    if (btn) btn.textContent = '▶';
+    stopDurationTracking();
+    startDurationTracking();
+}
 }
 
 // Add this new function
@@ -6770,3 +6782,17 @@ setTimeout(() => {
 
     console.log('✓ Jam button added');
 }, 2500);
+
+function togglePlayPause() {
+    if (!ytPlayer || typeof ytPlayer.getPlayerState !== 'function') return;
+    const state = ytPlayer.getPlayerState();
+    const btn = document.getElementById('durPlayPauseBtn');
+    if (state === 1) {
+        ytPlayer.pauseVideo();
+        if (btn) btn.textContent = '▶';
+    } else {
+        ytPlayer.playVideo();
+        if (btn) btn.textContent = '⏸';
+    }
+}
+window.togglePlayPause = togglePlayPause;
