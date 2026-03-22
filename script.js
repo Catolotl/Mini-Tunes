@@ -79,6 +79,106 @@ const titleCleanCache = new Map();
 // UTILITY FUNCTIONS
 // ────────────────────────────────────────
 
+// ── DURATION BAR STATE ───────────────────────
+let _durationRafId = null;
+let _nearEndFired = false;
+let _durationLastReported = 0;
+
+function formatTime(secs) {
+    if (!isFinite(secs) || secs < 0) return '0:00';
+    const m = Math.floor(secs / 60);
+    const s = Math.floor(secs % 60);
+    return `${m}:${s.toString().padStart(2, '0')}`;
+}
+
+function showDurationBar() {
+    const bar = document.getElementById('durationBar');
+    if (bar) bar.classList.add('visible');
+}
+
+function hideDurationBar() {
+    const bar = document.getElementById('durationBar');
+    if (bar) bar.classList.remove('visible');
+}
+
+function startDurationTracking() {
+    stopDurationTracking();
+    showDurationBar();
+
+    const track = document.getElementById('durTrack');
+    if (track && !track._durWired) {
+        track._durWired = true;
+        track.addEventListener('click', (e) => {
+            if (!ytPlayer || typeof ytPlayer.getDuration !== 'function') return;
+            const rect = track.getBoundingClientRect();
+            const ratio = Math.max(0, Math.min(1, (e.clientX - rect.left) / rect.width));
+            const duration = ytPlayer.getDuration();
+            if (duration > 0) ytPlayer.seekTo(ratio * duration, true);
+        });
+    }
+
+    function tick() {
+        if (!ytPlayer || typeof ytPlayer.getCurrentTime !== 'function') {
+            _durationRafId = requestAnimationFrame(tick);
+            return;
+        }
+
+        const state = ytPlayer.getPlayerState();
+        const isAd = (state === 3 && ytPlayer.getDuration && ytPlayer.getDuration() < 1);
+        if (isAd) { _durationRafId = requestAnimationFrame(tick); return; }
+
+        const current = ytPlayer.getCurrentTime() || 0;
+        const duration = ytPlayer.getDuration() || 0;
+
+        if (Math.abs(current - _durationLastReported) > 3 && _durationLastReported > 0) {
+            highlightLyricLine(current);
+            highlightFullscreenLyricLine(current);
+        }
+        _durationLastReported = current;
+
+        const pct = duration > 0 ? (current / duration) * 100 : 0;
+        const fill = document.getElementById('durFill');
+        const cur  = document.getElementById('durCurrent');
+        const tot  = document.getElementById('durTotal');
+        if (fill) fill.style.width = `${pct}%`;
+        if (cur)  cur.textContent  = formatTime(current);
+        if (tot)  tot.textContent  = formatTime(duration);
+
+        if (document.querySelector('.synced-lyrics')) highlightLyricLine(current);
+        if (isFullscreenLyrics && document.querySelector('#fullscreenLyricsText .synced-lyrics')) {
+            highlightFullscreenLyricLine(current);
+        }
+
+        if (duration > 10 && current > 0 && (duration - current) < 1.2) {
+            handleSongNearEnd();
+        }
+
+        _durationRafId = requestAnimationFrame(tick);
+    }
+
+    _durationRafId = requestAnimationFrame(tick);
+}
+
+function stopDurationTracking() {
+    if (_durationRafId) {
+        cancelAnimationFrame(_durationRafId);
+        _durationRafId = null;
+    }
+}
+
+function handleSongNearEnd() {
+    if (_nearEndFired) return;
+    _nearEndFired = true;
+    setTimeout(() => { _nearEndFired = false; }, 4000);
+    console.log('[Duration] Near end — triggering next song');
+    if (repeatMode === 'one') {
+        lastPlayedVideoId = null;
+        playSong(currentPlayingSong);
+        return;
+    }
+    handleNextSong();
+}
+
 async function workerSearch(query) {
     const res = await fetch(`${WORKER_URL}/search?q=${encodeURIComponent(query)}`);
     if (!res.ok) throw new Error(`Worker HTTP ${res.status}`);
@@ -590,23 +690,33 @@ window.onYouTubeIframeAPIReady = function() {
         }
     });
 };
-
 function onPlayerStateChange(event) {
-    if (event.data === window.YT.PlayerState.ENDED) {
-        console.log("Song ended, handling next track...");
-        if (repeatMode === 'one') {
-            console.log("Repeat one - replaying current song");
-            lastPlayedVideoId = null; // Allow replay
-            playSong(currentPlayingSong);
-        } else {
-            handleNextSong();
+    const state = event.data;
+
+    if (state === window.YT.PlayerState.PLAYING) {
+        console.log('Song playing');
+        startDurationTracking();
+        _nearEndFired = false;
+    } else if (state === window.YT.PlayerState.PAUSED) {
+        console.log('Song paused');
+        // Keep duration bar visible but stop ticking
+        stopDurationTracking();
+        // Restart to keep the bar frozen in place
+        startDurationTracking();
+    } else if (state === window.YT.PlayerState.ENDED) {
+        console.log('Song ENDED event fired (fallback)');
+        // handleSongNearEnd already fired via duration check, but just in case:
+        if (!_nearEndFired) {
+            if (repeatMode === 'one') {
+                lastPlayedVideoId = null;
+                playSong(currentPlayingSong);
+            } else {
+                handleNextSong();
+            }
         }
-    } else if (event.data === window.YT.PlayerState.PLAYING) {
-        console.log("Song started playing");
-    } else if (event.data === window.YT.PlayerState.PAUSED) {
-        console.log("Song paused");
-    } else if (event.data === window.YT.PlayerState.BUFFERING) {
-        console.log("Buffering...");
+    } else if (state === window.YT.PlayerState.BUFFERING) {
+        console.log('Buffering (possible ad)');
+        // Don't stop tracking — duration tick skips ad states automatically
     }
 }
 
@@ -811,45 +921,91 @@ function formatSyncedLyrics(lrcText) {
 async function updateLyrics(song) {
     const lyricsContainer = document.getElementById('lyrics');
     if (!lyricsContainer) return;
-    
-    // Show loading state
+
     lyricsContainer.innerHTML = '<div class="lyrics-loading">Loading lyrics...</div>';
-    
+
     const lyricsData = await fetchLyrics(song);
-    
-    if (lyricsData) {
-        const formatted = formatLyricsForDisplay(lyricsData);
-        lyricsContainer.innerHTML = formatted;
-        
-        // Update fullscreen lyrics if open
-        if (isFullscreenLyrics) {
-            const fullscreenText = document.getElementById('fullscreenLyricsText');
-            if (fullscreenText) fullscreenText.innerHTML = formatted;
-        }
-    } else {
-        lyricsContainer.innerHTML = '<div class="lyrics-placeholder">No lyrics found</div>';
+    const formatted = lyricsData ? formatLyricsForDisplay(lyricsData) : '<div class="lyrics-placeholder">No lyrics found</div>';
+    lyricsContainer.innerHTML = formatted;
+
+    // Wire click-to-seek on synced lines in sidebar
+    const lyricsSection = document.querySelector('.lyrics-section');
+    if (lyricsSection) {
+        // Scroll detection
+        let scrollTimer;
+        lyricsSection.addEventListener('scroll', () => {
+            lyricsSection._userScrolled = true;
+            clearTimeout(scrollTimer);
+            scrollTimer = setTimeout(() => { lyricsSection._userScrolled = false; }, 3000);
+        }, { once: false });
+
+        lyricsContainer.querySelectorAll('.lyric-line[data-time]').forEach(line => {
+            if (line._seekWired) return;
+            line._seekWired = true;
+            line.style.cursor = 'pointer';
+            line.addEventListener('click', () => {
+                const t = parseFloat(line.dataset.time);
+                if (ytPlayer && typeof ytPlayer.seekTo === 'function') {
+                    ytPlayer.seekTo(t, true);
+                }
+            });
+        });
     }
-    
-    // Reinitialize fullscreen button (IMPORTANT!)
+
+    // If fullscreen is open, refresh it
+    if (isFullscreenLyrics) {
+        const fullscreenText = document.getElementById('fullscreenLyricsText');
+        if (fullscreenText) {
+            fullscreenText.innerHTML = formatted;
+            fullscreenText.querySelectorAll('.lyric-line[data-time]').forEach(line => {
+                line.style.cursor = 'pointer';
+                line.addEventListener('click', () => {
+                    const t = parseFloat(line.dataset.time);
+                    if (ytPlayer && typeof ytPlayer.seekTo === 'function') ytPlayer.seekTo(t, true);
+                });
+            });
+        }
+    }
+
     setupFullscreenLyrics();
 }
 
-// Highlight current line during playback (for synced lyrics)
 function highlightLyricLine(currentTimeSeconds) {
-    const lines = document.querySelectorAll('.lyric-line[data-time]');
+    const lines = document.querySelectorAll('#lyrics .lyric-line[data-time]');
     let activeLine = null;
-    
+
     lines.forEach(line => {
         const time = parseFloat(line.dataset.time);
-        if (time <= currentTimeSeconds) {
-            activeLine = line;
-        }
+        if (time <= currentTimeSeconds) activeLine = line;
     });
-    
+
     lines.forEach(line => line.classList.remove('active'));
     if (activeLine) {
         activeLine.classList.add('active');
-        activeLine.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        // Only auto-scroll if user hasn't manually scrolled
+        const lyricsSection = document.querySelector('.lyrics-section');
+        if (lyricsSection && !lyricsSection._userScrolled) {
+            activeLine.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }
+    }
+}
+
+function highlightFullscreenLyricLine(currentTimeSeconds) {
+    const lines = document.querySelectorAll('#fullscreenLyricsText .lyric-line[data-time]');
+    let activeLine = null;
+
+    lines.forEach(line => {
+        const time = parseFloat(line.dataset.time);
+        if (time <= currentTimeSeconds) activeLine = line;
+    });
+
+    lines.forEach(line => line.classList.remove('active'));
+    if (activeLine) {
+        activeLine.classList.add('active');
+        const fsText = document.getElementById('fullscreenLyricsText');
+        if (fsText && !fsText._userScrolled) {
+            activeLine.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }
     }
 }
 
@@ -968,20 +1124,34 @@ async function playSong(song, fromPlaylist = null) {
         }
     }
 
-    setTimeout(() => {
-        if (song && song.id) {
-            updateLyrics(song);
-            if (ytPlayer && typeof ytPlayer.getCurrentTime === 'function') {
-                if (window.lyricsInterval) clearInterval(window.lyricsInterval);
-                window.lyricsInterval = setInterval(() => {
-                    if (ytPlayer && ytPlayer.getCurrentTime && document.querySelector('.synced-lyrics')) {
-                        const currentTime = ytPlayer.getCurrentTime();
-                        highlightLyricLine(currentTime);
-                    }
-                }, 500);
+    // Reset near-end guard and start duration tracking immediately
+    _nearEndFired = false;
+    startDurationTracking();
+
+    // Fetch lyrics, but wait for actual playback (not ads) before syncing
+    setTimeout(async () => {
+        if (!song || !song.id) return;
+        await updateLyrics(song);
+
+        // Poll until the player is actually playing real content (not an ad)
+        // Ads are short clips — real songs have duration > 10s and state === 1
+        let adWaitAttempts = 0;
+        const waitForRealPlay = setInterval(() => {
+            adWaitAttempts++;
+            if (adWaitAttempts > 30) { clearInterval(waitForRealPlay); return; }
+            if (!ytPlayer || typeof ytPlayer.getPlayerState !== 'function') return;
+
+            const state = ytPlayer.getPlayerState();
+            const dur = ytPlayer.getDuration ? ytPlayer.getDuration() : 0;
+
+            // State 1 = playing, dur > 10 = real content not a short ad
+            if (state === 1 && dur > 10) {
+                clearInterval(waitForRealPlay);
+                console.log('[Lyrics] Real content confirmed, sync active');
+                // startDurationTracking() handles all syncing from here
             }
-        }
-    }, 1000);
+        }, 1000);
+    }, 800);
 }
 
 function skipToNext() {
@@ -2539,236 +2709,190 @@ console.log('✓ Link button features enabled');
 // ────────────────────────────────────────
 
 function setupFullscreenLyrics() {
-    // Remove any existing fullscreen overlay
     const existingOverlay = document.getElementById('fullscreenLyricsOverlay');
     if (existingOverlay) existingOverlay.remove();
-    
-    // Remove any existing fullscreen button
     const existingBtn = document.getElementById('fullscreenLyricsBtn');
     if (existingBtn) existingBtn.remove();
-    
+
     const lyricsSection = document.querySelector('.lyrics-section');
     if (!lyricsSection) return;
 
-    // Create fullscreen button
+    // Fullscreen button
     const fullscreenBtn = document.createElement('button');
     fullscreenBtn.id = 'fullscreenLyricsBtn';
-    fullscreenBtn.innerHTML = `
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3"/>
-        </svg>
-    `;
+    fullscreenBtn.innerHTML = `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3"/></svg>`;
     fullscreenBtn.style.cssText = `
-        position: absolute;
-        top: 20px;
-        right: 20px;
-        width: 44px;
-        height: 44px;
-        background: rgba(0, 0, 0, 0.6);
-        backdrop-filter: blur(10px);
-        border: 1px solid rgba(255, 255, 255, 0.2);
-        border-radius: 50%;
-        color: white;
-        cursor: pointer;
-        z-index: 10;
-        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+        position:absolute; top:14px; right:14px;
+        width:38px; height:38px;
+        background:rgba(0,0,0,0.55); backdrop-filter:blur(8px);
+        border:1px solid rgba(255,255,255,0.18); border-radius:50%;
+        color:white; cursor:pointer; z-index:10;
+        display:flex; align-items:center; justify-content:center;
+        transition:all 0.25s ease; pointer-events:auto;
     `;
-    
-    fullscreenBtn.onmouseover = () => {
-        fullscreenBtn.style.background = 'rgba(255, 255, 255, 0.15)';
-        fullscreenBtn.style.transform = 'scale(1.1)';
-    };
-    fullscreenBtn.onmouseout = () => {
-        fullscreenBtn.style.background = 'rgba(0, 0, 0, 0.6)';
-        fullscreenBtn.style.transform = 'scale(1)';
-    };
-    
+    fullscreenBtn.onmouseover = () => { fullscreenBtn.style.background = 'rgba(255,255,255,0.14)'; fullscreenBtn.style.transform = 'scale(1.1)'; };
+    fullscreenBtn.onmouseout  = () => { fullscreenBtn.style.background = 'rgba(0,0,0,0.55)'; fullscreenBtn.style.transform = 'scale(1)'; };
     lyricsSection.appendChild(fullscreenBtn);
 
-    // Create fullscreen overlay
-    const fullscreenLyricsOverlay = document.createElement('div');
-    fullscreenLyricsOverlay.id = 'fullscreenLyricsOverlay';
-    fullscreenLyricsOverlay.style.cssText = `
-        position: fixed;
-        top: 0;
-        left: 0;
-        right: 0;
-        bottom: 0;
-        background: linear-gradient(135deg, #0a0a0a 0%, #1a1a1a 100%);
-        z-index: 99999;
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        justify-content: center;
-        padding: 80px 40px;
-        opacity: 0;
-        pointer-events: none;
-        transition: opacity 0.4s cubic-bezier(0.4, 0, 0.2, 1);
-        overflow: hidden;
+    // Fullscreen overlay — SOLID dark background
+    const overlay = document.createElement('div');
+    overlay.id = 'fullscreenLyricsOverlay';
+    overlay.style.cssText = `
+        position:fixed; inset:0; z-index:99999;
+        background:#0d0d0d;
+        display:flex; flex-direction:column;
+        opacity:0; pointer-events:none;
+        transition:opacity 0.4s cubic-bezier(0.4,0,0.2,1);
+        overflow:hidden;
     `;
-    
-    fullscreenLyricsOverlay.innerHTML = `
-        <!-- Animated background -->
+
+    // Derive accent color from current song's gradient
+    const accentColor = getComputedStyle(document.documentElement).getPropertyValue('--gradient-color').trim() || '#517c7a';
+
+    overlay.innerHTML = `
+        <!-- Subtle color wash from album art color -->
         <div id="fullscreenLyricsBg" style="
-            position: absolute;
-            inset: 0;
-            background: radial-gradient(circle at 50% 50%, var(--gradient-color) 0%, transparent 70%);
-            opacity: 0.3;
-            animation: breathe 8s ease-in-out infinite;
+            position:absolute; inset:0; pointer-events:none;
+            background:radial-gradient(ellipse at 30% 20%, ${accentColor}22 0%, transparent 60%);
         "></div>
-        
-        <!-- Now Playing Info -->
-        <div id="fullscreenNowPlaying" style="
-            position: absolute;
-            top: 40px;
-            left: 40px;
-            display: flex;
-            align-items: center;
-            gap: 16px;
-            z-index: 2;
+
+        <!-- Top bar: album art + title + close -->
+        <div style="
+            position:relative; z-index:3;
+            display:flex; align-items:center; justify-content:space-between;
+            padding:28px 36px 16px;
+            background:linear-gradient(180deg, rgba(0,0,0,0.7) 0%, transparent 100%);
         ">
-            <img id="fullscreenAlbumArt" src="" style="
-                width: 64px;
-                height: 64px;
-                border-radius: 8px;
-                box-shadow: 0 8px 24px rgba(0, 0, 0, 0.6);
-            ">
-            <div>
-                <div id="fullscreenSongTitle" style="
-                    font-family: 'Syne', sans-serif;
-                    font-size: 20px;
-                    font-weight: 700;
-                    color: white;
-                    text-shadow: 0 2px 8px rgba(0, 0, 0, 0.6);
-                    margin-bottom: 4px;
-                ">Song Title</div>
-                <div id="fullscreenArtist" style="
-                    font-size: 14px;
-                    color: rgba(255, 255, 255, 0.7);
-                    text-shadow: 0 2px 8px rgba(0, 0, 0, 0.6);
-                ">Artist</div>
+            <div style="display:flex; align-items:center; gap:16px;">
+                <img id="fullscreenAlbumArt" src="" style="
+                    width:56px; height:56px; border-radius:8px;
+                    box-shadow:0 6px 20px rgba(0,0,0,0.7);
+                    object-fit:cover;
+                ">
+                <div>
+                    <div id="fullscreenSongTitle" style="
+                        font-family:'Syne',sans-serif; font-size:18px; font-weight:700; color:#fff;
+                        margin-bottom:3px; text-shadow:0 2px 8px rgba(0,0,0,0.8);
+                    ">Song Title</div>
+                    <div id="fullscreenArtist" style="
+                        font-size:13px; color:rgba(255,255,255,0.6);
+                    ">Artist</div>
+                </div>
             </div>
+            <button id="exitFullscreenLyrics" style="
+                background:rgba(255,255,255,0.07); border:1px solid rgba(255,255,255,0.14);
+                color:white; width:44px; height:44px; border-radius:50%;
+                font-size:24px; cursor:pointer; display:flex; align-items:center; justify-content:center;
+                transition:all 0.25s ease;
+            ">×</button>
         </div>
-        
-        <!-- Exit Button -->
-        <button id="exitFullscreenLyrics" style="
-            position: absolute;
-            top: 40px;
-            right: 40px;
-            background: rgba(0, 0, 0, 0.6);
-            backdrop-filter: blur(10px);
-            border: 1px solid rgba(255, 255, 255, 0.2);
-            color: white;
-            width: 52px;
-            height: 52px;
-            border-radius: 50%;
-            font-size: 28px;
-            cursor: pointer;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            transition: all 0.3s ease;
-            box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4);
-            z-index: 2;
-        ">×</button>
-        
-        <!-- Lyrics Container -->
+
+        <!-- Lyrics scroll area -->
         <div id="fullscreenLyricsText" style="
-            max-width: 900px;
-            width: 100%;
-            max-height: calc(100vh - 200px);
-            overflow-y: auto;
-            padding: 40px 20px;
-            color: white;
-            text-align: center;
-            font-size: 32px;
-            line-height: 2.2;
-            font-weight: 400;
-            text-shadow: 0 4px 20px rgba(0, 0, 0, 0.8);
-            position: relative;
-            z-index: 1;
-            scroll-behavior: smooth;
+            flex:1; overflow-y:auto; overflow-x:hidden;
+            padding:20px 10vw 60px;
+            color:rgba(255,255,255,0.45);
+            text-align:center;
+            font-size:28px; line-height:2.2; font-weight:400;
+            position:relative; z-index:2;
+            scroll-behavior:smooth;
         "></div>
     `;
-    
-    document.body.appendChild(fullscreenLyricsOverlay);
 
-    // Toggle function
-    function toggleFullscreenLyrics() {
-        isFullscreenLyrics = !isFullscreenLyrics;
-        
-        if (isFullscreenLyrics) {
-            // Open fullscreen
-            fullscreenLyricsOverlay.style.opacity = '1';
-            fullscreenLyricsOverlay.style.pointerEvents = 'all';
-            
-            // Copy lyrics content
-            const lyricsContainer = document.getElementById('lyrics');
-            const fullscreenText = document.getElementById('fullscreenLyricsText');
-            if (fullscreenText && lyricsContainer) {
-                fullscreenText.innerHTML = lyricsContainer.innerHTML;
-            }
-            
-            // Update now playing info
-            if (currentPlayingSong) {
-                const albumArt = document.getElementById('fullscreenAlbumArt');
-                const songTitle = document.getElementById('fullscreenSongTitle');
-                const artist = document.getElementById('fullscreenArtist');
-                
-                if (albumArt) albumArt.src = currentPlayingSong.art || '';
-                if (songTitle) songTitle.textContent = currentPlayingSong.title || 'Unknown';
-                if (artist) artist.textContent = currentPlayingSong.artist || 'Unknown';
-            }
-            
-            // Prevent body scroll
-            document.body.style.overflow = 'hidden';
-            
-        } else {
-            // Close fullscreen
-            fullscreenLyricsOverlay.style.opacity = '0';
-            fullscreenLyricsOverlay.style.pointerEvents = 'none';
-            
-            // Restore body scroll
-            document.body.style.overflow = '';
+    document.body.appendChild(overlay);
+
+    // Scroll detection — stop auto-scroll if user manually scrolls
+    const fsText = overlay.querySelector('#fullscreenLyricsText');
+    if (fsText) {
+        let scrollTimer;
+        fsText.addEventListener('scroll', () => {
+            fsText._userScrolled = true;
+            clearTimeout(scrollTimer);
+            scrollTimer = setTimeout(() => { fsText._userScrolled = false; }, 3000);
+        });
+    }
+
+    function openFullscreen() {
+        isFullscreenLyrics = true;
+        overlay.style.opacity = '1';
+        overlay.style.pointerEvents = 'all';
+        document.body.style.overflow = 'hidden';
+
+        // Copy lyrics content (with click handlers) 
+        const lyricsContainer = document.getElementById('lyrics');
+        const fullscreenText = document.getElementById('fullscreenLyricsText');
+        if (fullscreenText && lyricsContainer) {
+            fullscreenText.innerHTML = lyricsContainer.innerHTML;
+
+            // Wire click-to-seek on each synced line
+            fullscreenText.querySelectorAll('.lyric-line[data-time]').forEach(line => {
+                line.style.cursor = 'pointer';
+                line.addEventListener('click', () => {
+                    const t = parseFloat(line.dataset.time);
+                    if (ytPlayer && typeof ytPlayer.seekTo === 'function') {
+                        ytPlayer.seekTo(t, true);
+                        // Immediately highlight
+                        fullscreenText.querySelectorAll('.lyric-line').forEach(l => l.classList.remove('active'));
+                        line.classList.add('active');
+                    }
+                });
+            });
+        }
+
+        // Sidebar lyrics: also wire click-to-seek
+        document.querySelectorAll('#lyrics .lyric-line[data-time]').forEach(line => {
+            if (line._seekWired) return;
+            line._seekWired = true;
+            line.style.cursor = 'pointer';
+            line.addEventListener('click', () => {
+                const t = parseFloat(line.dataset.time);
+                if (ytPlayer && typeof ytPlayer.seekTo === 'function') {
+                    ytPlayer.seekTo(t, true);
+                }
+            });
+        });
+
+        // Update now playing info
+        if (currentPlayingSong) {
+            const art = document.getElementById('fullscreenAlbumArt');
+            const title = document.getElementById('fullscreenSongTitle');
+            const artist = document.getElementById('fullscreenArtist');
+            if (art) art.src = currentPlayingSong.art || '';
+            if (title) title.textContent = currentPlayingSong.title || 'Unknown';
+            if (artist) artist.textContent = currentPlayingSong.artist || 'Unknown';
+        }
+
+        // Immediately sync to current playback position
+        if (ytPlayer && typeof ytPlayer.getCurrentTime === 'function') {
+            const t = ytPlayer.getCurrentTime();
+            highlightFullscreenLyricLine(t);
         }
     }
 
-    // Event listeners
-    fullscreenBtn.onclick = toggleFullscreenLyrics;
-    
-    const exitBtn = document.getElementById('exitFullscreenLyrics');
+    function closeFullscreen() {
+        isFullscreenLyrics = false;
+        overlay.style.opacity = '0';
+        overlay.style.pointerEvents = 'none';
+        document.body.style.overflow = '';
+    }
+
+    fullscreenBtn.onclick = openFullscreen;
+
+    const exitBtn = overlay.querySelector('#exitFullscreenLyrics');
     if (exitBtn) {
-        exitBtn.onmouseover = () => {
-            exitBtn.style.background = 'rgba(255, 255, 255, 0.15)';
-            exitBtn.style.transform = 'scale(1.1) rotate(90deg)';
-        };
-        exitBtn.onmouseout = () => {
-            exitBtn.style.background = 'rgba(0, 0, 0, 0.6)';
-            exitBtn.style.transform = 'scale(1) rotate(0deg)';
-        };
-        exitBtn.onclick = toggleFullscreenLyrics;
+        exitBtn.onmouseover = () => { exitBtn.style.background = 'rgba(255,255,255,0.12)'; exitBtn.style.transform = 'scale(1.1) rotate(90deg)'; };
+        exitBtn.onmouseout  = () => { exitBtn.style.background = 'rgba(255,255,255,0.07)'; exitBtn.style.transform = 'scale(1) rotate(0)'; };
+        exitBtn.onclick = closeFullscreen;
     }
-    
-    // Close on ESC key
+
     document.addEventListener('keydown', (e) => {
-        if (e.key === 'Escape' && isFullscreenLyrics) {
-            toggleFullscreenLyrics();
-        }
+        if (e.key === 'Escape' && isFullscreenLyrics) closeFullscreen();
     });
-    
-    // Click overlay background to close
-    fullscreenLyricsOverlay.addEventListener('click', (e) => {
-        if (e.target === fullscreenLyricsOverlay) {
-            toggleFullscreenLyrics();
-        }
+
+    overlay.addEventListener('click', (e) => {
+        if (e.target === overlay) closeFullscreen();
     });
 }
-
-// Export to global scope
 window.setupFullscreenLyrics = setupFullscreenLyrics;
 
 // ═══════════════════════════════════════
