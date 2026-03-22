@@ -6,6 +6,7 @@
 <link rel="icon" type="image/x-icon" href="favicon.png">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <style>
+
 :root {
     --bg: #0a0a0a;
     --panel: #1a1a1a;
@@ -38,16 +39,16 @@ body{
 .app-container{
     display:flex;
     height:100vh;
-    gap:12px;
-    padding:12px;
+    gap:8px;
+    padding:8px;
 }
 
 /* LEFT SIDEBAR */
 .left-sidebar{
-    width:400px;
+    width:280px;
     display:flex;
     flex-direction:column;
-    gap:12px;
+    gap:8px;
     transition:width .3s;
     border:none;
 }
@@ -108,12 +109,12 @@ body{
 .sidebar-library{
     background:var(--sidebar-bg);
     border-radius:12px;
-    padding:20px;
+    padding:16px;
     flex:1;
     overflow-y:auto;
     display:flex;
     flex-direction:column;
-    gap:12px;
+    gap:4px;
 }
 
 .library-header{
@@ -130,14 +131,14 @@ body{
 }
 
 .playlist-item{
-    padding:12px;
+    padding:8px 10px;
     background:transparent;
     border-radius:8px;
     cursor:pointer;
     transition:all .2s;
     display:flex;
     align-items:center;
-    gap:12px;
+    gap:10px;
 }
 
 .playlist-item:hover{
@@ -182,23 +183,23 @@ body{
     background:linear-gradient(180deg, var(--gradient-color) 0%, var(--bg) 20%);
     border-radius:12px;
     overflow-y:auto;
-    padding:32px;
+    padding:0;
     transition:background .8s;
 }
 
 .section{
-    margin-bottom:40px;
+    margin-bottom:32px;
 }
 
 .section-header{
     display:flex;
     align-items:center;
     justify-content:space-between;
-    margin-bottom:20px;
+    margin-bottom:14px;
 }
 
 .section-header h2{
-    font-size:24px;
+    font-size:20px;
     font-weight:700;
 }
 
@@ -228,14 +229,14 @@ body{
 /* Recently Played Grid */
 .recent-grid{
     display:grid;
-    grid-template-columns:repeat(auto-fill, minmax(200px, 1fr));
-    gap:16px;
+    grid-template-columns:repeat(auto-fill, minmax(220px, 1fr));
+    gap:10px;
 }
 
 .song-card{
-    background:rgba(255, 255, 255, 0.3);
+    background:rgba(255, 255, 255, 0.07);
     border-radius:8px;
-    padding:16px;
+    padding:10px 12px;
     cursor:pointer;
     transition:all .3s;
     display:flex;
@@ -244,12 +245,12 @@ body{
 }
 
 .song-card:hover{
-    background:rgba(255, 255, 255, 0.5);
+    background:rgba(255, 255, 255, 0.13);
 }
 
 .song-card img{
-    width:56px;
-    height:56px;
+    width:48px;
+    height:48px;
     border-radius:6px;
     object-fit:cover;
     flex-shrink:0;
@@ -301,24 +302,26 @@ body{
 }
 
 .album-card{
-    min-width:180px;
-    background:rgba(0,0,0,.3);
-    border-radius:8px;
-    padding:16px;
+    min-width:160px;
+    max-width:160px;
+    background:rgba(255,255,255,0.05);
+    border-radius:10px;
+    padding:12px;
     cursor:pointer;
     transition:all .3s;
 }
 
 .album-card:hover{
-    background:rgba(0,0,0,.5);
+    background:rgba(255,255,255,0.1);
     transform:translateY(-4px);
 }
 
 .album-card img{
-    width:50%;
+    width:100%;
     aspect-ratio:1;
     border-radius:6px;
-    margin-bottom:12px;
+    margin-bottom:10px;
+    object-fit:cover;
 }
 
 .album-title{
@@ -340,7 +343,7 @@ body{
 
 /* RIGHT SIDEBAR */
 .right-sidebar{
-    width:380px;
+    width:340px;
     background: #000;
     border-radius:12px;
     overflow:hidden;
@@ -806,9 +809,6 @@ body{
 /* ============================================
    ENHANCED MINIMALIST DESIGN IMPROVEMENTS
    ============================================ */
-
-/* Import beautiful fonts */
-@import url('https://fonts.googleapis.com/css2?family=Syne:wght@400;500;600;700;800&family=DM+Sans:wght@300;400;500;600&display=swap');
 
 /* Override body font */
 body {
@@ -1474,8 +1474,7 @@ body::before {
     z-index: 2;
 }
 
-/* Ensure album art or iframe covers the entire container */
-.video-container img,
+/* Ensure iframe covers the entire container */
 .video-container iframe {
     position: absolute;
     top: 0;
@@ -2196,37 +2195,29 @@ body::before {
 }
 
 /* ============================================
-   ENHANCED LAYOUT FIXES & POLISH
-   Paste this at the bottom of your <style> section
+   LAYOUT CONSOLIDATION — single source of truth
    ============================================ */
 
-/* ──────────────────────────────────────────
-   CONSISTENT CARD SIZING
-   ────────────────────────────────────────── */
-
-/* Fix album cards to be uniform size */
 .album-card {
-    min-width: 180px;
-    max-width: 180px; /* NEW: Prevents size variation */
-    background: rgba(0, 0, 0, 0.3);
-    border-radius: 12px;
-    padding: 16px;
-    cursor: pointer;
-    transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+    min-width: 160px;
+    max-width: 160px;
+    border-radius: 10px;
+    padding: 12px;
 }
 
 .album-card img {
-    width: 100%; /* Changed from 50% to full width */
+    width: 100%;
     aspect-ratio: 1;
-    border-radius: 8px;
-    margin-bottom: 14px;
-    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.4);
+    border-radius: 6px;
+    margin-bottom: 10px;
+    object-fit: cover;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.4);
 }
 
 .album-title {
-    font-size: 14px;
+    font-size: 13px;
     font-weight: 600;
-    margin-bottom: 6px;
+    margin-bottom: 4px;
     overflow: hidden;
     text-overflow: ellipsis;
     display: -webkit-box;
@@ -2234,7 +2225,6 @@ body::before {
     line-clamp: 2;
     -webkit-box-orient: vertical;
     line-height: 1.4;
-    min-height: 40px; /* NEW: Ensures consistent height */
 }
 
 .album-artist {
@@ -2245,29 +2235,28 @@ body::before {
     white-space: nowrap;
 }
 
-/* ──────────────────────────────────────────
-   SEARCH RESULTS - BETTER SPACING
-   ────────────────────────────────────────── */
-
-/* More spacious song cards in search */
 .song-card {
-    background: rgba(255, 255, 255, 0.048);
+    background: rgba(255,255,255,0.07);
     backdrop-filter: blur(10px);
-    border: 1px solid rgba(255, 255, 255, 0.04);
-    border-radius: 12px;
-    padding: 1px 1px; /* Increased padding */
+    border: 1px solid rgba(255,255,255,0.05);
+    border-radius: 10px;
+    padding: 10px 12px;
     cursor: pointer;
-    transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+    transition: all 0.3s ease;
     display: flex;
     align-items: center;
-    gap: 14px; /* Increased gap */
-    min-height: 80px; /* NEW: Minimum height for breathing room */
+    gap: 12px;
+}
+
+.song-card:hover {
+    background: rgba(255,255,255,0.12);
+    border-color: rgba(255,255,255,0.1);
 }
 
 .song-card img {
-    width: 64px; /* Increased from 56px */
-    height: 64px;
-    border-radius: 8px;
+    width: 52px;
+    height: 52px;
+    border-radius: 6px;
     object-fit: cover;
     flex-shrink: 0;
 }
@@ -2275,128 +2264,97 @@ body::before {
 .song-info {
     flex: 1;
     min-width: 0;
-    margin-right: 12px; /* NEW: Space before buttons */
 }
 
 .song-title {
-    font-size: 15px; /* Slightly larger */
+    font-size: 14px;
     font-weight: 600;
-    margin-bottom: 6px;
+    margin-bottom: 4px;
     overflow: hidden;
     text-overflow: ellipsis;
-    display: -webkit-box;
-    -webkit-line-clamp: 2; /* Allow 2 lines */
-    line-clamp: 2;
-    -webkit-box-orient: vertical;
-    line-height: 1.3;
-    white-space: normal; /* Changed from nowrap */
+    white-space: nowrap;
 }
 
 .song-artist {
-    font-size: 13px;
+    font-size: 12px;
     color: var(--muted);
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
 }
 
-/* Song card action buttons */
 .song-card button {
-    flex-shrink: 0; /* Prevent button shrinking */
-    margin-left: 6px;
+    flex-shrink: 0;
 }
 
-/* ──────────────────────────────────────────
-   GRID IMPROVEMENTS
-   ────────────────────────────────────────── */
-
-/* Better grid spacing for recent songs */
 .recent-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); /* Increased from 200px */
-    gap: 20px; /* Increased from 16px */
+    grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+    gap: 10px;
 }
 
-/* Better library grid */
 .library-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
-    gap: 20px; /* Increased from 16px */
+    grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+    gap: 14px;
 }
-
-/* ──────────────────────────────────────────
-   SCROLL CONTAINERS - MORE BREATHING ROOM
-   ────────────────────────────────────────── */
 
 .scroll-container {
     display: flex;
-    gap: 20px; /* Increased from 16px */
+    gap: 14px;
     overflow-x: auto;
-    padding-bottom: 12px;
+    padding-bottom: 10px;
+    padding-right: 16px;
     scroll-behavior: smooth;
-    padding-right: 20px; /* NEW: Padding at end */
 }
 
-/* ──────────────────────────────────────────
-   SECTION SPACING
-   ────────────────────────────────────────── */
-
 .section {
-    margin-bottom: 48px; /* Increased from 40px */
+    margin-bottom: 32px;
 }
 
 .section-header {
     display: flex;
     align-items: center;
     justify-content: space-between;
-    margin-bottom: 24px; /* Increased from 20px */
+    margin-bottom: 14px;
 }
 
 .section-header h2 {
-    font-size: 26px; /* Slightly larger */
+    font-size: 20px;
     font-weight: 700;
 }
 
-/* ──────────────────────────────────────────
-   FILTER CHIPS - REFINED
-   ────────────────────────────────────────── */
-
 .filter-chips {
     display: flex;
-    gap: 14px; /* Increased from 12px */
-    margin-bottom: 32px; /* Increased from 24px */
+    gap: 8px;
+    margin-bottom: 20px;
     flex-wrap: wrap;
 }
 
 .filter-chip {
-    padding: 7px 10px; /* Increased padding */
-    background: rgba(255, 255, 255, 0.06);
+    padding: 6px 14px;
+    background: rgba(255,255,255,0.06);
     backdrop-filter: blur(10px);
-    border: 1px solid rgba(255, 255, 255, 0.1);
+    border: 1px solid rgba(255,255,255,0.1);
     border-radius: 30px;
     color: var(--text);
-    font-size: 14px;
+    font-size: 13px;
     font-weight: 600;
     cursor: pointer;
-    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    transition: all 0.25s ease;
     display: flex;
     align-items: center;
-    gap: 10px;
-    white-space: nowrap; /* NEW: Prevents wrapping */
+    gap: 6px;
+    white-space: nowrap;
 }
 
 .filter-chip .count {
-    font-size: 12px;
-    opacity: 0.7;
-    font-weight: 500;
+    font-size: 11px;
+    opacity: 0.6;
 }
 
-/* ──────────────────────────────────────────
-   PLAYLIST ITEMS - MORE SPACIOUS
-   ────────────────────────────────────────── */
-
 .playlist-item {
-    padding: 14px; /* Increased from 12px */
+    padding: 8px 10px;
     background: transparent;
     border: none;
     border-radius: 10px;
@@ -2464,76 +2422,79 @@ body::before {
 
 .main-content {
     flex: 1;
-    background: linear-gradient(180deg, var(--gradient-color) 0%, rgba(10, 10, 10, 0.95) 25%, var(--bg) 50%);
+    background: linear-gradient(180deg, var(--gradient-color) 0%, rgba(10,10,10,0.95) 25%, var(--bg) 50%);
     border-radius: 12px;
     overflow-y: auto;
-    padding: 40px; /* Increased from 32px */
+    padding: 0;
     transition: background 0.8s;
 }
 
+#homeView, #searchView {
+    padding: 20px 24px;
+}
+
 /* ──────────────────────────────────────────
-   SEARCH INPUT - MORE PROMINENT
+   SEARCH INPUT
    ────────────────────────────────────────── */
 
 .search-header {
-    margin-bottom: 40px; /* Increased from 32px */
+    margin-bottom: 20px;
 }
 
 .search-input {
     width: 100%;
-    max-width: 700px; /* Increased from 600px */
-    padding: 18px 28px; /* Increased padding */
-    background: rgba(0, 0, 0, 0.2);
+    max-width: 600px;
+    padding: 14px 22px;
+    background: rgba(0,0,0,0.2);
     backdrop-filter: blur(20px);
-    border: 1px solid rgba(255, 255, 255, 0.08);
+    border: 1px solid rgba(255,255,255,0.08);
     border-radius: 30px;
     color: var(--text);
-    font-size: 16px;
-    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2);
+    font-size: 15px;
+    transition: all 0.3s ease;
 }
 
 /* ──────────────────────────────────────────
-   STATS CARD - CLEANER LAYOUT
+   STATS CARD
    ────────────────────────────────────────── */
 
 .stats-card {
-    background: rgba(0, 0, 0, 0.25);
+    background: rgba(0,0,0,0.25);
     backdrop-filter: blur(10px);
-    border: 1px solid rgba(255, 255, 255, 0.06);
-    border-radius: 16px;
-    padding: 32px; /* Increased from 24px */
-    margin-bottom: 40px; /* Increased from 32px */
+    border: 1px solid rgba(255,255,255,0.06);
+    border-radius: 12px;
+    padding: 20px;
+    margin-bottom: 24px;
 }
 
 .stats-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); /* Increased from 150px */
-    gap: 28px; /* Increased from 20px */
+    grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+    gap: 16px;
 }
 
 .stat-item {
     text-align: center;
-    padding: 16px; /* NEW: Inner padding */
-    border-radius: 12px;
-    background: rgba(255, 255, 255, 0.02); /* NEW: Subtle background */
+    padding: 12px;
+    border-radius: 10px;
+    background: rgba(255,255,255,0.02);
     transition: all 0.3s ease;
 }
 
 .stat-item:hover {
-    background: rgba(255, 255, 255, 0.05);
+    background: rgba(255,255,255,0.05);
     transform: translateY(-2px);
 }
 
 .stat-value {
     font-family: 'Syne', sans-serif;
-    font-size: 42px; /* Increased from 36px */
+    font-size: 32px;
     font-weight: 800;
     background: linear-gradient(135deg, #ffffff 0%, #a0a0a0 100%);
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
     background-clip: text;
-    margin-bottom: 10px; /* Increased from 8px */
+    margin-bottom: 6px;
 }
 
 /* ──────────────────────────────────────────
@@ -2541,27 +2502,27 @@ body::before {
    ────────────────────────────────────────── */
 
 .library-album-card {
-    background: rgba(0, 0, 0, 0.25);
-    border-radius: 12px;
-    padding: 18px; /* Increased from 16px */
+    background: rgba(255,255,255,0.05);
+    border-radius: 10px;
+    padding: 12px;
     cursor: pointer;
-    transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+    transition: all 0.3s ease;
     position: relative;
-    border: 1px solid rgba(255, 255, 255, 0.04);
+    border: 1px solid rgba(255,255,255,0.04);
 }
 
 .library-album-card img {
     width: 100%;
     aspect-ratio: 1;
-    border-radius: 8px;
-    margin-bottom: 14px;
+    border-radius: 6px;
+    margin-bottom: 10px;
+    object-fit: cover;
 }
 
 .library-album-card .album-title {
-    font-size: 14px;
+    font-size: 13px;
     font-weight: 600;
-    margin-bottom: 6px;
-    min-height: 40px; /* Consistent with other cards */
+    margin-bottom: 4px;
 }
 
 .library-album-card .album-artist {
@@ -2570,111 +2531,90 @@ body::before {
 }
 
 /* ──────────────────────────────────────────
-   QUEUE PANEL - BETTER SPACING
+   QUEUE PANEL
    ────────────────────────────────────────── */
 
 .queue-item {
     display: flex;
     align-items: center;
-    gap: 14px; /* Increased from 12px */
-    padding: 14px; /* Increased from 12px */
-    background: rgba(255, 255, 255, 0.05);
-    border-radius: 10px;
+    gap: 10px;
+    padding: 10px;
+    background: rgba(255,255,255,0.05);
+    border-radius: 8px;
     cursor: pointer;
-    transition: all 0.3s ease;
-    margin-bottom: 8px; /* NEW: Space between items */
+    transition: all 0.2s ease;
+    margin-bottom: 6px;
 }
 
 .queue-item img {
-    width: 52px; /* Increased from 48px */
-    height: 52px;
-    border-radius: 6px;
+    width: 44px;
+    height: 44px;
+    border-radius: 4px;
+    flex-shrink: 0;
 }
 
 .queue-item-title {
-    font-size: 14px;
+    font-size: 13px;
     font-weight: 600;
-    margin-bottom: 4px;
+    margin-bottom: 3px;
     overflow: hidden;
     text-overflow: ellipsis;
-    display: -webkit-box;
-    -webkit-line-clamp: 2; /* Allow 2 lines */
-    line-clamp: 2;
-    -webkit-box-orient: vertical;
-    line-height: 1.3;
-    white-space: normal;
+    white-space: nowrap;
 }
 
 /* ──────────────────────────────────────────
-   MODAL IMPROVEMENTS
+   MODAL
    ────────────────────────────────────────── */
 
 .modal-content {
-    background: rgba(20, 20, 20, 0.95);
+    background: rgba(20,20,20,0.95);
     backdrop-filter: blur(30px);
-    border: 1px solid rgba(255, 255, 255, 0.1);
-    box-shadow: 0 24px 64px rgba(0, 0, 0, 0.8);
+    border: 1px solid rgba(255,255,255,0.1);
+    box-shadow: 0 24px 64px rgba(0,0,0,0.8);
     animation: modalZoomIn 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-    padding: 36px; /* Increased from 32px */
-    border-radius: 20px; /* Increased from 16px */
-    max-width: 440px; /* Increased from 400px */
+    padding: 28px;
+    border-radius: 16px;
+    max-width: 420px;
 }
 
 .modal-content h3 {
-    margin-bottom: 28px; /* Increased from 24px */
-    font-size: 26px; /* Increased from 24px */
+    margin-bottom: 20px;
+    font-size: 22px;
 }
 
 .modal-content input {
-    padding: 16px; /* Increased from 14px */
-    margin-bottom: 18px; /* Increased from 16px */
-    border-radius: 10px;
+    padding: 12px 14px;
+    margin-bottom: 14px;
+    border-radius: 8px;
 }
 
 /* ──────────────────────────────────────────
-   BUTTON IMPROVEMENTS
+   BUTTONS
    ────────────────────────────────────────── */
 
 .play-all-btn,
 .add-album-to-lib-btn {
-    padding: 16px 36px; /* Increased padding */
-    font-size: 15px; /* Slightly larger */
+    padding: 12px 28px;
+    font-size: 14px;
 }
 
 .back-btn {
-    padding: 12px 24px; /* Increased padding */
-    margin-bottom: 28px; /* Increased from 24px */
+    padding: 10px 20px;
+    margin-bottom: 20px;
 }
 
 /* ──────────────────────────────────────────
-   HOVER STATES - MORE SUBTLE
-   ────────────────────────────────────────── */
-
-/* ──────────────────────────────────────────
-   RESPONSIVE ADJUSTMENTS
+   RESPONSIVE
    ────────────────────────────────────────── */
 
 @media (max-width: 1600px) {
-    .album-card {
-        min-width: 160px;
-        max-width: 160px;
-    }
+    .album-card { min-width: 150px; max-width: 150px; }
 }
 
 @media (max-width: 1200px) {
-    .main-content {
-        padding: 28px;
-    }
-    
-    .recent-grid {
-        grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
-        gap: 16px;
-    }
-    
-    .album-card {
-        min-width: 140px;
-        max-width: 140px;
-    }
+    #homeView, #searchView { padding: 16px 20px; }
+    .recent-grid { grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 10px; }
+    .album-card { min-width: 140px; max-width: 140px; }
 }
 
 /* ──────────────────────────────────────────
@@ -2907,15 +2847,12 @@ img {
    ANIMATED GRADIENT BACKGROUND FOR MAIN CONTENT
    ────────────────────────────────────────── */
 
+/* ──────────────────────────────────────────
+   MAIN CONTENT RADIAL HIGHLIGHT
+   ────────────────────────────────────────── */
+
 .main-content {
     position: relative;
-    overflow-y: auto;
-    background: linear-gradient(180deg, 
-        var(--gradient-color) 0%, 
-        rgba(10, 10, 10, 0.98) 20%, 
-        var(--bg) 40%);
-    background-size: 100% 200%;
-    transition: background 1.5s ease;
 }
 
 .main-content::before {
@@ -3383,28 +3320,15 @@ img {
 .right-sidebar .mode-btn {
     pointer-events: auto;
 }
-/* Adjust the app container to account for the nav bar */
+/* ── LAYOUT: nav + app container ── */
 .app-container {
     display: flex;
-    height: calc(100vh - 60px); /* Subtract nav bar height */
-    gap: 12px;
-    padding: 12px;
+    height: calc(100vh - 56px);
+    gap: 8px;
+    padding: 8px;
     margin-top: 0;
 }
 
-/* Make sure the nav bar sits above the app container */
-.sticky-nav-full {
-    position: sticky;
-    top: 0;
-    z-index: 1000;
-    width: 100%;
-    height: 60px; /* Fixed height */
-    background: rgba(10, 10, 10, 0.75);
-    backdrop-filter: blur(16px);
-    border-bottom: 1px solid rgba(255, 255, 255, 0.06);
-}
-
-/* Remove any margin/padding that might cause gaps */
 body {
     overflow: hidden;
     height: 100vh;
@@ -3412,79 +3336,20 @@ body {
     padding: 0;
 }
 
-.main-content {
-    flex: 1;
-    background: linear-gradient(180deg, var(--gradient-color) 0%, var(--bg) 20%);
-    border-radius: 12px;
-    overflow-y: auto;
-    padding: 0;
-    transition: background .8s;
-}
-
-/* Content padding */
-#homeView, #searchView {
-    padding: 24px 32px;
-}
-
-/* ============================================
-   FINAL NAV BAR FIX - Makes it flush with top
-   ============================================ */
-
-/* Reset body padding/margin */
-body {
-    margin: 0;
-    padding: 0;
-    overflow: hidden;
-    height: 100vh;
-}
-
-/* Adjust the main app container to account for nav bar */
-.app-container {
-    display: flex;
-    height: calc(100vh - 60px); /* Subtract nav bar height */
-    gap: 12px;
-    padding: 12px;
-    margin-top: 0;
-}
-
-/* Make nav bar stick to top with proper positioning */
 .sticky-nav-full {
     position: sticky;
-    top: 0;
-    left: 0;
-    right: 0;
+    top: 0; left: 0; right: 0;
     z-index: 1000;
     width: 100%;
-    height: 60px;
-    background: rgba(10, 10, 10, 0.85);
-    backdrop-filter: blur(16px);
-    border-bottom: 1px solid rgba(255, 255, 255, 0.06);
-    margin: 0;
-    padding: 0;
+    height: 56px;
+    background: rgba(10,10,10,0.88);
+    backdrop-filter: blur(18px);
+    border-bottom: 1px solid rgba(255,255,255,0.06);
+    margin: 0; padding: 0;
 }
 
-/* Fix the container inside nav */
-.sticky-nav-container {
-    max-width: 100%;
-    height: 100%;
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    padding: 0 24px;
-    margin: 0 auto;
-}
-
-/* Remove any negative margins that might cause gaps */
-.sticky-nav-full {
-    margin-left: 0;
-    margin-right: 0;
-    width: 100%;
-}
-
-/* Ensure main content starts immediately after nav */
 .main-content {
     flex: 1;
-    background: linear-gradient(180deg, var(--gradient-color) 0%, var(--bg) 20%);
     border-radius: 12px;
     overflow-y: auto;
     padding: 0;
@@ -3492,88 +3357,52 @@ body {
     transition: background 0.8s;
 }
 
-/* Add proper padding to content areas */
 #homeView, #searchView {
-    padding: 24px 32px;
+    padding: 18px 22px;
     margin: 0;
 }
 
-/* Remove any top margin from first elements */
-.filter-chips {
-    margin-top: 0 !important;
-    padding-top: 0 !important;
-}
+.filter-chips { margin-top: 0 !important; padding-top: 0 !important; }
+#featuredSection { margin-top: 0; }
+.main-content > *:first-child { margin-top: 0; }
+.section:first-of-type { margin-top: 0; }
 
-/* Ensure the featured section doesn't add extra space */
-#featuredSection {
-    margin-top: 0;
-}
-
-/* Fix any conflicting styles */
-.main-content > *:first-child {
-    margin-top: 0;
-}
-
-/* Remove the problematic full-width hack */
-.sticky-nav-full {
-    width: 100%;
-    margin-left: 0;
-    margin-right: 0;
-}
-
-/* Adjust for any leftover spacing */
-.section:first-of-type {
-    margin-top: 0;
-}
-
-/* ============================================
-   FIX ALBUM/PLAYLIST VIEW PADDING
-   ============================================ */
-
-/* Ensure album and playlist views have proper padding */
+/* ── ALBUM / PLAYLIST VIEWS ── */
 .album-view,
 .playlist-view {
-    padding: 32px !important;
+    padding: 24px !important;
 }
 
-/* Make sure these views are positioned correctly */
 #mainContent > .album-view,
 #mainContent > .playlist-view {
-    padding: 32px !important;
+    padding: 24px !important;
     margin: 0 !important;
 }
 
-/* Fix back button positioning */
 .album-view .back-btn,
 .playlist-view .back-btn {
     margin-top: 0 !important;
-    margin-bottom: 24px;
+    margin-bottom: 18px;
 }
 
-/* Ensure album/playlist header has proper spacing */
 .album-header,
 .playlist-header {
     margin-top: 0 !important;
-    margin-bottom: 32px;
+    margin-bottom: 24px;
+    gap: 20px;
 }
 
-/* ============================================
-   ADD TOP MARGIN TO FILTER CHIPS
-   ============================================ */
-
-/* Add spacing between nav bar and filter chips */
+/* ── FILTER CHIPS TOP SPACING ── */
 .filter-chips {
-    margin-top: 24px !important;
+    margin-top: 0 !important;
 }
 
-/* Also add top padding to the home view container for extra breathing room */
 #homeView {
-    padding-top: 32px !important;
+    padding-top: 18px !important;
 }
 
-/* Make sure search view has the same spacing */
 #searchView {
-    padding-top: 32px !important;
+    padding-top: 18px !important;
 }
 /* Album covers in sidebar */
 .playlist-album-cover {
@@ -3604,33 +3433,31 @@ body {
 </head>
 <body>
 
-    <!-- STICKY NAVIGATION BAR - Full width, above everything -->
+<!-- STICKY NAVIGATION BAR - Full width, above everything -->
 <div class="sticky-nav-full" id="stickyNav">
     <div class="sticky-nav-container">
         <div class="nav-left">
-            <div class="nav-logo" href="full-tunes.html">
+            <div class="nav-logo" onclick="showHome()" style="cursor:pointer;">
                 <span class="nav-logo-icon">✦</span>
                 <span class="nav-logo-text">INDY MUSIC</span>
             </div>
         </div>
-        
-        
-        <div class="nav-center">
-                        <a class="nav-home-btn" href="full-tunes.html" style="text-decoration: none;">
-  <span>⌂</span>
-</a>
 
+        <div class="nav-center">
+            <a class="nav-home-btn" onclick="showHome()" style="text-decoration:none; cursor:pointer;">
+                <span>⌂</span>
+            </a>
             <div class="nav-search-container">
                 <span class="nav-search-icon">⌕</span>
                 <input type="text" class="nav-search-input" id="navSearchInput" placeholder="What do you want to listen to?" onkeypress="handleNavSearchKeyPress(event)">
                 <button class="nav-search-btn" onclick="performNavSearch()">Search</button>
             </div>
         </div>
-        
+
         <div class="nav-right">
-                            <button class="nav-btn" id="linkBtn" onclick="linkIndy()">
-                    <span>🔗</span> Link
-                </button>
+            <button class="nav-btn" id="linkBtn" onclick="linkIndy()">
+                <span>🔗</span> Link
+            </button>
         </div>
     </div>
 </div>
@@ -3646,16 +3473,14 @@ body {
     left: 0;
     right: 0;
     z-index: 1000;
-    width: 100vw;
-    margin-left: calc(-50vw + 50%);
-    margin-right: calc(-50vw + 50%);
-    background: rgba(10, 10, 10, 0.75);
-    backdrop-filter: blur(16px);
-    -webkit-backdrop-filter: blur(16px);
+    width: 100%;
+    background: rgba(10, 10, 10, 0.88);
+    backdrop-filter: blur(18px);
+    -webkit-backdrop-filter: blur(18px);
     border-bottom: 1px solid rgba(255, 255, 255, 0.06);
-    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
-    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-    margin-bottom: 24px;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
+    transition: all 0.3s ease;
+    margin-bottom: 0;
 }
 
 .sticky-nav-full.scrolled {
@@ -5292,12 +5117,13 @@ body {
             <div class="recent-grid" id="recentGrid"></div>
         </div>
 
-        <div class="section" id="albumsSection">
-            <div class="section-header">
-                <h2>Recommended Albums</h2>
-            </div>
-            <div class="scroll-container" id="albumsScroll"></div>
-        </div>
+
+<div class="section" id="prebuiltSection">
+    <div class="section-header">
+        <h2>✦ Prebuilt Playlists</h2>
+    </div>
+    <div class="scroll-container" id="prebuiltScroll"></div>
+</div>
 
         <div class="section" id="mixesSection">
             <div class="section-header">
@@ -5305,6 +5131,8 @@ body {
             </div>
             <div class="scroll-container" id="mixesScroll"></div>
         </div>
+
+        
         
         <!-- NEW: Popular Songs Section -->
         <div class="section" id="popularSection">
@@ -5339,45 +5167,17 @@ body {
 
     <!-- RIGHT SIDEBAR -->
     <aside class="right-sidebar" id="rightSidebar">
-        <!-- Hidden SoundCloud Widget -->
-        <iframe id="scWidget"
-            src="https://w.soundcloud.com/player/?url=https%3A//soundcloud.com&amp;auto_play=false&amp;hide_related=true&amp;show_comments=false&amp;show_user=false&amp;show_reposts=false&amp;show_teaser=false&amp;visual=false"
-            style="display:none; width:1px; height:1px; border:none;"
-            allow="autoplay">
-        </iframe>
-
-        <div class="video-container" id="videoContainer">
-            <!-- Album Art Display (replaces video) -->
-            <img id="nowPlayingArt"
-                 src=""
-                 alt="Album Art"
-                 style="
-                     position:absolute; inset:0; width:100%; height:100%;
-                     object-fit:cover; z-index:1;
-                     transition: opacity 0.5s ease, src 0.3s;
-                     opacity: 0;
-                 ">
-            <div id="npArtPlaceholder" style="
-                position:absolute; inset:0; z-index:1;
-                display:flex; flex-direction:column; align-items:center; justify-content:center;
-                background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
-                font-size:64px;
-            ">🎵</div>
-
-            <!-- Dark gradient overlay for readability -->
-            <div style="
-                position:absolute; inset:0; z-index:2; pointer-events:none;
-                background: linear-gradient(180deg, rgba(0,0,0,0.4) 0%, rgba(0,0,0,0.3) 40%, rgba(0,0,0,0.7) 100%);
-            "></div>
-
-            <!-- SoundCloud Error Overlay -->
+        <div class="video-container">
+            <iframe id="player" allow="autoplay; encrypted-media"></iframe>
+            
+            <!-- NEW: Video Error Overlay -->
             <div class="video-error-overlay" id="videoError">
-                <div class="video-error-icon">🔇</div>
+                <div class="video-error-icon">⚠️</div>
                 <div class="video-error-text">
-                    Track unavailable on SoundCloud<br>
-                    <small style="opacity:0.7;">This track may not be available for streaming</small>
+                    Video unavailable or restricted<br>
+                    <small style="opacity:0.7;">This might be due to copyright or regional restrictions</small>
                 </div>
-                <button class="retry-video-btn" onclick="retryVideo()">Try Again</button>
+                <button class="retry-video-btn" onclick="retryVideo()">Try Another Source</button>
                 <button class="retry-video-btn" onclick="skipToNext()" style="margin-top:8px;background:transparent;">
                     Skip to Next →
                 </button>
@@ -5490,8 +5290,6 @@ body {
     <div class="context-menu-item" onclick="addToQueueNext(contextMenuTarget)"><span>⚡</span> Play Next</div>
 </div>
 
-<!-- SoundCloud Widget API -->
-<script src="https://w.soundcloud.com/player/api.js"></script>
 <script src="script.js"></script>
 
 <script>
@@ -5567,68 +5365,54 @@ function filterContent(type) {
 }
 
 // Function to handle nav bar search
-function performNavSearch() {
+async function performNavSearch() {
     const navSearchInput = document.getElementById('navSearchInput');
     const searchQuery = navSearchInput.value.trim();
-    
-    if (searchQuery) {
-        // Switch to search view
-        showSearch();
-        
-        // Directly trigger the search without populating the input
-        const videoId = extractYouTubeVideoId(searchQuery);
-        
-        if (videoId) {
-            // It's a YouTube URL, play it directly
-            navSearchInput.value = '';
-            showNotification("Loading video...");
-            
-            const song = {
-                id: videoId,
-                title: "Loading...",
-                artist: "YouTube",
-                art: `https://img.youtube.com/vi/${videoId}/mqdefault.jpg`
-            };
-            
-            fetch(`https://www.googleapis.com/youtube/v3/videos?part=snippet&id=${videoId}&key=${getNextKey()}`)
-                .then(r => r.json())
-                .then(data => {
-                    const item = data.items?.[0];
-                    if (item?.snippet) {
-                        song.title = item.snippet.title;
-                        song.artist = item.snippet.channelTitle;
-                        saveMetadataToCache(videoId, song.title, song.artist);
-                    }
-                    playSong(song);
-                    showNotification("Playing pasted video!");
-                })
-                .catch(err => {
-                    console.error("Error fetching video details:", err);
-                    playSong(song);
-                    showNotification("Playing video (couldn't fetch title)");
-                });
-        } else if (searchQuery.length >= 3) {
-            // Regular search query
-            Promise.all([
-                fetch(`https://www.googleapis.com/youtube/v3/search?part=snippet&type=video&videoCategoryId=10&maxResults=10&q=${encodeURIComponent(searchQuery)}&key=${getNextKey()}`).then(r => r.json()),
-                fetch(`https://www.googleapis.com/youtube/v3/search?part=snippet&type=playlist&maxResults=4&q=${encodeURIComponent(searchQuery + ' album')}&key=${getNextKey()}`).then(r => r.json())
-            ])
-            .then(([videos, playlists]) => {
-                renderSearchResults(videos, playlists);
-            })
-            .catch(error => {
-                console.error("Search error:", error);
-                showNotification("Search failed");
-            });
-        }
-        
-        // Clear the nav search input
-        navSearchInput.value = '';
-    } else {
-        // If empty, just open search view
+
+    if (!searchQuery) {
         showSearch();
         const searchInput = document.getElementById('searchInput');
         if (searchInput) searchInput.focus();
+        return;
+    }
+
+    showSearch();
+    navSearchInput.value = '';
+
+    const videoId = extractYouTubeVideoId(searchQuery);
+
+    if (videoId) {
+        showNotification("Loading video...");
+        const song = {
+            id: videoId,
+            title: "Loading...",
+            artist: "YouTube",
+            art: `https://img.youtube.com/vi/${videoId}/mqdefault.jpg`
+        };
+        playSong(song);
+        showNotification("Playing pasted video!");
+    } else if (searchQuery.length >= 3) {
+        try {
+            const results = await workerSearch(searchQuery);
+            const videos = {
+                items: results.map(v => ({
+                    id: { videoId: v.videoId },
+                    snippet: {
+                        title: v.title,
+                        channelTitle: v.channel,
+                        channelId: v.videoId,
+                        thumbnails: {
+                            default: { url: v.thumb },
+                            medium:  { url: v.thumb }
+                        }
+                    }
+                }))
+            };
+            renderSearchResults(videos, { items: [] });
+        } catch (error) {
+            console.error("Search error:", error);
+            showNotification("Search failed — check worker");
+        }
     }
 }
 
@@ -5987,17 +5771,35 @@ function triggerConfetti() {
     .nav-right {
         flex: 0 0 90px !important;
     }
+    /* Fix right sidebar hitbox — overlays must not block the video or controls */
+.now-playing-info {
+    pointer-events: none;
 }
-
-/* ── HITBOX FIX: containers are invisible, only children are clickable ── */
-.now-playing-info,
+.now-playing-info .np-title,
+.now-playing-info .np-artist,
+.now-playing-info #addToPlaylistBtn,
+.now-playing-info .playback-mode-btns,
+.now-playing-info .playback-mode-btns * {
+    pointer-events: auto;
+}
 .lyrics-section {
-    pointer-events: none !important;
+    pointer-events: none;
 }
-.now-playing-info > *,
-.lyrics-section > * {
-    pointer-events: auto !important;
+.lyrics-section h4,
+.lyrics-section .lyrics,
+.lyrics-section .lyric-line,
+.lyrics-section #fullscreenLyricsBtn {
+    pointer-events: auto;
 }
+.playback-controls {
+    pointer-events: none;
+}
+.playback-controls .control-btn,
+.playback-controls .mode-btn {
+    pointer-events: auto;
+}
+}
+    
 </style>
 
 
