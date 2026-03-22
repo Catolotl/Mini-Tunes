@@ -5189,16 +5189,6 @@ body {
             <button id="addToPlaylistBtn" class="add-to-playlist-btn" style="display:none;">
                 <span style="font-size:18px;">+</span>
             </button>
-
-            <!-- NEW: Playback Mode Buttons -->
-            <div class="playback-mode-btns">
-                <button class="mode-btn" id="shuffleBtn" onclick="skipToPrevious()">
-                    <span>⏮</span>
-                </button>
-                <button class="mode-btn" id="repeatBtn" onclick="skipToNext()">
-                    <span>⏭</span>
-                </button>
-            </div>
         </div>
         
         <div class="lyrics-section">
@@ -5969,10 +5959,11 @@ function triggerConfetti() {
         </div>
         <span class="duration-time" id="durTotal">0:00</span>
     </div>
-    <div class="duration-controls">
-        <button class="dur-skip-btn" onclick="skipToPrevious()" title="Previous">⏮</button>
-        <button class="dur-skip-btn" onclick="skipToNext()" title="Next">⏭</button>
-    </div>
+<div class="duration-controls">
+    <button class="dur-skip-btn" onclick="skipToPrevious()" title="Previous">⏮</button>
+    <button class="dur-skip-btn" id="durPlayPauseBtn" onclick="togglePlayPause()" title="Play/Pause">⏸</button>
+    <button class="dur-skip-btn" onclick="skipToNext()" title="Next">⏭</button>
+</div>
 </div>
 
 </body>
