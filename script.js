@@ -5,10 +5,46 @@
 // ────────────────────────────────────────
 // CONFIGURATION & CONSTANTS
 // ────────────────────────────────────────
-const GROQ_API_KEY = "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";
-const YOUTUBE_API_KEY = "AIzaSyDNd7dwB1rZEpJzpyRrVZQwSKHvnt3Q7vQ";
+const WORKER_URL = 'https://morning-frog-57e3.rafaestrada-rafa.workers.dev';
 const CACHE_TTL = 24 * 60 * 60 * 1000; // 24 hours
 const UPDATE_KEY = "tunes_datasaving_update_v1";
+
+// ────────────────────────────────────────
+// PREBUILT PLAYLISTS
+// Add more playlists by copying the pattern below.
+// Songs: just paste the YouTube video ID (the part after ?v=)
+// ────────────────────────────────────────
+const PREBUILT_PLAYLISTS = [
+    {
+        id: 'locura-de-marzo-2026',
+        name: 'Locura de Marzo 2026',
+        emoji: '🎉',
+        description: 'March 2026 vibes',
+        cover: '', // optional: paste a direct image URL here for the cover art
+songs: [
+    { id: 'SiOgs73KMOU', title: 'ÁNGEL', artist: 'Grupo Frontera' },
+    { id: 'qNw8ejrI0nM', title: 'BZRP Music Sessions #0/66', artist: 'Bizarrap' },
+    { id: 'a7am7JTJZyc', title: '¿Para Qué?', artist: 'Ela Taubert' },
+    { id: 'uwf3-oeB7jg', title: 'Coleccionando Heridas', artist: 'KAROL G, Marco Antonio Solís' },
+    { id: 'tpRlBlxvxmk', title: 'Si Sabes Contar', artist: 'Los Ángeles Azules, Luck Ra, Yami Safdie' },
+    { id: '7tJ5f4BYptQ', title: 'GOODBYE', artist: 'Arthur Hanlon, Carlos Vives, Goyo' },
+    { id: '7csX6CfgMoo', title: '6 DE FEBRERO', artist: 'Aitana' },
+    { id: 'IHJz8F38P_E', title: 'Regalo', artist: 'Alvaro Soler' },
+    { id: 'zGdBgRYbWLc', title: 'Tocando El Cielo', artist: 'Luis Fonsi' },
+    { id: 'JVnY9yR2sYk', title: 'Luna Llena', artist: 'Elvis Crespo, Ebenezer Guerra' },
+    { id: 'uZjYaPQcih4', title: 'Buen Café', artist: 'Efecto Pasillo' },
+    { id: 'DYKMzBWjgak', title: 'Amuleto', artist: 'Diego Torres' },
+    { id: '67iWwThdXbs', title: 'NARCISISTA', artist: 'The Warning' },
+    { id: 'lltIoGeNOoE', title: 'La Mujer Que Soy', artist: 'Fanny Lu' },
+    { id: '8CnB7nDzp5E', title: 'VUELA', artist: 'Luck Ra, Ke Personajes' },
+    { id: 'JrqSnbQkOdw', title: 'AKAKAW', artist: 'Renata Flores, Los Mirlos' },
+    { id: 'EXyzhaakdVg', title: 'TQMQA', artist: 'Eladio Carrión' },
+    { id: 'RfaE-aajv8w', title: 'Regalo', artist: 'Alvaro Soler' }
+]
+    },
+    // To add another playlist, copy from the { above to the }, above and paste here
+];
+
 
 // ────────────────────────────────────────
 // STATE MANAGEMENT
@@ -43,8 +79,12 @@ const titleCleanCache = new Map();
 // UTILITY FUNCTIONS
 // ────────────────────────────────────────
 
-function getNextKey() {
-    return YOUTUBE_API_KEY;
+async function workerSearch(query) {
+    const res = await fetch(`${WORKER_URL}/search?q=${encodeURIComponent(query)}`);
+    if (!res.ok) throw new Error(`Worker HTTP ${res.status}`);
+    const body = await res.json();
+    if (body.error) throw new Error(body.error);
+    return body.results || [];
 }
 
 function escapeHtml(text) {
@@ -243,41 +283,15 @@ function extractYouTubeVideoId(input) {
 
 async function fetchVideoDetails(videoId, song) {
     if (!videoId) return;
-
-    // 1. Try cache first → instant!
     const cached = getCachedMetadata(videoId);
     if (cached) {
-        console.log(`Cache hit for ${videoId}: "${cached.title}"`);
         applyMetadata(videoId, song, cached.title, cached.artist);
         return;
     }
-
-    // 2. Fetch from API
-    try {
-        const url = `https://www.googleapis.com/youtube/v3/videos?part=snippet&id=${videoId}&key=${getNextKey()}`;
-        const res = await fetch(url);
-        if (!res.ok) throw new Error(`API ${res.status}`);
-
-        const data = await res.json();
-        const item = data.items?.[0];
-
-        if (item?.snippet) {
-            const realTitle = item.snippet.title;
-            const realArtist = item.snippet.channelTitle;
-
-            // Save to persistent cache
-            saveMetadataToCache(videoId, realTitle, realArtist);
-
-            // Apply to UI and song object
-            applyMetadata(videoId, song, realTitle, realArtist);
-        }
-    } catch (err) {
-        console.warn("Metadata fetch failed:", err);
-        // Fallback: use regex guess from original title if available
-        if (song?.title && song.title !== "[couldn't fetch title]") {
-            const guessed = shortenSongTitle(song.title);
-            applyMetadata(videoId, song, guessed, "YouTube");
-        }
+    // No API call — title/artist already come from search results
+    if (song?.title && song.title !== 'Loading...') {
+        saveMetadataToCache(videoId, song.title, song.artist || 'YouTube');
+        applyMetadata(videoId, song, song.title, song.artist || 'YouTube');
     }
 }
 
@@ -286,44 +300,33 @@ async function fetchVideoDetails(videoId, song) {
 // ────────────────────────────────────────
 
 function showHome() {
-    const mainContent = document.getElementById('mainContent');
+    const homeView = document.getElementById('homeView');
     const searchView = document.getElementById('searchView');
     const homeBtn = document.getElementById('homeBtn');
     const searchBtn = document.getElementById('searchBtn');
-    
-    if (!mainContent) return;
 
-    // Show home view, hide search view
-    const homeView = document.getElementById('homeView');
-    if (homeView) {
-        homeView.style.display = 'block';
-    }
-    
+    if (!homeView) return;
+
+    homeView.style.display = 'block';
+
     if (searchView) {
         searchView.classList.remove('active');
         searchView.style.display = 'none';
     }
-    
+
     if (homeBtn) homeBtn.classList.add('active');
     if (searchBtn) searchBtn.classList.remove('active');
-    
-    // Render all content
+
     renderRecent();
     renderAlbums();
     renderMixes();
     renderPopular();
     renderArtists();
     renderLibrary();
-    
-    // Update filter counts
     updateFilterCounts();
-    
-    // Setup filter buttons
     setupFilterButtons();
-    
-    // Setup search input
     setTimeout(setupSearchInput, 100);
-    window.location.reload();
+    // NO reload — just show the home view
 }
 
 function initializeApp() {
@@ -331,7 +334,7 @@ function initializeApp() {
     recent = load("recent", []);
     playlists = load("playlists", {});
     liked = load("liked", []);
-    queue = load('queue', []); // Make sure this line exists
+    queue = load('queue', []);
     savedAlbums = load('indy_saved_albums', {});
     listeningStats = load('listening_stats', {
         songsPlayed: 0,
@@ -339,11 +342,9 @@ function initializeApp() {
         lastUpdated: Date.now()
     });
 
-    // Initialize queue index from saved state
     const savedQueueIndex = load('queue_index', 0);
     queueIndex = savedQueueIndex;
 
-    // Initialize Liked Songs playlist
     if (!playlists["Liked Songs"]) {
         playlists["Liked Songs"] = {
             emoji: "❤️",
@@ -354,7 +355,6 @@ function initializeApp() {
         save("playlists", playlists);
     }
 
-    // Render initial content
     renderRecent();
     renderPlaylists();
     renderAlbums();
@@ -366,27 +366,64 @@ function initializeApp() {
     updateFilterCounts();
     updateStats();
 
-    // Setup YouTube API
     loadYouTubeAPI();
-
-    // Setup animations CSS
     injectAnimationStyles();
+    renderPrebuiltPlaylists();
 
-    // Auto-minimize right sidebar initially
     const rightSidebar = document.getElementById('rightSidebar');
     if (rightSidebar) {
         rightSidebar.classList.add('minimized');
     }
 
-    // Show update popup if needed
     showUpdatePopupIfNeeded();
-
-    // Setup fullscreen lyrics
     setupFullscreenLyrics();
-    
-    // Setup filter buttons
     setupFilterButtons();
-    
+
+    // Restore last playing song after player is ready
+// Restore last playing song after player is ready
+const lastSong = load('last_playing_song', null);
+if (lastSong && lastSong.id) {
+    const tryRestore = setInterval(() => {
+        if (playerReady && ytPlayer && typeof ytPlayer.loadVideoById === 'function') {
+            clearInterval(tryRestore);
+
+            // Restore UI info
+            const npTitle = document.getElementById('npTitle');
+            const npArtist = document.getElementById('npArtist');
+            if (npTitle) npTitle.textContent = lastSong.title || 'Unknown Title';
+            if (npArtist) npArtist.textContent = lastSong.artist || 'Unknown Artist';
+            if (lastSong.art) updateGradient(lastSong.art);
+            updateMiniPlayer(lastSong);
+
+            const addBtn = document.getElementById('addToPlaylistBtn');
+            if (addBtn) addBtn.style.display = 'flex';
+
+            const rs = document.getElementById('rightSidebar');
+            if (rs) rs.classList.remove('minimized');
+
+            // Set state so handleNextSong works correctly
+            currentPlayingSong = { ...lastSong };
+            lastPlayedVideoId = lastSong.id;
+
+            // Actually load and play the video so iframe isn't black
+            ytPlayer.loadVideoById({
+                videoId: lastSong.id,
+                startSeconds: 0,
+                suggestedQuality: 'default'
+            });
+
+            // Fetch lyrics
+            setTimeout(() => {
+                updateLyrics(lastSong);
+                if (typeof setupLyricsSync === 'function') setupLyricsSync();
+            }, 1500);
+
+            showNotification(`↩ Resumed: ${lastSong.title}`);
+        }
+    }, 200);
+    setTimeout(() => clearInterval(tryRestore), 10000);
+}
+
     console.log('🎵 INDY Music initialized successfully');
 }
 
@@ -557,22 +594,15 @@ window.onYouTubeIframeAPIReady = function() {
 function onPlayerStateChange(event) {
     if (event.data === window.YT.PlayerState.ENDED) {
         console.log("Song ended, handling next track...");
-        
-        // Force the player to not show anything
-        if (ytPlayer && typeof ytPlayer.stopVideo === 'function') {
-            ytPlayer.stopVideo();  // This clears the player
-        }
-        
-        // Check repeat mode
         if (repeatMode === 'one') {
             console.log("Repeat one - replaying current song");
+            lastPlayedVideoId = null; // Allow replay
             playSong(currentPlayingSong);
         } else {
             handleNextSong();
         }
     } else if (event.data === window.YT.PlayerState.PLAYING) {
         console.log("Song started playing");
-        // Update playing state if needed
     } else if (event.data === window.YT.PlayerState.PAUSED) {
         console.log("Song paused");
     } else if (event.data === window.YT.PlayerState.BUFFERING) {
@@ -582,66 +612,48 @@ function onPlayerStateChange(event) {
 
 // Add this new function
 function handleNextSong() {
-    // Check if we're playing from queue
-    if (queue.length > 0) {
-        // Check if current song is in queue
-        const currentInQueue = currentPlayingSong && queue.some(s => s.id === currentPlayingSong.id);
-        
-        if (currentInQueue) {
-            // Find current song's position in queue
-            const currentQueuePos = queue.findIndex(s => s.id === currentPlayingSong.id);
-            
-            if (currentQueuePos !== -1 && currentQueuePos < queue.length - 1) {
-                // Play next song in queue
-                console.log("Playing next song in queue");
+    // Always clear lastPlayedVideoId so the next song isn't blocked
+    lastPlayedVideoId = null;
+
+    // Queue takes priority
+    if (queue.length > 0 && currentPlayingSong) {
+        const currentQueuePos = queue.findIndex(s => s.id === currentPlayingSong.id);
+        if (currentQueuePos !== -1) {
+            if (currentQueuePos < queue.length - 1) {
                 queueIndex = currentQueuePos + 1;
                 playSong(queue[queueIndex]);
                 return;
-            } else if (repeatMode === 'all' && queue.length > 0) {
-                // Loop back to start of queue
-                console.log("Looping queue back to start");
+            } else if (repeatMode === 'all') {
                 queueIndex = 0;
                 playSong(queue[0]);
                 return;
             } else {
-                // End of queue reached
-                console.log("End of queue reached");
-                if (queue.length > 0) {
-                    showNotification("End of queue");
-                }
+                showNotification("End of queue");
+                return;
             }
         }
     }
-    
-    // If not in queue mode or queue ended, handle regular playlist/single mode
+
+    // Shuffle mode
     if (shuffleMode && currentSongs.length > 1) {
-        // Pick random song (not current)
         let newIndex;
         do {
             newIndex = Math.floor(Math.random() * currentSongs.length);
         } while (newIndex === currentIndex && currentSongs.length > 1);
-        
-        console.log("Shuffle mode - playing random song");
         currentIndex = newIndex;
         playSong(currentSongs[currentIndex]);
         return;
     }
-    
-    // Regular sequential playback
+
+    // Sequential playlist playback
     if (currentIndex < currentSongs.length - 1) {
-        console.log("Playing next song in playlist");
         currentIndex++;
         playSong(currentSongs[currentIndex]);
     } else if (repeatMode === 'all' && currentSongs.length > 0) {
-        console.log("Repeat all - looping to start");
         currentIndex = 0;
         playSong(currentSongs[currentIndex]);
     } else {
-        console.log("No more songs to play");
-        // No more songs to play
-        if (currentPlayingSong) {
-            showNotification("End of playlist/queue");
-        }
+        if (currentPlayingSong) showNotification("End of playlist");
     }
 }
 
@@ -864,138 +876,103 @@ async function playSong(song, fromPlaylist = null) {
         console.error("Invalid song object", song);
         return;
     }
-    
+
     if (lastPlayedVideoId === song.id) {
         console.log("Already playing this exact video — skipping duplicate call");
         return;
     }
-    
+
     lastPlayedVideoId = song.id;
     currentPlayingSong = { ...song };
 
+    // Save last playing song to localStorage
+    save('last_playing_song', song);
 
-    // Update playback context - IMPORTANT: Check if we're playing from queue
+    // Update playback context
     if (fromPlaylist && fromPlaylist !== 'queue') {
         currentPlaylist = fromPlaylist;
         currentSongs = playlists[fromPlaylist]?.songs || [];
         currentIndex = currentSongs.findIndex(s => s.id === song.id);
         if (currentIndex === -1) currentIndex = 0;
     } else if (fromPlaylist === 'queue') {
-        // Playing from queue, keep current queue state
         currentPlaylist = null;
         currentSongs = [...queue];
     } else {
-    // UPDATE THIS SECTION - Fix queue detection logic
-    // Check if we're playing from queue
-    const queueIdx = queue.findIndex(s => s.id === song.id);
-    if (queueIdx !== -1) {
-        // This song is in queue, set queue as current source
-        queueIndex = queueIdx;
-        currentSongs = [...queue];
-        currentIndex = queueIdx;
-        currentPlaylist = null;
-        fromPlaylist = 'queue'; // Mark as queue playback
-    } else if (fromPlaylist && fromPlaylist !== 'queue') {
-        currentPlaylist = fromPlaylist;
-        currentSongs = playlists[fromPlaylist]?.songs || [];
-        currentIndex = currentSongs.findIndex(s => s.id === song.id);
-        if (currentIndex === -1) currentIndex = 0;
-    } else {
-        // Not from playlist or queue
-        const idx = currentSongs.findIndex(s => s.id === song.id);
-        if (idx !== -1) currentIndex = idx;
-    }
+        const queueIdx = queue.findIndex(s => s.id === song.id);
+        if (queueIdx !== -1) {
+            queueIndex = queueIdx;
+            currentSongs = [...queue];
+            currentIndex = queueIdx;
+            currentPlaylist = null;
+            fromPlaylist = 'queue';
+        } else if (fromPlaylist && fromPlaylist !== 'queue') {
+            currentPlaylist = fromPlaylist;
+            currentSongs = playlists[fromPlaylist]?.songs || [];
+            currentIndex = currentSongs.findIndex(s => s.id === song.id);
+            if (currentIndex === -1) currentIndex = 0;
+        } else {
+            const idx = currentSongs.findIndex(s => s.id === song.id);
+            if (idx !== -1) currentIndex = idx;
+        }
     }
 
-    // Inside playSong function, after setting queueIndex if playing from queue
-if (fromPlaylist === 'queue' || queue.some(s => s.id === song.id)) {
-    save('queue_index', queueIndex);
-}
+    if (fromPlaylist === 'queue' || queue.some(s => s.id === song.id)) {
+        save('queue_index', queueIndex);
+    }
 
-    // Hide video error overlay if showing
     hideVideoError();
-    
-    // Increment play stats
     incrementSongPlay();
 
-    // Clean title for display
     const cleanTitle = await getCleanSongTitle(song.id, song.title);
 
     const npTitle = document.getElementById('npTitle');
     const npArtist = document.getElementById('npArtist');
-    
     if (npTitle) npTitle.textContent = cleanTitle || "Unknown Title";
     if (npArtist) npArtist.textContent = song.artist || "Unknown Artist";
 
     addToRecent(song);
     if (song.art) updateGradient(song.art);
     showToast({ ...song, title: cleanTitle });
-
-    // Update mini player
     updateMiniPlayer({ ...song, title: cleanTitle });
 
-    // Show add to playlist button
     const addBtn = document.getElementById('addToPlaylistBtn');
     if (addBtn) addBtn.style.display = 'flex';
 
-    // Auto-open right sidebar
     const rightSidebar = document.getElementById('rightSidebar');
     if (rightSidebar && rightSidebar.classList.contains('minimized')) {
         rightSidebar.classList.remove('minimized');
     }
 
-    // Update queue display
     renderQueue();
 
-    // Load video
-    const params = new URLSearchParams({
-        autoplay: 1,
-        enablejsapi: 1,
-        origin: window.location.origin,
-        rel: 0,
-        modestbranding: 1,
-        showinfo: 0,
-        iv_load_policy: 3,
-        playsinline: 1,
-        fs: 1
-    });
-
-// Replace the existing video loading code with this:
-if (window.ytPlayer && typeof window.ytPlayer.loadVideoById === 'function') {
-    try {
-        // Load with options to prevent related videos
-        window.ytPlayer.loadVideoById({
-            videoId: song.id,
-            startSeconds: 0,
-            endSeconds: 0,  // Let it play to the end
-            suggestedQuality: 'default'
-        });
-        console.log(`Playing "${cleanTitle}" via ytPlayer.loadVideoById`);
-    } catch (err) {
-        console.error("loadVideoById failed:", err);
+    if (window.ytPlayer && typeof window.ytPlayer.loadVideoById === 'function') {
+        try {
+            window.ytPlayer.loadVideoById({
+                videoId: song.id,
+                startSeconds: 0,
+                suggestedQuality: 'default'
+            });
+            console.log(`Playing "${cleanTitle}" via ytPlayer.loadVideoById`);
+        } catch (err) {
+            console.error("loadVideoById failed:", err);
+            const embedUrl = `https://www.youtube.com/embed/${song.id}?autoplay=1&enablejsapi=1&rel=0&modestbranding=1&iv_load_policy=3`;
+            const playerIframe = document.getElementById('player');
+            if (playerIframe) playerIframe.src = embedUrl;
+        }
+    } else {
         const embedUrl = `https://www.youtube.com/embed/${song.id}?autoplay=1&enablejsapi=1&rel=0&modestbranding=1&iv_load_policy=3`;
         const playerIframe = document.getElementById('player');
-        if (playerIframe) playerIframe.src = embedUrl;
+        if (playerIframe) {
+            playerIframe.src = embedUrl;
+            console.log(`Playing "${cleanTitle}" via direct iframe src`);
+        }
     }
-} else {
-    // Critical: Add rel=0 to prevent related videos
-    const embedUrl = `https://www.youtube.com/embed/${song.id}?autoplay=1&enablejsapi=1&rel=0&modestbranding=1&iv_load_policy=3`;
-    const playerIframe = document.getElementById('player');
-    if (playerIframe) {
-        playerIframe.src = embedUrl;
-        console.log(`Playing "${cleanTitle}" via direct iframe src with rel=0`);
-    }
-}
 
-    // Fetch lyrics for the new song
     setTimeout(() => {
         if (song && song.id) {
             updateLyrics(song);
-            
-            // Set up lyrics sync if we have the player
             if (ytPlayer && typeof ytPlayer.getCurrentTime === 'function') {
                 if (window.lyricsInterval) clearInterval(window.lyricsInterval);
-                
                 window.lyricsInterval = setInterval(() => {
                     if (ytPlayer && ytPlayer.getCurrentTime && document.querySelector('.synced-lyrics')) {
                         const currentTime = ytPlayer.getCurrentTime();
@@ -1121,50 +1098,32 @@ async function renderPopular() {
     const randomQuery = popularQueries[Math.floor(Math.random() * popularQueries.length)];
     
     try {
-        const response = await fetch(
-            `https://www.googleapis.com/youtube/v3/search?part=snippet&type=video&videoCategoryId=10&maxResults=6&q=${encodeURIComponent(randomQuery)}&key=${getNextKey()}`
-        );
-        
-        if (!response.ok) throw new Error('API error');
-        
-        const data = await response.json();
-        
-        container.innerHTML = '';
-        
-        if (data.items && data.items.length > 0) {
-            data.items.forEach(item => {
-                const song = {
-                    id: item.id.videoId,
-                    title: item.snippet.title,
-                    artist: item.snippet.channelTitle,
-                    art: item.snippet.thumbnails.medium.url
-                };
-                
-                const div = document.createElement('div');
-                div.className = 'album-card';
-                div.innerHTML = `
-                    <img src="${song.art}" alt="">
-                    <div class="album-title loading">${escapeHtml(song.title)}</div>
-                    <div class="album-artist">${escapeHtml(song.artist)}</div>
-                `;
-                div.onclick = () => playSong(song);
-                container.appendChild(div);
-                
-                getCleanSongTitle(song.id, song.title).then(clean => {
-                    const titleEl = div.querySelector('.album-title');
-                    if (titleEl) {
-                        titleEl.textContent = clean;
-                        titleEl.classList.remove('loading');
-                    }
-                });
+    const results = await workerSearch(randomQuery);
+    container.innerHTML = '';
+    if (results.length > 0) {
+        results.slice(0, 6).forEach(v => {
+            const song = { id: v.videoId, title: v.title, artist: v.channel, art: v.thumb };
+            const div = document.createElement('div');
+            div.className = 'album-card';
+            div.innerHTML = `
+                <img src="${song.art}" alt="">
+                <div class="album-title loading">${escapeHtml(song.title)}</div>
+                <div class="album-artist">${escapeHtml(song.artist)}</div>
+            `;
+            div.onclick = () => playSong(song);
+            container.appendChild(div);
+            getCleanSongTitle(song.id, song.title).then(clean => {
+                const titleEl = div.querySelector('.album-title');
+                if (titleEl) { titleEl.textContent = clean; titleEl.classList.remove('loading'); }
             });
-        } else {
-            container.innerHTML = '<div style="padding:20px;color:var(--muted);">No popular songs found</div>';
-        }
-    } catch (error) {
-        console.error("Popular songs error:", error);
-        container.innerHTML = '<div style="padding:20px;color:var(--muted);">Could not load popular songs</div>';
+        });
+    } else {
+        container.innerHTML = '<div style="padding:20px;color:var(--muted);">No popular songs found</div>';
     }
+} catch (error) {
+    console.error("Popular songs error:", error);
+    container.innerHTML = '<div style="padding:20px;color:var(--muted);">Could not load popular songs</div>';
+}
 }
 
 async function renderArtists() {
@@ -1345,6 +1304,140 @@ if (videoId) {
 // RENDER FUNCTIONS
 // ────────────────────────────────────────
 
+function renderPrebuiltPlaylists() {
+    const container = document.getElementById('prebuiltScroll');
+    if (!container) return;
+
+    container.innerHTML = '';
+
+    if (PREBUILT_PLAYLISTS.length === 0) {
+        container.innerHTML = '<div style="padding:20px;color:var(--muted);">No prebuilt playlists yet</div>';
+        return;
+    }
+
+    PREBUILT_PLAYLISTS.forEach(playlist => {
+        const songCount = playlist.songs.length;
+        const coverUrl = playlist.cover || '';
+
+        const div = document.createElement('div');
+        div.className = 'album-card';
+        div.style.cursor = 'pointer';
+        div.innerHTML = `
+            ${coverUrl
+                ? `<img src="${coverUrl}" alt="" style="width:100%;aspect-ratio:1;border-radius:8px;margin-bottom:12px;object-fit:cover;">`
+                : `<div style="width:100%;aspect-ratio:1;background:linear-gradient(135deg,rgba(255,255,255,0.12),rgba(255,255,255,0.04));border-radius:8px;margin-bottom:12px;display:flex;align-items:center;justify-content:center;font-size:52px;">${playlist.emoji}</div>`
+            }
+            <div class="album-title">${escapeHtml(playlist.name)}</div>
+            <div class="album-artist">${songCount} songs · Prebuilt</div>
+        `;
+        div.onclick = () => openPrebuiltPlaylist(playlist);
+        container.appendChild(div);
+    });
+}
+
+async function openPrebuiltPlaylist(playlist) {
+    if (!playlist.songs || playlist.songs.length === 0) {
+        showNotification('This playlist has no songs yet');
+        return;
+    }
+
+    showNotification(`Loading ${playlist.name}...`);
+
+    // Build song objects — title defaults to ID until we resolve it
+    const songs = playlist.songs.map((entry, i) => {
+        // entry can be just a string ID, or an object { id, title, artist }
+        if (typeof entry === 'object' && entry.id) {
+            return {
+                id:     entry.id,
+                title:  entry.title  || entry.id,
+                artist: entry.artist || playlist.name,
+                art:    `https://img.youtube.com/vi/${entry.id}/mqdefault.jpg`
+            };
+        }
+        // Plain string ID — check cache for saved title
+        const cached = getCachedMetadata(entry);
+        return {
+            id:     entry,
+            title:  cached?.title  || entry,
+            artist: cached?.artist || playlist.name,
+            art:    `https://img.youtube.com/vi/${entry}/mqdefault.jpg`
+        };
+    });
+
+    currentSongs = songs;
+    currentIndex = 0;
+    currentPlaylist = null;
+
+    const mainContent = document.getElementById('mainContent');
+    if (!mainContent) return;
+
+    mainContent.innerHTML = `
+        <div class="playlist-view" style="padding:32px;">
+            <button class="back-btn" onclick="showHome()">← Back</button>
+            <div class="playlist-header">
+                <div style="width:200px;height:200px;border-radius:8px;overflow:hidden;flex-shrink:0;box-shadow:0 16px 48px rgba(0,0,0,0.6);">
+                    ${playlist.cover
+                        ? `<img src="${playlist.cover}" style="width:100%;height:100%;object-fit:cover;">`
+                        : `<div style="width:100%;height:100%;background:linear-gradient(135deg,rgba(255,255,255,0.15),rgba(255,255,255,0.04));display:flex;align-items:center;justify-content:center;font-size:80px;">${playlist.emoji}</div>`
+                    }
+                </div>
+                <div class="playlist-info-large">
+                    <h1>${escapeHtml(playlist.name)}</h1>
+                    <p>${songs.length} songs · ${escapeHtml(playlist.description || 'Prebuilt Playlist')}</p>
+                    <div style="display:flex;gap:12px;margin-top:16px;align-items:center;flex-wrap:wrap;">
+                        <button class="play-all-btn" onclick="
+                            currentIndex = 0;
+                            lastPlayedVideoId = null;
+                            playSong(currentSongs[0]);
+                        ">▶ Play All</button>
+                        <button class="play-all-btn" style="background:rgba(255,255,255,0.12);color:var(--text);border:1px solid rgba(255,255,255,0.2);" onclick="
+                            currentSongs = [...currentSongs].sort(() => Math.random() - 0.5);
+                            currentIndex = 0;
+                            lastPlayedVideoId = null;
+                            playSong(currentSongs[0]);
+                        ">🔀 Shuffle</button>
+                        <span style="font-size:12px;color:var(--muted);font-style:italic;">Read-only playlist</span>
+                    </div>
+                </div>
+            </div>
+            <div class="playlist-songs" id="prebuiltSongsList"></div>
+        </div>
+    `;
+
+    const list = document.getElementById('prebuiltSongsList');
+    if (!list) return;
+
+    songs.forEach((song, i) => {
+        const div = document.createElement('div');
+        div.className = 'album-song-item';
+        div.id = `prebuilt-song-${song.id}`;
+        div.innerHTML = `
+            <span class="song-number">${i + 1}</span>
+            <img src="${escapeHtml(song.art)}" alt="" style="width:48px;height:48px;border-radius:4px;object-fit:cover;">
+            <div class="song-info" style="flex:1;min-width:0;">
+                <div class="song-title">${escapeHtml(song.title)}</div>
+                <div class="song-artist" style="font-size:12px;color:var(--muted);">${escapeHtml(song.artist)}</div>
+            </div>
+            <div style="display:flex;gap:8px;margin-left:auto;flex-shrink:0;">
+                <button onclick="event.stopPropagation(); addToQueue(${JSON.stringify(song).replace(/"/g, '&quot;')})"
+                    style="background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.12);color:var(--text);padding:6px 14px;border-radius:20px;cursor:pointer;font-size:12px;">
+                    + Queue
+                </button>
+                <button onclick="event.stopPropagation(); showAddToPlaylistMenu(${JSON.stringify(song).replace(/"/g, '&quot;')})"
+                    style="background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.12);color:var(--text);padding:6px 14px;border-radius:20px;cursor:pointer;font-size:12px;">
+                    📝 Save
+                </button>
+            </div>
+        `;
+        div.onclick = () => {
+            currentIndex = i;
+            lastPlayedVideoId = null;
+            playSong(song);
+        };
+        list.appendChild(div);
+    });
+}
+
 function addToRecent(song) {
     if (!song || !song.id) return;
     
@@ -1408,38 +1501,30 @@ async function renderAlbums() {
     }
     
     try {
-        const albumPromises = uniqueArtists.map(artist =>
-            cachedFetch(
-                `https://www.googleapis.com/youtube/v3/search?part=snippet&type=playlist&maxResults=2&q=${encodeURIComponent(artist + ' album')}&key=${getNextKey()}`,
-                `album-cache-${artist.replace(/\W/g,'_')}`
-            )
-        );
-        
-        const results = await Promise.all(albumPromises);
-        const albums = results.flatMap(data => data?.items || []).slice(0, 6);
-        
-        container.innerHTML = '';
-        
-        if (albums.length === 0) {
-            container.innerHTML = '<div style="padding:20px;color:var(--muted);">No albums found</div>';
-            return;
-        }
-        
-        albums.forEach(item => {
-            const div = document.createElement('div');
-            div.className = 'album-card';
-            div.innerHTML = `
-                <img src="${item.snippet.thumbnails.medium.url}" alt="">
-                <div class="album-title">${escapeHtml(item.snippet.title)}</div>
-                <div class="album-artist">${escapeHtml(item.snippet.channelTitle)}</div>
-            `;
-            div.onclick = () => playPlaylist(item.id.playlistId, true);
-            container.appendChild(div);
-        });
-    } catch (error) {
-        console.error("Album fetch error:", error);
-        container.innerHTML = '<div style="padding:20px;color:var(--muted);">Could not load albums</div>';
+    const allResults = await Promise.all(
+        uniqueArtists.map(artist => workerSearch(artist + ' album playlist'))
+    );
+    const albums = allResults.flat().slice(0, 6);
+    container.innerHTML = '';
+    if (albums.length === 0) {
+        container.innerHTML = '<div style="padding:20px;color:var(--muted);">No albums found</div>';
+        return;
     }
+    albums.forEach(v => {
+        const div = document.createElement('div');
+        div.className = 'album-card';
+        div.innerHTML = `
+            <img src="${v.thumb}" alt="">
+            <div class="album-title">${escapeHtml(v.title)}</div>
+            <div class="album-artist">${escapeHtml(v.channel)}</div>
+        `;
+        div.onclick = () => playSong({ id: v.videoId, title: v.title, artist: v.channel, art: v.thumb });
+        container.appendChild(div);
+    });
+} catch (error) {
+    console.error("Album fetch error:", error);
+    container.innerHTML = '<div style="padding:20px;color:var(--muted);">Could not load albums</div>';
+}
 }
 
 function renderMixes() {
@@ -1739,45 +1824,29 @@ function renderPlaylists() {
 // ────────────────────────────────────────
 
 async function playPlaylist(playlistId, isAlbum = false) {
+    // Local playlists still work — they're stored as song arrays
+    const localPlaylist = playlists[playlistId];
+    if (localPlaylist) {
+        currentSongs = localPlaylist.songs || [];
+        currentIndex = 0;
+        currentPlaylist = playlistId;
+        if (currentSongs.length > 0) playSong(currentSongs[0]);
+        return;
+    }
+    // For YouTube playlist IDs from search, search by name instead
+    showNotification("Loading playlist...");
     try {
-        const response = await fetch(`https://www.googleapis.com/youtube/v3/playlistItems?part=snippet&maxResults=50&playlistId=${playlistId}&key=${getNextKey()}`);
-        
-        if (!response.ok) throw new Error('API error');
-        
-        const data = await response.json();
-        
-        if (data.items && data.items.length > 0) {
-            currentSongs = data.items
-                .map(item => ({
-                    id: item.snippet.resourceId?.videoId,
-                    title: item.snippet.title,
-                    artist: item.snippet.channelTitle,
-                    art: item.snippet.thumbnails?.medium?.url || ''
-                }))
-                .filter(song => song.id && song.title !== 'Private video' && song.title !== 'Deleted video');
-            
-            currentIndex = 0;
-            currentPlaylist = null;
-            
-            if (isAlbum) {
-                try {
-                    const playlistResponse = await fetch(`https://www.googleapis.com/youtube/v3/playlists?part=snippet&id=${playlistId}&key=${getNextKey()}`);
-                    const playlistData = await playlistResponse.json();
-                    const albumName = playlistData.items?.[0]?.snippet?.title || data.items[0].snippet.channelTitle;
-                    
-                    showAlbumView(currentSongs, albumName, playlistId);
-                } catch (err) {
-                    console.error("Error fetching playlist details:", err);
-                    showAlbumView(currentSongs, data.items[0].snippet.channelTitle, playlistId);
-                }
-            } else {
-                if (currentSongs.length > 0) {
-                    playSong(currentSongs[0]);
-                }
-            }
+        const results = await workerSearch(playlistId);
+        if (!results.length) { showNotification("No songs found"); return; }
+        currentSongs = results.map(v => ({ id: v.videoId, title: v.title, artist: v.channel, art: v.thumb }));
+        currentIndex = 0;
+        currentPlaylist = null;
+        if (isAlbum) {
+            showAlbumView(currentSongs, results[0]?.channel || 'Album', playlistId);
+        } else {
+            playSong(currentSongs[0]);
         }
-    } catch (error) {
-        console.error("Playlist error:", error);
+    } catch (err) {
         showNotification("Failed to load playlist");
     }
 }
@@ -1924,24 +1993,11 @@ async function openMix(seedSong) {
 
 async function generateMix(seedSong) {
     const query = `${seedSong.artist} official audio`;
-    
     try {
-        const res = await fetch(
-            `https://www.googleapis.com/youtube/v3/search?part=snippet&type=video&videoCategoryId=10&maxResults=15&q=${encodeURIComponent(query)}&key=${getNextKey()}`
-        );
-        
-        if (!res.ok) throw new Error('API error');
-        
-        const data = await res.json();
-
-        return (data.items || [])
-            .map(item => ({
-                id: item.id.videoId,
-                title: item.snippet.title,
-                artist: item.snippet.channelTitle,
-                art: item.snippet.thumbnails.medium.url
-            }))
-            .filter(song => song.id);
+        const results = await workerSearch(query);
+        return results.map(v => ({
+            id: v.videoId, title: v.title, artist: v.channel, art: v.thumb
+        })).filter(s => s.id);
     } catch (err) {
         console.error("Mix generation error:", err);
         return [];
@@ -3502,12 +3558,13 @@ window.showHome = function() {
                 <div class="recent-grid" id="recentGrid"></div>
             </div>
 
-            <div class="section" id="albumsSection">
-                <div class="section-header">
-                    <h2>Recommended Albums</h2>
-                </div>
-                <div class="scroll-container" id="albumsScroll"></div>
-            </div>
+            <div class="section" id="prebuiltSection">
+    <div class="section-header">
+        <h2>✦ Prebuilt Playlists</h2>
+    </div>
+    <div class="scroll-container" id="prebuiltScroll"></div>
+</div>
+
 
             <div class="section" id="mixesSection">
                 <div class="section-header">
@@ -3568,6 +3625,7 @@ window.showHome = function() {
     renderPopular();
     renderArtists();
     renderLibrary();
+    renderPrebuiltPlaylists();
     
     // Update filter counts and setup
     updateFilterCounts();
@@ -4332,27 +4390,16 @@ function setupSearchInput() {
     if (!searchInput || searchInput.dataset.enhanced) return;
 
     searchInput.dataset.enhanced = 'true';
-    
-    const genreBrowse = document.getElementById('genreBrowse');
-    const searchResults = document.getElementById('searchResults');
 
     searchInput.oninput = (e) => {
         clearTimeout(searchTimeout);
         const value = e.target.value.trim();
 
         if (!value) {
-            // Show genre browse, hide results
-            if (genreBrowse) genreBrowse.style.display = 'block';
-            if (searchResults) {
-                searchResults.style.display = 'none';
-                searchResults.innerHTML = '';
-            }
+            const resultsContainer = document.getElementById('searchResults');
+            if (resultsContainer) resultsContainer.innerHTML = '';
             return;
         }
-        
-        // Hide genre browse, show results
-        if (genreBrowse) genreBrowse.style.display = 'none';
-        if (searchResults) searchResults.style.display = 'block';
 
         searchTimeout = setTimeout(async () => {
             const videoId = extractYouTubeVideoId(value);
@@ -4360,41 +4407,35 @@ function setupSearchInput() {
             if (videoId) {
                 e.target.value = '';
                 showNotification("Loading video...");
-                
                 const song = {
                     id: videoId,
                     title: "Loading...",
                     artist: "YouTube",
                     art: `https://img.youtube.com/vi/${videoId}/mqdefault.jpg`
                 };
-                
-                fetch(`https://www.googleapis.com/youtube/v3/videos?part=snippet&id=${videoId}&key=${getNextKey()}`)
-                    .then(r => r.json())
-                    .then(data => {
-                        const item = data.items?.[0];
-                        if (item?.snippet) {
-                            song.title = item.snippet.title;
-                            song.artist = item.snippet.channelTitle;
-                            saveMetadataToCache(videoId, song.title, song.artist);
-                        }
-                        playSong(song);
-                        showNotification("Playing pasted video!");
-                    })
-                    .catch(err => {
-                        console.error("Error fetching video details:", err);
-                        playSong(song);
-                        showNotification("Playing video (couldn't fetch title)");
-                    });
+                playSong(song);
+                showNotification("Playing pasted video!");
             } else if (value.length >= 3) {
                 try {
-                    const [videos, playlists] = await Promise.all([
-                        fetch(`https://www.googleapis.com/youtube/v3/search?part=snippet&type=video&videoCategoryId=10&maxResults=10&q=${encodeURIComponent(value)}&key=${getNextKey()}`).then(r => r.json()),
-                        fetch(`https://www.googleapis.com/youtube/v3/search?part=snippet&type=playlist&maxResults=4&q=${encodeURIComponent(value + ' album')}&key=${getNextKey()}`).then(r => r.json())
-                    ]);
-                    renderSearchResults(videos, playlists);
+                    const results = await workerSearch(value);
+                    const videos = {
+                        items: results.map(v => ({
+                            id: { videoId: v.videoId },
+                            snippet: {
+                                title: v.title,
+                                channelTitle: v.channel,
+                                channelId: v.videoId,
+                                thumbnails: {
+                                    default: { url: v.thumb },
+                                    medium:  { url: v.thumb }
+                                }
+                            }
+                        }))
+                    };
+                    renderSearchResults(videos, { items: [] });
                 } catch (error) {
                     console.error("Search error:", error);
-                    showNotification("Search failed");
+                    showNotification("Search failed — check worker");
                 }
             }
         }, 500);
@@ -4409,37 +4450,17 @@ function setupSearchInput() {
             if (videoId) {
                 e.target.value = '';
                 showNotification("Loading video...");
-                
                 const song = {
                     id: videoId,
                     title: "Loading...",
                     artist: "YouTube",
                     art: `https://img.youtube.com/vi/${videoId}/mqdefault.jpg`
                 };
-                
-                fetch(`https://www.googleapis.com/youtube/v3/videos?part=snippet&id=${videoId}&key=${getNextKey()}`)
-                    .then(r => r.json())
-                    .then(data => {
-                        const item = data.items?.[0];
-                        if (item?.snippet) {
-                            song.title = item.snippet.title;
-                            song.artist = item.snippet.channelTitle;
-                            saveMetadataToCache(videoId, song.title, song.artist);
-                        }
-                        playSong(song);
-                        showNotification("Playing pasted video!");
-                    })
-                    .catch(err => {
-                        console.error("Error fetching video details:", err);
-                        playSong(song);
-                        showNotification("Playing video (couldn't fetch title)");
-                    });
+                playSong(song);
+                showNotification("Playing pasted video!");
             }
         }
     });
-    
-    // Initial render of genre browse
-    renderGenreBrowse();
 }
 
 // Update showSearch to show genre browse initially
