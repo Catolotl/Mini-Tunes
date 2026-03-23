@@ -18,8 +18,8 @@ const PREBUILT_PLAYLISTS = [
     {
         id: 'locura-de-marzo-2026',
         name: 'Locura de Marzo 2026',
-        emoji: '🎉',
-        description: 'March 2026 vibes',
+        emoji: '🕶️',
+        description: 'March 2026 Locura de Marzo Bracket',
         cover: '', // optional: paste a direct image URL here for the cover art
 songs: [
     { id: 'SiOgs73KMOU', title: 'ÁNGEL', artist: 'Grupo Frontera' },
