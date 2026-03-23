@@ -20,7 +20,7 @@ const PREBUILT_PLAYLISTS = [
         name: 'Locura de Marzo 2026',
         emoji: '🕶️',
         description: 'March 2026 Locura de Marzo Bracket',
-        cover: '', // optional: paste a direct image URL here for the cover art
+        cover: 'https://i.scdn.co/image/ab67616d0000b273256e4fd17616bfe624911861', // optional: paste a direct image URL here for the cover art
 songs: [
     { id: 'SiOgs73KMOU', title: 'ÁNGEL', artist: 'Grupo Frontera' },
     { id: 'qNw8ejrI0nM', title: 'BZRP Music Sessions #0/66', artist: 'Bizarrap' },
@@ -40,6 +40,24 @@ songs: [
     { id: 'JrqSnbQkOdw', title: 'AKAKAW', artist: 'Renata Flores, Los Mirlos' },
     { id: 'EXyzhaakdVg', title: 'TQMQA', artist: 'Eladio Carrión' },
     { id: 'RfaE-aajv8w', title: 'Regalo', artist: 'Alvaro Soler' }
+]
+    },
+
+        {
+        id: 'tadc-2026',
+        name: 'The Amazing Digital Circus (8 ep)',
+        emoji: '🎪',
+        description: 'All 8 TADC episodes in one playlist',
+        cover: 'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRJ0bplO1JBvSNOIR8ljdq_t1AViqWwsgTSv64JunC88T1a_IyeIRo4a8P4YGMAXdVbl-wo&s=10',
+songs: [
+    { id: 'HwAPLk_sQ3w', title: 'THE AMAZING DIGITAL CIRCUS: PILOT', artist: 'Glitch Studios & Gooseworks' },
+    { id: '4ofJpOEXrZs', title: 'THE AMAZING DIGITAL CIRCUS - Ep 2: Candy Carrier Chaos!', artist: 'Glitch Studios & Gooseworks' },
+    { id: 'bKjfw77cxeQ', title: 'THE AMAZING DIGITAL CIRCUS - Ep 3: The Mystery Of Mildenhall Manor', artist: 'Glitch Studios & Gooseworks' },
+    { id: 'Q9KWcWKo2T8', title: 'THE AMAZING DIGITAL CIRCUS - Ep 4: Fast Food Masquerade', artist: 'Glitch Studios & Gooseworks' },
+    { id: 'L4p2gN2CzsA', title: 'THE AMAZING DIGITAL CIRCUS - Ep 5: Untitled', artist: 'Glitch Studios & Gooseworks' },
+    { id: 'mOvhHim78YA', title: 'THE AMAZING DIGITAL CIRCUS - Ep 6: They All Get Guns *pew pews*', artist: 'Glitch Studios & Gooseworks' },
+    { id: 'oaOG1xOk7XY', title: 'THE AMAZING DIGITAL CIRCUS - Ep 7: Beach Episode', artist: 'Glitch Studios & Gooseworks' },
+    { id: 'DMNlzf8PiEM', title: 'THE AMAZING DIGITAL CIRCUS - Ep 8: hjsakldfhl', artist: 'Glitch Studios & Gooseworks' },
 ]
     },
     // To add another playlist, copy from the { above to the }, above and paste here
@@ -6795,4 +6813,215 @@ function togglePlayPause() {
         if (btn) btn.textContent = '⏸';
     }
 }
+
+// ═══════════════════════════════════════
+// CINEMATIC FULLSCREEN MODE
+// ═══════════════════════════════════════
+
+function openCinematicFullscreen() {
+    document.getElementById('cinematicOverlay')?.remove();
+
+    const overlay = document.createElement('div');
+    overlay.id = 'cinematicOverlay';
+    overlay.style.cssText = `
+        position:fixed;inset:0;z-index:999998;
+        background:#000;
+        display:flex;flex-direction:column;
+        opacity:0;transition:opacity 0.4s ease;
+    `;
+
+    overlay.innerHTML = `
+        <!-- Album art background blur -->
+        <div id="cinematicBg" style="
+            position:absolute;inset:0;
+            background-size:cover;background-position:center;
+            filter:blur(40px) brightness(0.3);
+            transform:scale(1.1);
+            transition:background-image 0.8s ease;
+        "></div>
+
+        <!-- Top bar: song info + close -->
+        <div style="
+            position:absolute;top:0;left:0;right:0;
+            padding:32px 40px;
+            display:flex;align-items:flex-start;justify-content:space-between;
+            background:linear-gradient(180deg,rgba(0,0,0,0.7) 0%,transparent 100%);
+            z-index:3;
+        ">
+            <div id="cinematicSongInfo" style="display:flex;align-items:center;gap:16px;">
+                <img id="cinematicArt" src="" style="
+                    width:52px;height:52px;border-radius:8px;
+                    object-fit:cover;box-shadow:0 4px 16px rgba(0,0,0,0.6);
+                    flex-shrink:0;
+                ">
+                <div>
+                    <div id="cinematicTitle" style="
+                        font-family:'Syne',sans-serif;font-size:20px;font-weight:800;
+                        color:white;text-shadow:0 2px 8px rgba(0,0,0,0.8);
+                        margin-bottom:3px;
+                    "></div>
+                    <div id="cinematicArtist" style="
+                        font-size:14px;color:rgba(255,255,255,0.6);
+                    "></div>
+                </div>
+            </div>
+            <button onclick="closeCinematicFullscreen()" style="
+                background:rgba(255,255,255,0.1);
+                border:1px solid rgba(255,255,255,0.2);
+                color:white;width:40px;height:40px;border-radius:50%;
+                font-size:20px;cursor:pointer;
+                display:flex;align-items:center;justify-content:center;
+                transition:all 0.2s ease;flex-shrink:0;
+            " onmouseover="this.style.background='rgba(255,255,255,0.2)'"
+               onmouseout="this.style.background='rgba(255,255,255,0.1)'">×</button>
+        </div>
+
+        <!-- Video container (center) -->
+        <div style="
+            position:absolute;inset:0;
+            display:flex;align-items:center;justify-content:center;
+            z-index:2;
+        ">
+            <div id="cinematicPlayerWrap" style="
+                width:min(85vw, 140vh);
+                aspect-ratio:16/9;
+                border-radius:12px;overflow:hidden;
+                box-shadow:0 32px 80px rgba(0,0,0,0.8);
+            "></div>
+        </div>
+
+        <!-- Lyric display (bottom center) -->
+        <div style="
+            position:absolute;bottom:0;left:0;right:0;
+            padding:0 10vw 48px;
+            display:flex;align-items:flex-end;justify-content:center;
+            background:linear-gradient(0deg,rgba(0,0,0,0.7) 0%,transparent 100%);
+            z-index:3;pointer-events:none;
+            min-height:120px;
+        ">
+            <div id="cinematicLyric" style="
+                font-family:'Syne',sans-serif;
+                font-size:clamp(18px,3vw,36px);
+                font-weight:700;
+                color:white;
+                text-align:center;
+                text-shadow:0 2px 16px rgba(0,0,0,0.9);
+                opacity:0;
+                transform:translateY(12px);
+                transition:opacity 0.35s ease, transform 0.35s ease;
+                max-width:800px;
+                line-height:1.4;
+            "></div>
+        </div>
+    `;
+
+    document.body.appendChild(overlay);
+    setTimeout(() => { overlay.style.opacity = '1'; }, 20);
+
+    // Move the actual YouTube iframe into the cinematic player wrap
+    const playerEl = document.getElementById('player');
+    const wrap = document.getElementById('cinematicPlayerWrap');
+    if (playerEl && wrap) {
+        overlay._playerParent = playerEl.parentNode;
+        overlay._playerNextSibling = playerEl.nextSibling;
+        wrap.appendChild(playerEl);
+        playerEl.style.width = '100%';
+        playerEl.style.height = '100%';
+    }
+
+    // Set background and song info
+    cinematicUpdateSongInfo();
+
+    // Start lyric loop
+    overlay._lyricInterval = setInterval(cinematicUpdateLyric, 250);
+
+    // ESC to close
+    overlay._escHandler = (e) => { if (e.key === 'Escape') closeCinematicFullscreen(); };
+    document.addEventListener('keydown', overlay._escHandler);
+}
+
+function cinematicUpdateSongInfo() {
+    const song = currentPlayingSong;
+    if (!song) return;
+    const bg = document.getElementById('cinematicBg');
+    const art = document.getElementById('cinematicArt');
+    const title = document.getElementById('cinematicTitle');
+    const artist = document.getElementById('cinematicArtist');
+    if (bg && song.art) bg.style.backgroundImage = `url(${song.art})`;
+    if (art && song.art) art.src = song.art;
+    if (title) title.textContent = song.title || '';
+    if (artist) artist.textContent = song.artist || '';
+}
+
+let _lastCinematicLyric = '';
+
+function cinematicUpdateLyric() {
+    if (!ytPlayer || typeof ytPlayer.getCurrentTime !== 'function') return;
+    const current = ytPlayer.getCurrentTime() || 0;
+
+    // Find active lyric from sidebar (reuse existing parsed lines)
+    const lines = document.querySelectorAll('#lyrics .lyric-line[data-time]');
+    let activeLine = null;
+    lines.forEach(line => {
+        if (parseFloat(line.dataset.time) <= current) activeLine = line;
+    });
+
+    const lyricEl = document.getElementById('cinematicLyric');
+    if (!lyricEl) return;
+
+    const newText = activeLine ? activeLine.textContent.trim() : '';
+
+    if (newText === _lastCinematicLyric) return;
+    _lastCinematicLyric = newText;
+
+    // Fade out, swap text, fade in
+    lyricEl.style.opacity = '0';
+    lyricEl.style.transform = 'translateY(12px)';
+    setTimeout(() => {
+        lyricEl.textContent = newText;
+        if (newText) {
+            lyricEl.style.opacity = '1';
+            lyricEl.style.transform = 'translateY(0)';
+        }
+    }, 350);
+}
+
+function closeCinematicFullscreen() {
+    const overlay = document.getElementById('cinematicOverlay');
+    if (!overlay) return;
+
+    // Restore player to original position
+    const playerEl = document.getElementById('player');
+    if (playerEl && overlay._playerParent) {
+        playerEl.style.width = '';
+        playerEl.style.height = '';
+        if (overlay._playerNextSibling) {
+            overlay._playerParent.insertBefore(playerEl, overlay._playerNextSibling);
+        } else {
+            overlay._playerParent.appendChild(playerEl);
+        }
+    }
+
+    clearInterval(overlay._lyricInterval);
+    document.removeEventListener('keydown', overlay._escHandler);
+    overlay.style.opacity = '0';
+    setTimeout(() => overlay.remove(), 400);
+}
+
+// Keep cinematic info in sync when song changes
+const _origPlaySongForCinematic = playSong;
+window.addEventListener('load', () => {
+    // Patch playSong to refresh cinematic overlay if open
+    const _base = window.playSong;
+    window.playSong = async function(...args) {
+        await _base(...args);
+        if (document.getElementById('cinematicOverlay')) {
+            setTimeout(cinematicUpdateSongInfo, 800);
+        }
+    };
+});
+
+window.openCinematicFullscreen = openCinematicFullscreen;
+window.closeCinematicFullscreen = closeCinematicFullscreen;
+console.log('✓ Cinematic fullscreen loaded');
 window.togglePlayPause = togglePlayPause;
